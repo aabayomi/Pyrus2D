@@ -4,18 +4,20 @@ from lib.debug.debug import log
 
 
 class GameMode:
-    def __init__(self, game_mode: GameModeType = GameModeType.BeforeKickOff, time=GameTime()):
+    def __init__(
+        self, game_mode: GameModeType = GameModeType.BeforeKickOff, time=GameTime()
+    ):
         self._game_mode: GameModeType = game_mode
         self._mode_name: str = None
         self._side: SideID = None
         self._time: GameTime = time
         self._left_score: int = 0
         self._right_score: int = 0
-        
+
         if game_mode is not None:
             self._mode_name = self._set_mode_name()
             self._side = self._set_side()
-    
+
     def copy(self):
         new = GameMode()
         new._game_mode = self._game_mode
@@ -24,7 +26,7 @@ class GameMode:
         new._time = self._time.copy()
         new._left_score = self._left_score
         new._right_score = self._right_score
-        
+
         return new
 
     def type(self) -> GameModeType:
@@ -38,12 +40,12 @@ class GameMode:
 
     def _set_side(self) -> SideID:
         return self._game_mode.side()
-    
+
     def time(self):
         return self._time
 
     def _set_mode_name(self) -> str:
-        if self._game_mode.value[-2:] == '_l' or self._game_mode.value[-2:] == '_r':
+        if self._game_mode.value[-2:] == "_l" or self._game_mode.value[-2:] == "_r":
             return self._game_mode.value[:-2]
         return self._game_mode.value
 
@@ -52,23 +54,27 @@ class GameMode:
 
     def is_teams_set_play(self, team_side: SideID):
         if team_side == SideID.LEFT:
-            if self.type() in [GameModeType.KickOff_Left,
-                               GameModeType.KickIn_Left,
-                               GameModeType.CornerKick_Left,
-                               GameModeType.GoalKick_Left,
-                               GameModeType.FreeKick_Left,
-                               GameModeType.GoalieCatchBall_Left,
-                               GameModeType.IndFreeKick_Left]:
+            if self.type() in [
+                GameModeType.KickOff_Left,
+                GameModeType.KickIn_Left,
+                GameModeType.CornerKick_Left,
+                GameModeType.GoalKick_Left,
+                GameModeType.FreeKick_Left,
+                GameModeType.GoalieCatchBall_Left,
+                GameModeType.IndFreeKick_Left,
+            ]:
                 return True
             return False
         else:
-            if self.type() in [GameModeType.KickOff_Right,
-                               GameModeType.KickIn_Right,
-                               GameModeType.CornerKick_Right,
-                               GameModeType.GoalKick_Right,
-                               GameModeType.FreeKick_Right,
-                               GameModeType.GoalieCatchBall_Right,
-                               GameModeType.IndFreeKick_Right]:
+            if self.type() in [
+                GameModeType.KickOff_Right,
+                GameModeType.KickIn_Right,
+                GameModeType.CornerKick_Right,
+                GameModeType.GoalKick_Right,
+                GameModeType.FreeKick_Right,
+                GameModeType.GoalieCatchBall_Right,
+                GameModeType.IndFreeKick_Right,
+            ]:
                 return True
             return False
 
@@ -91,10 +97,15 @@ class GameMode:
         return self.is_teams_set_play(our_side)
 
     def update(self, mode: str, current_time: GameTime):
-        mode = mode[:mode.find(')')]
-        if mode.startswith("yellow") or mode.startswith("red") or mode == 'foul_l' or mode == 'foul_r':
+        mode = mode[: mode.find(")")]
+        if (
+            mode.startswith("yellow")
+            or mode.startswith("red")
+            or mode == "foul_l"
+            or mode == "foul_r"
+        ):
             return False
-        
+
         n_under_line = len(mode.split("_"))
         game_mode: GameModeType = None
         if mode.startswith("goal_l"):
@@ -105,15 +116,18 @@ class GameMode:
             if n_under_line == 3:
                 self._right_score = int(mode.split("_")[-1])
             game_mode = GameModeType.AfterGoal_Right
-        
+
         if game_mode is None:
+            print("in game mode: ", mode)
             game_mode = GameModeType(mode)
-        
-        if (self._game_mode.is_goalie_catch_ball()
+            print("after emnum:  ", mode)
+
+        if (
+            self._game_mode.is_goalie_catch_ball()
             and game_mode.is_free_kick()
             and self._game_mode.side() == game_mode.side()
-            and self._time == current_time):
-            
+            and self._time == current_time
+        ):
             pass
 
         else:
@@ -121,7 +135,7 @@ class GameMode:
             self._side = self._game_mode.side()
         self._time = current_time.copy()
         return True
-    
+
     def is_server_cycle_stopped_mode(self):
         return self._game_mode in [
             GameModeType.BeforeKickOff,

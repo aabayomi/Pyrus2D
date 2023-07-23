@@ -6,20 +6,25 @@ import multiprocessing as mp
 import team_config
 
 
+## 
+
+
+
 players = []
 
-goalie = mp.Process(target=main_p.main, args=(1,True))
-goalie.start()
+# goalie = mp.Process(target=main_p.main, args=(1,True))
+# goalie.start()
 
-players.append(goalie)
+# players.append(goalie)
+keepers = 4
 
-for i in range(2,12):
-    proc = mp.Process(target=main_p.main, args=(i,False))
+for i in range(2,keepers):
+    proc = mp.Process(target=main_p.main)
     proc.start()
     players.append(proc)
     sleep(0.25)
 
 sleep(5)
 
-coach = mp.Process(target=main_c.main)
-coach.start()
+# coach = mp.Process(target=main_c.main)
+# coach.start()
