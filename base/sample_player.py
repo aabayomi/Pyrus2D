@@ -30,6 +30,8 @@ class SamplePlayer(PlayerAgent):
     def do_preprocess(self):
         wm = self.world()
 
+        print("do_preprocess ball position: ", wm.ball().pos())
+
         if wm.self().is_frozen():
             self.set_view_action(ViewTactical())
             self.set_neck_action(NeckTurnToBallOrScan())

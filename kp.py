@@ -3,6 +3,7 @@ from time import sleep
 import logging
 
 
+# import base.main_keepaway_player as kp
 import base.main_keepaway_player as kp
 import base.main_coach as main_c
 import multiprocessing as mp
@@ -22,7 +23,7 @@ def launch_monitor(options):
     monitor_options = ["--%s=%s" % option for option in monitor_options]
 
     command = ["soccerwindow2 &"]
-    # command = ['rcssmonitor'] + monitor_options
+    # command = ["rcssmonitor"] + monitor_options
     # print command
     # print " ".join(command)
     Popen(command, shell=True)
@@ -132,11 +133,11 @@ def launch_server(options):
     # print command
     # print " ".join(command)
     # logging.debug("Built the command to connect to the server")
-    popen = Popen(command)
+    Popen(command)
 
     # Wait until the server is ready.
     # wait_for_server(options.port)
-    return popen.pid
+    # return popen.pid
 
 
 def parse_options(args=None, **defaults):

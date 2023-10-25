@@ -3,5 +3,8 @@
         "editor.defaultFormatter": "ms-python.black-formatter"
     },
     "python.formatting.provider": "none",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "cSpell.ignoreWords": [
+        "Keepaway"
+    ]
 }

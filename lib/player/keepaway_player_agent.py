@@ -78,6 +78,7 @@ class PlayerAgent(SoccerAgent):
         self._see_state: SeeState = SeeState()
 
         self._team_name = team_name
+        # print("team name is ", self._team_name)
         self._game_mode: GameMode = GameMode()
         self._server_cycle_stopped: bool = True
 
@@ -92,7 +93,7 @@ class PlayerAgent(SoccerAgent):
         self._last_body_command = []
         self._is_synch_mode = True
         self._effector = ActionEffector(self)
-        self._communication = None
+        self._communication = SampleCommunication()
         self._current_time_ = time.time()
         self._time_last_said_ = -5.0
 
@@ -167,11 +168,12 @@ class PlayerAgent(SoccerAgent):
         _, cycle, sender = tuple(message.split(" ")[:3])
         cycle = int(cycle)
 
-        if sender[0].isnumeric() or sender[0] == "-":  # PLAYER MESSAGE
-            self.hear_player_parser(message)
-            pass
-        elif sender == "referee":
-            self.hear_referee_parser(message)
+        ## commmented out since we do not need a referee message
+        # if sender[0].isnumeric() or sender[0] == "-":  # PLAYER MESSAGE
+        #     self.hear_player_parser(message)
+        #     pass
+        # elif sender == "referee":
+        #     self.hear_referee_parser(message)
 
     def hear_player_parser(self, message: str):
         log.debug_client().add_message(f"rcv msg:#{message}#")
@@ -334,12 +336,6 @@ class PlayerAgent(SoccerAgent):
             self._view_action.execute(self)
             self._view_action = None
 
-    ###
-    # def do_view_action(self):
-    #     if self._view_action:
-    #         self._view_action.get_default_view_width(self)
-    #         self._view_action = None
-
     def do_change_focus_action(self):
         if self._focus_point_action:
             self._focus_point_action.execute(self)
@@ -388,16 +384,6 @@ class PlayerAgent(SoccerAgent):
 
     def run(self):
         """Main Game Loop For Keep-away Task"""
-
-        # if self._team_name == "keepers":
-        #     # keepaway_player_type = self._keeper()
-        #     keepaway_player_type = "keepers"
-        #     # print("keeper")
-        # else:
-        #     # keepaway_player_type = self._taker()
-        #     keepaway_player_type = "takers"
-        # # print("taker")
-
         last_time_rec = time.time()
         waited_msec: int = 0
         timeout_count: int = 0
@@ -569,6 +555,15 @@ class PlayerAgent(SoccerAgent):
         self._last_body_command.append(self._effector.set_move(x, y))
         return True
 
+    def do_pass_to(self, power, dir, target):
+        if self.world().self().is_frozen():
+            log.os_log().error(
+                f"(do pass to) player({self._real_world.self_unum()} is frozen!"
+            )
+            return False
+        self._last_body_command.append(self._effector.set_kick_to(power, dir, target))
+        return True
+
     def do_move_player(
         self,
         teamname: str,
@@ -594,6 +589,19 @@ class PlayerAgent(SoccerAgent):
             )
             return False
         self._last_body_command.append(self._effector.set_kick(power, rel_dir))
+        return True
+
+    ### Keepaway Methods
+
+    def do_kick_to(self, power: float, rel_dir: AngleDeg, target: Vector2D):
+        if self.world().self().is_frozen():
+            log.os_log().error(
+                f"(do kick) player({self._real_world.self_unum()} is frozen!"
+            )
+            return False
+        self._last_body_command.append(
+            self._effector.set_kick_to(power, rel_dir, target)
+        )
         return True
 
     def do_tackle(self, power_or_dir: float, foul: bool):
@@ -857,477 +865,24 @@ class PlayerAgent(SoccerAgent):
         if self.full_world_exists():
             self.update_full_world_before_decision()
 
-    ###################################################################### 2018.
-
-    # def run(self):
-    #     """Main Game Loop For Keep-away Task"""
-
-    #     if self._team_name == "keepers":
-    #         # keepaway_player_type = self._keeper()
-    #         keepaway_player_type = "keepers"
-    #         # print("keeper")
-    #     else:
-    #         # keepaway_player_type = self._taker()
-    #         keepaway_player_type = "takers"
-    #     # print("taker")
-
-    #     last_time_rec = time.time()
-    #     waited_msec: int = 0
-    #     timeout_count: int = 0
-    #     while self._client.is_server_alive():
-    #         length, message, server_address = self._client.recv_message()
-    #         if len(message) == 0:
-    #             waited_msec += team_config.SOCKET_INTERVAL
-    #             timeout_count += 1
-    #             if time.time() - last_time_rec > 3:
-    #                 self._client.set_server_alive(False)
-    #                 break
-    #         else:
-    #             self.parse_message(message.decode())
-    #             last_time_rec = time.time()
-    #             waited_msec = 0
-    #             timeout_count = 0
-
-    #         if ServerParam.i().synch_mode():
-    #             if self.think_received():
-    #                 self.action(keepaway_player_type)
-    #                 self.debug_players()
-    #                 self._think_received = False
-    #         else:
-    #             if self.is_decision_time(timeout_count, waited_msec) or (
-    #                 self._last_decision_time != self._current_time
-    #                 and self.world().see_time() == self._current_time
-    #             ):
-    #                 self.action(keepaway_player_type)
-    #         self.flush_logs()
-    #         if len(message) > 0:
-    #             print(pt.get())
-
-    # # def main_loop(self):
-    # #     if self._team_name == "keepers":
-    # #         keepaway_player_type = self._keeper()
-    # #         # print("keeper")
-    # #     else:
-    # #         keepaway_player_type = self._taker()
-    # #         # print("taker")
-
-    # #     if self._shall_i_say_something == True:
-    # #         self._time_last_said = self.world()._time()
-    # #         message = self._make_say_message(keepaway_player_type)
-    # #         if len(message) != 0:
-    # #             log.os_log().debug("send communication string " + str(message))
-    # #             ## send world model message
-    # #         log.os_log().debug("determined action; waiting for new info ")
-
-    # #         if (self.world()._see_time == self.world()._time()) or (
-    # #             (ServerParam.i().synch_mode() == True) and self.think_received() == True
-    # #         ):
-    # #             ## set action command
-    # #             log.os_log().debug("send messages directly")
-    # #             if ServerParam.i().synch_mode() == True:
-    # #                 ## set world mold received think to false
-    # #                 ## set action command to be (done).
-    # #                 pass
-    # #             else:
-    # #                 log.os_log().debug(
-    # #                     " HOLE no action determined; waiting for new info"
-    # #                 )
-    # #                 ## log some information . TODO: check
-    # #                 pass
-
-    # #         ## log some information
-    # #         log.os_log().debug("time for action: %d", self.world().time() * 1000)
-
-    # #         if self.world().wait_for_new_info() == False:
-    # #             ## set action command to be (done).
-    # #             log.os_log().debug("wait for new info")
-    # #             b = False
-
-    # # def _shall_i_say_something(self):
-    # #     """Decides whether the player should say something or not."""
-    # #     ss = ServerParam.i()
-    # #     # bReturn = (
-    # #     #     self._current_time_ - self._time_last_said_
-    # #     # ) >= ss.player_hear_decay()
-    # #     # bReturn &= self._current_time.cycle() > 0
-
-    # #     if (self._current_time_ - self._time_last_said_) >= ss.player_hear_decay() and (
-    # #         self._current_time.cycle() > 0
-    # #     ):
-    # #         return False
-    # #     else:
-    # #         return True
-
-    # def _predict_ball(self):
-    #     """Predict the ball position and velocity given a kick command."""
-    #     ss = ServerParam.i()
-
-    #     ball_pos = self.world().ball().pos()
-    #     ball_vel = self.world().ball().vel()
-
-    #     if self._last_body_command[-1] == CommandType.KICK:
-    #         kick_power = self._last_body_command[-1].kick_power()
-    #         kick_dir = self._last_body_command[-1].kick_dir()
-    #         kick_dir.normalize()
-    #         angle = ball_pos.th()
-    #         power = kick_power * ss.ball_decay()
-    #         ball_vel += Vector2D.polar2vector(power, angle)
-    #         ball_pos += ball_vel
-
-    #     return ball_pos, ball_vel
-
-    # def _predict_player_pos(self, cycle, dash_power):
-    #     """Predict the player position given a dash command."""
-    #     ss = ServerParam.i()
-    #     p = self.world().self()
-    #     dash_dir = self._last_body_command[-1].dash_dir()
-    #     dash_dir.normalize()
-    #     angle = p.body()
-    #     power = dash_power * ss._player_decay() * cycle  ## pow
-    #     p_vel = Vector2D.polar2vector(power, angle)
-    #     p_pos = p.pos() + p_vel
-    #     return p_pos, p_vel
-
-    # def _make_say_message(self, p):
-    #     """Makes a message to be said by the player."""
-    #     ss = ServerParam.i()
-    #     i_diff = 0
-    #     ball_pos, ball_vel = None, None
-    #     encoded_message = ""
-
-    #     ## world model ball prediction
-    #     ball_pred = self.world().ball().pos() + self.world().ball().vel()
-    #     ## Agent position prediction after command execution
-
-    #     ## if there is good information about the ball
-    #     ## not sure of what see_state last_see_time is..
-    #     ## player->getMaximalKickDist() - what is this?? used 2.0 instead
-
-    #     if (
-    #         (
-    #             self.see_state._last_see_time == self.world.time()
-    #             and p.dist_from_ball() < 20
-    #             and self.world.get_ball_time_info() == self.world.time()
-    #         )
-    #         or (
-    #             p.dist_from_ball() < ss.visible_distance()
-    #             and self.world.get_ball_time_info() == self.world.time()
-    #         )
-    #         or (p.dist_from_ball() < 2.0)
-    #         and ball_pred.pos().dist2(p.pos) > 2.0
-    #     ):  ## fix agent position prediction
-    #         # if we can kick ball
-    #         if self.world().get_ball_rel_dist() < 2.0:
-    #             # if kick and a pass
-    #             if self._last_body_command[-1] == CommandType.KICK:
-    #                 pred_ball_pos, pred_ball_vel = self._predict_ball(self)
-    #                 ball_pos, ball_vel = pred_ball_pos, pred_ball_vel
-    #                 player_pos, player_vel = self._predict_player_pos(1, 0)
-
-    #                 if ball_pos.pos().dist2(player_pos) > 0.2 + 0.2:
-    #                     i_diff = 1
-    #             if i_diff == 0:
-    #                 ball_pos = self.world().ball().pos()
-    #                 ball_vel = Vector2D = Vector2D(0, 0)
-
-    #     log.sw_log().world().add_text(f"ball pos: %s", ball_pos)
-
-    #     ## encode the message to be sent TODO:
-
-    #     encoded_message += (
-    #         str(ball_pos.getX())
-    #         + str(ball_pos.getY())
-    #         + str(ball_vel.getX())
-    #         + str(ball_vel.getY())
-    #         + str(1 - i_diff)
-    #     )
-
-    #     ## find number of takers seen in this cycle.
-    #     self.parse_message(encoded_message.decode())
-    #     num_takers_seen = self.world()._opponents().size()
-
-    #     closest_opponents = (
-    #         self.world()._opponents
-    #     )  # WM->sortClosestTo( T, numSeen, WM->getAgentObjectType() );
-
-    #     if num_takers_seen > 0:
-    #         opp_pos = closest_opponents[0].getPos()
-    #         encoded_message += str(opp_pos.getX()) + str(opp_pos.getY()) + str(1)
-
-    #     # if (len(encoded_message) <= 7 and WM->getConfidence( WM->getAgentObjectType() ) > PS->getPlayerHighConfThr() ):
-    #     #     myencoder.add(new OurPos( posAgentPred.getX(), posAgentPred.getY() ))
-
-    #     return encoded_message
-
-    # def _keeper(self):
-    #     """Returns the keeper messages."""
-
-    #     if self.world()._is_new_episode == True:
-    #         self.end_episode(self.world()._reward())  #
-    #         self.world().set_new_episode()
-    #         self.world().set_last_action(-1)  #
-    #         time_start_episode = self.world().time()  #
-
-    #     if DEBUG:
-    #         log.sw_log().world().add_text(f"ball pos = {self.world().ball().pos()}")
-
-    #     ## If we don't know where the ball is, search for it.  PS.getBallConfThr() = .9
-
-    #     if self.world()._get_confidence("ball") < 0.90:
-    #         ## Search for the ball and return message.
-    #         if (
-    #             self.world().self_unum() is None
-    #             or self.world().self().unum() != self.world().self_unum()
-    #         ):
-    #             return
-
-    #         self.update_before_decision()
-    #         KickTable.instance().create_tables(self.world().self().player_type())
-
-    #         self._effector.reset()
-    #         # self.action_impl()
-    #         self.search_ball()
-    #         self.do_view_action()  ## why is this here?
-    #         self.do_neck_action()  ## why is this here?
-    #         self.do_change_focus_action()  ## why is this here?
-
-    #         self._communication = SampleCommunication()
-
-    #         self._last_decision_time = self._current_time.copy()
-
-    #         log.os_log().debug("body " + str(self.world().self().body()))
-    #         log.os_log().debug("pos " + str(self.world().self().pos()))
-
-    #         self.real_world().update_just_after_decision(self._effector)
-    #         if self.full_world_exists():
-    #             self.full_world().update_just_after_decision(self._effector)
-    #         if DEBUG:
-    #             log.os_log().debug("======Self after decision======")
-    #             log.os_log().debug("turn " + str(self.effector().get_turn_info()))
-    #             log.os_log().debug("dash " + str(self.effector().get_dash_info()))
-    #             log.os_log().debug(
-    #                 "next body " + str(self.effector().queued_next_self_body())
-    #             )
-    #             log.os_log().debug(
-    #                 "next pos " + str(self.effector().queued_next_self_pos())
-    #             )
-    #             # log.os_log().debug(str(self.world().self().long_str()))
-
-    #         self._see_state.set_view_mode(self.world().self().view_width())
-
-    #         message_command = self._effector.make_say_message_command(self.world())
-
-    #         return message_command
-
-    #     ## If the ball is kickable , call main action selection routine.
-    #     if self.world().is_kickable():  #
-    #         if DEBUG:
-    #             log.sw_log().team().add_text(
-    #                 f"is kickable? dist {wm.ball().dist_from_self()} "
-    #                 f"ka {wm.self().player_type().kickable_area()} "
-    #                 f"seen pos count {wm.ball().seen_pos_count()} "
-    #                 f"is? {wm.self()._kickable}"
-    #             )
-
-    #         return self._keeper_with_ball
-
-    #     # ## If fastest, intercept the ball.
-    #     # fastest_teammate = self.world().intercept_table().fastest_teammate()
-    #     # if fastest_teammate is None:
-    #     #     log.os_log().debug("I am fastest to ball; can get there in cycles")
-    #     #     ## If we are the fastest to the ball, intercept it.
-    #     #     self_min = wm.intercept_table().self_reach_cycle()
-    #     #     intercept_pos = wm.ball().inertia_point(self_min)
-    #     #     Intercept().execute(self)
-    #     #     self.set_neck_action(NeckTurnToBall())
-
-    #     # log.os_log().debug("I am not fastest to ball")
-
-    #     # return self._keeper_support(fastest_teammate)
-
-    # def _keeper_support(self, teammate):
-    #     wm = self.world()
-
-    #     # fastest = wm.intercept_table().fastest_teammate()
-    #     # int iCycles = WM->predictNrCyclesToObject( fastest, OBJECT_BALL )
-    #     # VecPosition posPassFrom = WM->predictPosAfterNrCycles( OBJECT_BALL, iCycles )
-
-    #     ## position to pass from the fastest teammate.
-
-    #     log.os_log().debug(
-    #         f'{"=" * 30}Visual Sensor{"=" * 30}\n' + str(self._see_parser)
-    #     )
-
-    #     # wm.intercept_table().predict_teammate(self)
-    #     # pos_pass_from = wm.intercept_table().fastest_teammate().pos()
-    #     self.action_impl()
-    #     # LogDraw.logCircle( "BallPredict", posPassFrom, 1, 70, true, COLOR_BROWN )
-    #     # log.os_log().debug(f"BallPredict , {pos_pass_from}")
-
-    #     ## fix the position to pass from to be in the keep-away rectangle
-
-    #     rect = wm._get_keepaway_rec("real")
-
-    #     # wm._get_open_for_pass_from_in_rectangle(rect, pos_pass_from)
-
-    #     # ObjectT lookObject = self._choose_look_object( 0.97 )
-    #     # ACT->putCommandInQueue( turnNeckToPoint( WM->getKeepawayRect().getPosCenter(), soc ) )
-
-    # # def choose_look_object(self, ball_thr ):
-    # #     if WM->getConfidence( OBJECT_BALL ) < ballThr:
-    # #         return OBJECT_BALL;
-    # #     ObjectT objLeast = OBJECT_ILLEGAL
-    # #     double confLeast = 1.1
-    # #     for ( int i = 0; i < WM->getNumKeepers(); i++ ):
-    # #         ObjectT obj = SoccerTypes::getTeammateObjectFromIndex( i )
-    # #         if ( obj != WM->getAgentObjectType() )
-    # #             double conf = WM->getConfidence( obj )
-    # #         if ( conf < confLeast )
-    # #             confLeast = conf
-    # #             objLeast = obj
-    # #     return objLeast
-
-    # ##############################
-
-    # def action(self, player_type):
-    #     if player_type == "keepers":
-    #         if self.world()._is_new_episode == True:
-    #             self.end_episode(self.world()._reward())  #
-    #             self.world().set_new_episode()
-    #             self.world().set_last_action(-1)  #
-    #             time_start_episode = self.world().time()  #
-
-    #         if self.world()._get_confidence("ball") < 0.90:
-    #             if (
-    #                 self.world().self_unum() is None
-    #                 or self.world().self().unum() != self.world().self_unum()
-    #             ):
-    #                 return
-    #             self.update_before_decision()
-    #             KickTable.instance().create_tables(
-    #                 self.world().self().player_type()
-    #             )  # TODO should be moved!
-
-    #             self._effector.reset()
-    #             # self.action_impl()
-    #             self.search_ball()
-    #             self.do_view_action()
-    #             self.do_neck_action()
-    #             self.do_change_focus_action()
-
-    #             self.communicate_impl()
-
-    #             self._last_decision_time = self._current_time.copy()
-
-    #             log.os_log().debug("body " + str(self.world().self().body()))
-    #             log.os_log().debug("pos " + str(self.world().self().pos()))
-
-    #             self.real_world().update_just_after_decision(self._effector)
-    #             if self.full_world_exists():
-    #                 self.full_world().update_just_after_decision(self._effector)
-    #             if DEBUG:
-    #                 log.os_log().debug("======Self after decision======")
-    #                 log.os_log().debug("turn " + str(self.effector().get_turn_info()))
-    #                 log.os_log().debug("dash " + str(self.effector().get_dash_info()))
-    #                 log.os_log().debug(
-    #                     "next body " + str(self.effector().queued_next_self_body())
-    #                 )
-    #                 log.os_log().debug(
-    #                     "next pos " + str(self.effector().queued_next_self_pos())
-    #                 )
-    #                 # log.os_log().debug(str(self.world().self().long_str()))
-
-    #             self._see_state.set_view_mode(self.world().self().view_width())
-
-    #             message_command = self._effector.make_say_message_command(self.world())
-    #             if message_command:
-    #                 self._last_body_command.append(message_command)
-    #             commands = self._last_body_command
-    #             # if self.world().our_side() == SideID.RIGHT:
-    #             # PlayerCommandReverser.reverse(commands) # unused :\ # its useful :) # nope not useful at all :(
-    #             if self._is_synch_mode:
-    #                 commands.append(PlayerDoneCommand())
-    #             message = self.make_commands(commands)
-    #             log.debug_client().add_message("\nsent message: " + str(message))
-    #             if DEBUG:
-    #                 log.os_log().debug("sent message: " + str(message))
-
-    #             self._client.send_message(message)
-    #             self._last_body_command = []
-    #             self._effector.clear_all_commands()
-
-    #         else:
-    #             if (
-    #                 self.world().self_unum() is None
-    #                 or self.world().self().unum() != self.world().self_unum()
-    #             ):
-    #                 return
-    #             self.update_before_decision()
-    #             self._effector.reset()
-    #             print("takers here")
-
-    #             # self.taker()
-    #             self.action_impl()
-    #             self.do_view_action()
-    #             self.do_neck_action()
-    #             self.do_change_focus_action()
-
-    #             self._last_decision_time = self._current_time.copy()
-
-    #             log.os_log().debug("body " + str(self.world().self().body()))
-    #             log.os_log().debug("pos " + str(self.world().self().pos()))
-
-    #             self.real_world().update_just_after_decision(self._effector)
-    #             if self.full_world_exists():
-    #                 self.full_world().update_just_after_decision(self._effector)
-    #             if DEBUG:
-    #                 log.os_log().debug("======Self after decision======")
-    #                 log.os_log().debug("turn " + str(self.effector().get_turn_info()))
-    #                 log.os_log().debug("dash " + str(self.effector().get_dash_info()))
-    #                 log.os_log().debug(
-    #                     "next body " + str(self.effector().queued_next_self_body())
-    #                 )
-    #                 log.os_log().debug(
-    #                     "next pos " + str(self.effector().queued_next_self_pos())
-    #                 )
-    #                 # log.os_log().debug(str(self.world().self().long_str()))
-
-    #             self._see_state.set_view_mode(self.world().self().view_width())
-
-    #             message_command = self._effector.make_say_message_command(self.world())
-    #             if message_command:
-    #                 self._last_body_command.append(message_command)
-    #             commands = self._last_body_command
-    #             # if self.world().our_side() == SideID.RIGHT:
-    #             # PlayerCommandReverser.reverse(commands) # unused :\ # its useful :) # nope not useful at all :(
-    #             if self._is_synch_mode:
-    #                 commands.append(PlayerDoneCommand())
-    #             message = self.make_commands(commands)
-    #             log.debug_client().add_message("\nsent message: " + str(message))
-    #             if DEBUG:
-    #                 log.os_log().debug("sent message: " + str(message))
-
-    #             self._client.send_message(message)
-    #             self._last_body_command = []
-    #             self._effector.clear_all_commands()
-
     def action(self):
-        if (
-            self.world().self_unum() is None
-            or self.world().self().unum() != self.world().self_unum()
-        ):
-            return
-        self.update_before_decision()
+        # if (
+        #     self.world().self_unum() is None
+        #     or self.world().self().unum() != self.world().self_unum()
+        # ):
+        #     return
+        self.update_before_decision()  # this should help with the bug of not seeing the ball.
+
+        # print("KP", self.world().ball())
+
         KickTable.instance().create_tables(
             self.world().self().player_type()
         )  # TODO should be moved!
 
-        # print(self._team_name)
-        ##
-
         self._effector.reset()
         self.action_impl()
         # self.search_ball()
+
         self.do_view_action()
         self.do_neck_action()
         self.do_change_focus_action()

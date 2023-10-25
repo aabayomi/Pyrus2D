@@ -2,16 +2,17 @@ from enum import Enum
 from pyrusgeom.geom_2d import *
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from lib.player.world_model import WorldModel
     from lib.player.object_player import PlayerObject
 
 
 class KickActionType(Enum):
-    No = '0'
-    Pass = 'Pass'
-    Dribble = 'Dribble'
-    Clear = 'Clear'
+    No = "0"
+    Pass = "Pass"
+    Dribble = "Dribble"
+    Clear = "Clear"
 
 
 class KickAction:
@@ -26,14 +27,25 @@ class KickAction:
         self.index = 0
         self.min_opp_dist = 0.0
 
-    def calculate_min_opp_dist(self, wm: 'WorldModel' = None):
+    def calculate_min_opp_dist(self, wm: "WorldModel" = None):
         if wm is None:
             return 0.0
-        return min([opp.pos().dist(self.target_ball_pos) for opp in wm.opponents() if opp is not None and opp.unum() > 0])
+        for opp in wm.opponents():
+            print(opp)
+            # if opp is not None and opp.unum() > 0
+        return min(
+            [
+                opp.pos().dist(self.target_ball_pos)
+                for opp in wm.opponents()
+                if opp is not None and opp.unum() > 0
+            ]
+        )
 
-    def evaluate(self, wm: 'WorldModel' = None):
+    def evaluate(self, wm: "WorldModel" = None):
         self.min_opp_dist = self.calculate_min_opp_dist(wm)
-        self.eval = self.target_ball_pos.x() + max(0.0, 40.0 - self.target_ball_pos.dist(Vector2D(52, 0)))
+        self.eval = self.target_ball_pos.x() + max(
+            0.0, 40.0 - self.target_ball_pos.dist(Vector2D(52, 0))
+        )
         if self.min_opp_dist < 5.0:
             self.eval -= list([30, 20, 10, 5, 2])[int(self.min_opp_dist)]
 
@@ -41,12 +53,14 @@ class KickAction:
         return self.eval > other.eval
 
     def __repr__(self):
-        return '{} Action {} to {} in ({}, {}) eval:{}'.format(self.type.value,
-                                                               self.start_unum,
-                                                               self.target_unum,
-                                                               round(self.target_ball_pos.x(), 2),
-                                                               round(self.target_ball_pos.y(), 2),
-                                                               self.eval)
+        return "{} Action {} to {} in ({}, {}) eval:{}".format(
+            self.type.value,
+            self.start_unum,
+            self.target_unum,
+            round(self.target_ball_pos.x(), 2),
+            round(self.target_ball_pos.y(), 2),
+            self.eval,
+        )
 
     def __str__(self):
         return self.__repr__()
@@ -59,27 +73,37 @@ class TackleAction:
             self._ball_vel: Vector2D = vel.copy()
             self._ball_speed: float = vel.r()
             self._ball_move_angle: AngleDeg = vel.th()
-            self._score: float = 0.
+            self._score: float = 0.0
             return
         self._tackle_angle: AngleDeg = AngleDeg(0)
-        self._ball_vel: Vector2D = Vector2D(0,0)
-        self._ball_speed: float = 0.
+        self._ball_vel: Vector2D = Vector2D(0, 0)
+        self._ball_speed: float = 0.0
         self._ball_move_angle: AngleDeg = AngleDeg(0)
-        self._score: float = -float('inf')
+        self._score: float = -float("inf")
 
     def clear(self):
         self._tackle_angle: AngleDeg = AngleDeg(0)
-        self._ball_vel: Vector2D = Vector2D(0,0)
-        self._ball_speed: float = 0.
+        self._ball_vel: Vector2D = Vector2D(0, 0)
+        self._ball_speed: float = 0.0
         self._ball_move_angle: AngleDeg = AngleDeg(0)
-        self._score: float = -float('inf')
+        self._score: float = -float("inf")
 
 
 class ShootAction:
-    def __init__(self, index, target_point, first_ball_speed, ball_move_angle, ball_move_dist, ball_reach_step):
+    def __init__(
+        self,
+        index,
+        target_point,
+        first_ball_speed,
+        ball_move_angle,
+        ball_move_dist,
+        ball_reach_step,
+    ):
         self.index = index
         self.target_point: Vector2D = target_point
-        self.first_ball_vel: Vector2D = Vector2D.polar2vector(first_ball_speed, ball_move_angle)
+        self.first_ball_vel: Vector2D = Vector2D.polar2vector(
+            first_ball_speed, ball_move_angle
+        )
         self.first_ball_speed = first_ball_speed
         self.ball_move_angle: AngleDeg = ball_move_angle
         self.ball_move_dist = ball_move_dist
@@ -90,7 +114,9 @@ class ShootAction:
         self.score = 0
 
     def __repr__(self):
-        return '{} target {} first_vel {}'.format(self.index, self.target_point, self.first_ball_vel)
+        return "{} target {} first_vel {}".format(
+            self.index, self.target_point, self.first_ball_vel
+        )
 
     def __str__(self):
         return self.__repr__()
@@ -102,9 +128,9 @@ class BhvKickGen:
         self.index = 0
         self.debug_list = []
 
-    def can_opponent_cut_ball(self, wm: 'WorldModel', ball_pos, cycle):
+    def can_opponent_cut_ball(self, wm: "WorldModel", ball_pos, cycle):
         for unum in range(1, 12):
-            opp: 'PlayerObject' = wm.their_player(unum)
+            opp: "PlayerObject" = wm.their_player(unum)
             if opp.unum() == 0:
                 continue
             opp_cycle = opp.pos().dist(ball_pos) - opp.player_type().kickable_area()

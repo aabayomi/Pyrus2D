@@ -20,5 +20,7 @@ setup(
         "numpy==1.24.2",
         "pyrusgeom==0.1.2",
         "scipy==1.10.1",
+        # gymnasium
+        # pettingzoo
     ],
 )

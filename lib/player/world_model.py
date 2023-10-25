@@ -56,7 +56,6 @@ def player_valid_check(p: PlayerObject):
 
 class WorldModel:
     DEBUG = True
-
     DIR_CONF_DIVS = 72
     DIR_STEP = 360.0 / DIR_CONF_DIVS
 
@@ -72,6 +71,7 @@ class WorldModel:
         self._their_players: list[PlayerObject] = []
         self._our_players: list[PlayerObject] = []
 
+        
         self._teammates_from_ball: list[PlayerObject] = []
         self._opponents_from_ball: list[PlayerObject] = []
         self._teammates_from_self: list[PlayerObject] = []
@@ -82,6 +82,7 @@ class WorldModel:
         self._self: SelfObject = SelfObject()
 
         self._ball: BallObject = BallObject()
+        # print("self._ball", self._ball)
         self._prev_ball: BallObject = None
 
         self._intercept_table: InterceptTable = InterceptTable()
@@ -148,6 +149,17 @@ class WorldModel:
         self._last_action_time = None
         self._last_action = None
         self._is_new_episode = False
+         # self._time_list: list[GameTime] = [None,None,None]
+        self._time_list = [0,0,0,0]
+        self._available_actions = [None] * 4
+
+        # self._barrier = manager
+        self._info = {}
+        self._agents = [1,2,3] # hardcoded for now
+        self.observations = {agent: None for agent in self._agents}
+
+        
+       
 
     def init(self, team_name: str, side: SideID, unum: int, is_goalie: bool):
         self._our_team_name = team_name
@@ -214,10 +226,10 @@ class WorldModel:
 
     def team_name(self):
         return self._our_team_name
-    
+
     def our_team_name(self):
         return self._our_team_name
-    
+
     def their_team_name(self):
         return self._their_team_name
 
@@ -1970,7 +1982,19 @@ class WorldModel:
                 return True
         return False
 
-    ################################################  Keep-away Utils ##########################################
+################################################  Keep-away Utils ##########################################
+
+    def get_avail_agent_actions(self, agent_id: int):
+        """Returns the available actions for the agent. """
+        l = len(self._teammates)
+        agent_idx = agent_id 
+        self._available_actions[agent_idx] = l
+        return self._available_actions
+
+
+    def is_new_episode(self):
+        return self._is_new_episode
+
     def set_new_episode(self):
         self._is_new_episode = True
 
@@ -1985,10 +2009,6 @@ class WorldModel:
         self._teammates: list[PlayerObject] = []
         self._opponents: list[PlayerObject] = []
         self._unknown_players: list[PlayerObject] = []
-
-        # while not self._retrieve_observation():
-        #     self._env.step()  ##
-
         return True
 
     def num_of_takers(self):
@@ -2003,14 +2023,10 @@ class WorldModel:
         this implementations the 13 state variables from the paper Peter Stone 2005.
         """
 
-        # info = self._env.get_info()
-
         self._convert_players_observation()
         self._observation = self._result
-        # self._step = info.step
         return self._observation
 
-        # return info.is_in_play
 
     def _convert_players_observation(self):
         ## same as playerStateVars
@@ -2099,7 +2115,7 @@ class WorldModel:
     def _get_last_action_time(self):
         return self._last_action_time
 
-    def _get_current_cycle(self):
+    def get_current_cycle(self):
         return self._time.cycle()
 
     # def _get_open_for_pass_from_in_rectangle(
@@ -2167,8 +2183,8 @@ class WorldModel:
 
         """Returns the congestion at the given position."""
         congest = 0
-        if consider_me and pos != agent.pos():
-            congest += 1 / agent.pos().dist(pos)
+        if consider_me and pos != agent.self().pos():
+            congest += 1 / agent.self().pos().dist(pos)
 
         for p in self._teammates:
             if p.pos_valid() and p.pos() != pos:
@@ -2180,7 +2196,7 @@ class WorldModel:
 
         return congest
 
-    def _get_in_set_in_cone(self, radius, pos_from, pos_to):
+    def get_in_set_in_cone(self, radius, pos_from, pos_to):
         """Returns the number of players in the given set in the cone from posFrom to posTo with the given radius."""
         count = 0
         for p in self._opponents:
@@ -2191,7 +2207,7 @@ class WorldModel:
                     count += 1
         return count
 
-    def _get_keepaway_rec(self, type="real"):
+    def get_keepaway_rec(self, type="real"):
         """Returns the keepaway rectangle."""
 
         SP = ServerParam.i()
@@ -2212,7 +2228,7 @@ class WorldModel:
                 Vector2D(keepaway_length / 2 - 1.0, keepaway_width / 2 - 1.0),
             )
 
-    def _keepaway_rect(self):
+    def keepaway_rect(self):
         SP = ServerParam.i()
         return Rect2D.from_center(0.0, 0.0, SP.keepaway_length(), SP.keepaway_width())
 
@@ -2243,7 +2259,9 @@ class WorldModel:
         ball_angle = (ball_pos - pos).getDirection()
         return pos + Vector2D.polar2vector(dDist, ball_angle)
 
-    ########### basic keepaway behavior. #################################
+   
+
+   
 
     # def _mark_opponent(self, p, dDist):  # TODO: check this.
     #     """Mark the given opponent."""
@@ -2306,12 +2324,12 @@ class WorldModel:
             time = self.time()
             if self._get_ball_time_info().cycle() == -1:
                 return 0.0
-            dConf = max(
+            d = max(
                 0.0, 1.0 - (time.cycle() - self._get_ball_time_info().cycle()) / 100.0
             )
-            if dConf > 1.0:
+            if d > 1.0:
                 return 0.0
-            return dConf
+            return d
 
     # def predict_cycles_to_object(self, obj_from, obj_to):
     #     """Returns the number of cycles to the object."""
@@ -2373,20 +2391,6 @@ class WorldModel:
     # \return number of objects part of 'set' and located in this cone.
 
 
-# def get_nearest_teammate(wm: 'WorldModel', position: Vector2D, players: list['PlayerObject'] =None):
-#         if players is None:
-#             players = wm.teammates()
-#         best_player: 'PlayerObject' = None
-#         min_dist2 = 1000
-#         for player in players:
-#             d2 = player.pos().dist2( position )
-#             if d2 < min_dist2:
-#                 min_dist2 = d2
-#                 best_player = player
-
-#         return best_player
-
-
 # def observation(self):
 #     """Returns the current observation of the game."""
 
@@ -2396,3 +2400,5 @@ class WorldModel:
 #     ), "reset() must be called before observation()"
 
 #     return copy.deepcopy(self._observation)
+
+

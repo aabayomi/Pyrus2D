@@ -25,29 +25,25 @@ class BhvMove:
         self._in_recovery_mode = False
         pass
 
-    def execute(self, agent: 'PlayerAgent'):
-        wm: 'WorldModel' = agent.world()
+    def execute(self, agent: "PlayerAgent"):
+        wm: "WorldModel" = agent.world()
 
         if BasicTackle(0.8, 80).execute(agent):
             return True
-        
+
         # intercept
         self_min = wm.intercept_table().self_reach_cycle()
         tm_min = wm.intercept_table().teammate_reach_cycle()
         opp_min = wm.intercept_table().opponent_reach_cycle()
-        log.sw_log().block().add_text(
-                      f"self_min={self_min}")
-        log.sw_log().block().add_text(
-                      f"tm_min={tm_min}")
-        log.sw_log().block().add_text(
-                      f"opp_min={opp_min}")
+        log.sw_log().block().add_text(f"self_min={self_min}")
+        log.sw_log().block().add_text(f"tm_min={tm_min}")
+        log.sw_log().block().add_text(f"opp_min={opp_min}")
 
-        if (not wm.exist_kickable_teammates()
-                and (self_min <= 2
-                    or (self_min <= tm_min
-                        and self_min < opp_min + 5))):
-            log.sw_log().block().add_text( "INTERCEPTING")
-            log.debug_client().add_message('intercept')
+        if not wm.exist_kickable_teammates() and (
+            self_min <= 2 or (self_min <= tm_min and self_min < opp_min + 5)
+        ):
+            log.sw_log().block().add_text("INTERCEPTING")
+            log.debug_client().add_message("intercept")
             if Intercept().execute(agent):
                 agent.set_neck_action(NeckTurnToBall())
                 return True
@@ -60,16 +56,18 @@ class BhvMove:
         target = st.get_pos(agent.world().self().unum())
 
         log.debug_client().set_target(target)
-        log.debug_client().add_message('bhv_move')
+        log.debug_client().add_message("bhv_move")
 
-        dash_power, self._in_recovery_mode = get_normal_dash_power(wm, self._in_recovery_mode)
+        dash_power, self._in_recovery_mode = get_normal_dash_power(
+            wm, self._in_recovery_mode
+        )
         dist_thr = wm.ball().dist_from_self() * 0.1
 
         if dist_thr < 1.0:
             dist_thr = 1.0
 
+        print("target", target)
         if GoToPoint(target, dist_thr, dash_power).execute(agent):
             agent.set_neck_action(NeckTurnToBallOrScan())
             return True
         return False
-            

@@ -6,13 +6,14 @@ import sys
 import team_config
 
 
-def main(team_name,i,is_goalie):
-    agent = KeepawayPlayer(team_name)
+def main(team_name, i, is_goalie, shared_values, manager, lock, event, event_from_subprocess, main_process_event, world):
+    agent = KeepawayPlayer(team_name,shared_values, manager, lock, event,event_from_subprocess, main_process_event, world)
     if not agent.handle_start():
         agent.handle_exit()
         return
+    print("Starting agent {}".format(i))
     agent.run()
 
 
 if __name__ == "__main__":
-    main(team_name,i,is_goalie)
+    main(team_name, i, is_goalie, shared_values, manager, lock, event,event_from_subprocess, main_process_event, world)

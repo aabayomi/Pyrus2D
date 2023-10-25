@@ -9,6 +9,7 @@ from lib.rcsc.server_param import ServerParam as SP
 from lib.rcsc.types import UNUM_UNKNOWN, SideID, Card, ViewWidth
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from lib.player.localizer import Localizer
     from lib.player.world_model import WorldModel
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 class PlayerObject(Object):
     DEBUG = True
-    
+
     def __init__(self, side: SideID = None, player: Localizer.PlayerT = None):
         super().__init__()
         self._unum: int = UNUM_UNKNOWN
@@ -61,7 +62,13 @@ class PlayerObject(Object):
         self._unum = int(dic["unum"])
         self._pos = Vector2D(float(dic["pos_x"]), float(dic["pos_y"]))
         self._vel = Vector2D(float(dic["vel_x"]), float(dic["vel_y"]))
-        self._side = SideID.RIGHT if dic["side_id"] == 'r' else SideID.LEFT if dic["side_id"] == 'l' else SideID.NEUTRAL
+        self._side = (
+            SideID.RIGHT
+            if dic["side_id"] == "r"
+            else SideID.LEFT
+            if dic["side_id"] == "l"
+            else SideID.NEUTRAL
+        )
         self._body = AngleDeg(float(dic["body"]))
         self._neck = AngleDeg(float(dic["neck"]))
         self._face = self._body + self._neck
@@ -155,9 +162,9 @@ class PlayerObject(Object):
         return self.player_type().inertia_point(self.pos(), self.vel(), n_step)
 
     def inertia_final_point(self):
-        return inertia_final_point(self.pos(),
-                                   self.vel(),
-                                   ServerParam.i().default_player_decay())
+        return inertia_final_point(
+            self.pos(), self.vel(), ServerParam.i().default_player_decay()
+        )
 
     def unum(self):
         return self._unum
@@ -175,7 +182,7 @@ class PlayerObject(Object):
         return 0.25
 
     def is_tackling(self):
-        return self._tackle 
+        return self._tackle
 
     def tackle_count(self):
         return self._tackle_count
@@ -184,7 +191,7 @@ class PlayerObject(Object):
         return self._face_count
 
     def is_frozen(self):
-        return False 
+        return False
 
     def is_ghost(self):
         return self._ghost_count > 0
@@ -193,9 +200,10 @@ class PlayerObject(Object):
         return self._body_count
 
     def get_safety_dash_power(self, dash_power):
-        return self.stamina_model().get_safety_dash_power(self.player_type(),
-                                                          dash_power)
-    
+        return self.stamina_model().get_safety_dash_power(
+            self.player_type(), dash_power
+        )
+
     def body_valid(self):
         return self._body_count < self._body_count_thr
 
@@ -203,10 +211,10 @@ class PlayerObject(Object):
         self._pos_history = [self._pos] + self._pos_history
         if len(self._pos_history) > 100:
             self._pos_history = self._pos_history[:-1]
-        
+
         if self.vel_valid():
             self._pos += self.vel()
-        
+
         self._unum_count = min(1000, self._unum_count + 1)
         self._pos_count = min(1000, self._pos_count + 1)
         self._seen_pos_count = min(1000, self._seen_pos_count + 1)
@@ -217,7 +225,7 @@ class PlayerObject(Object):
         self._pointto_count = min(1000, self._pointto_count + 1)
         # self._kicking = min(1000, self._kicking + 1)
         self._tackle_count = min(1000, self._tackle_count + 1)
-    
+
     def forgot(self):
         self._pos_count = 1000
         self._seen_pos_count = 1000
@@ -227,42 +235,48 @@ class PlayerObject(Object):
         self._face_count = 1000
         self._pointto_count = 1000
         self._tackle_count = 1000
-    
+
     def update_by_see(self, side: SideID, player: Localizer.PlayerT):
         SP = ServerParam.i()
 
         self._side = side
         self._ghost_count = 0
-        
+
         if player.unum_ != UNUM_UNKNOWN:
             self._unum = player.unum_
             self._unum_count = 0
-            
+
             if not player.goalie_:
                 self._goalie = False
-        
+
         if player.goalie_:
             self._goalie = True
-        
+
         last_seen_move = player.pos_ - self._seen_pos
         last_seen_pos_count = self._seen_pos_count
-        
+
         if player.has_vel():
             self._vel = player.vel_
             self._vel_count = 0
             self._seen_vel = player.vel_
             self._seen_vel_count = 0
-        elif (0 < self._pos_count <= 2
-              and player.rpos_.r2() < 40**2):
-            
-            speed_max = self.player_type().real_speed_max() if self._player_type else SP.default_player_real_speed_max()
-            decay = self.player_type().player_decay() if self.player_type() else SP.default_player_decay()
+        elif 0 < self._pos_count <= 2 and player.rpos_.r2() < 40**2:
+            speed_max = (
+                self.player_type().real_speed_max()
+                if self._player_type
+                else SP.default_player_real_speed_max()
+            )
+            decay = (
+                self.player_type().player_decay()
+                if self.player_type()
+                else SP.default_player_decay()
+            )
             self._vel = last_seen_move / last_seen_pos_count
             tmp = self._vel.r()
 
             if tmp > speed_max:
                 self._vel *= speed_max / tmp
-            
+
             self._vel *= decay
             self._vel_count = last_seen_pos_count
             self._seen_vel = self._vel.copy()
@@ -270,12 +284,12 @@ class PlayerObject(Object):
         else:
             self._vel = Vector2D(0, 0)
             self._vel_count = 1000
-        
+
         self._pos = player.pos_.copy()
         self._seen_pos = player.pos_.copy()
         self._pos_count = 0
         self._seen_pos_count = 0
-        
+
         if player.has_angle():
             self._body = AngleDeg(player.body_)
             self._face = AngleDeg(player.face_)
@@ -291,69 +305,66 @@ class PlayerObject(Object):
             self._body_count = self.vel_count()
             self._face = AngleDeg(0)
             self._face_count = 1000
-            
+
         if player.is_pointing() and self._pointto_count >= SP.point_to_ban():
             self._pointto_angle = player.arm_
             self._pointto_count = 0
-        
+
         self._kicking = player.is_kicking()
         if player.is_tackling():
             if self._tackle_count > SP.tackle_cycles():
                 self._tackle_count = 0
-        elif player.rpos_.r2() > SP.visible_distance()**2:
+        elif player.rpos_.r2() > SP.visible_distance() ** 2:
             self._tackle_count = 1000
-    
-    def update_self_ball_related(self,
-                                 self_pos: Vector2D,
-                                 ball_pos: Vector2D):
+
+    def update_self_ball_related(self, self_pos: Vector2D, ball_pos: Vector2D):
         self._dist_from_self = (self.pos() - self_pos).r()
         self._angle_from_self = (self.pos() - self_pos).th()
         self._dist_from_ball = (self.pos() - ball_pos).r()
         self._angle_from_ball = (self.pos() - ball_pos).th()
-    
+
     def set_team(self, side: SideID, unum: int, goalie: bool):
         self._side = side
         self._unum = unum
         self._goalie = goalie
-    
-    def update_by_hear(self, 
-                       side: SideID,
-                       unum: int,
-                       goalie: bool,
-                       pos: Vector2D,
-                       body: float):
-        
+
+    def update_by_hear(
+        self, side: SideID, unum: int, goalie: bool, pos: Vector2D, body: float
+    ):
         if PlayerObject.DEBUG:
-            log.sw_log().sensor().add_text( f"(update player by hear) unum={unum} prior_pos={self.pos()} new_pos={pos}")
-        
+            log.sw_log().sensor().add_text(
+                f"(update player by hear) unum={unum} prior_pos={self.pos()} new_pos={pos}"
+            )
+
         self._heard_pos = pos.copy()
         self._heard_pos_count = 0
         self._ghost_count = 0
 
         if side is not SideID.NEUTRAL:
             self._side = side
-        
+
         if unum != UNUM_UNKNOWN and self._unum_count > 0:
             self._unum = unum
-        
+
         self._goalie = goalie
-        
+
         if self._unum_count > 2:
             self._unum_count = 2
-            
-        if (self._seen_pos_count >= 2
-            or (self._seen_pos_count > 0 and self.dist_from_self() > 20)):
-            self._pos = pos.copy()    
+
+        if self._seen_pos_count >= 2 or (
+            self._seen_pos_count > 0 and self.dist_from_self() > 20
+        ):
+            self._pos = pos.copy()
             self._pos_count = 1
-        
+
         if body != -360:
             if self._body_count >= 2:
                 self._body = AngleDeg(body)
                 self._body_count = 1
-    
+
     def is_self(self):
         return False
-    
+
     def set_ghost(self):
         self._ghost_count += 1
 
@@ -364,30 +375,32 @@ class PlayerObject(Object):
         return self._unum_count
 
     def long_str(self):
-        res = f'unum: {self._unum} ' \
-              f'side: {self._side} ' \
-              f'body: {self._body} ' \
-              f'goalie: {self._goalie} ' \
-              f'player_type:({self._player_type}) ' \
-              f'player_type_id: {self._player_type_id} ' \
-              f'pointto_angle: {self._pointto_angle} ' \
-              f'kick: {self._kick}' \
-              f'tackle: {self._tackle}' \
-              f'charged: {self._charged}' \
-              f'kicking: {self._kicking}' \
-              f'card: {self._card}' \
-              f'kick_rate: {self._kick_rate}' \
-              f'face: {self._face}' \
-              f'body_count: {self._body_count}' \
-              f'face_count: {self._face_count}' \
-              f'pointto_count: {self._pointto_count}' \
-              f'unum_count: {self._unum_count}' \
-              f'tackle_count: {self._tackle_count}'
+        res = (
+            f"unum: {self._unum} "
+            f"side: {self._side} "
+            f"body: {self._body} "
+            f"goalie: {self._goalie} "
+            f"player_type:({self._player_type}) "
+            f"player_type_id: {self._player_type_id} "
+            f"pointto_angle: {self._pointto_angle} "
+            f"kick: {self._kick}"
+            f"tackle: {self._tackle}"
+            f"charged: {self._charged}"
+            f"kicking: {self._kicking}"
+            f"card: {self._card}"
+            f"kick_rate: {self._kick_rate}"
+            f"face: {self._face}"
+            f"body_count: {self._body_count}"
+            f"face_count: {self._face_count}"
+            f"pointto_count: {self._pointto_count}"
+            f"unum_count: {self._unum_count}"
+            f"tackle_count: {self._tackle_count}"
+        )
         res += super(PlayerObject, self).long_str()
         return res
 
     def __str__(self):
-        return f'''Player side:{self._side.name} unum:{self._unum} pos:{self.pos()} vel:{self.vel()} body:{self._body} poscount:{self._pos_count} ghostcount:{self._ghost_count}'''
+        return f"""Player side:{self._side.name} unum:{self._unum} pos:{self.pos()} vel:{self.vel()} body:{self._body} poscount:{self._pos_count} ghostcount:{self._ghost_count}"""
 
     def __repr__(self):
         return self.__str__()

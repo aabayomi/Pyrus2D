@@ -6,33 +6,53 @@ from base.bhv_move import BhvMove
 from lib.action.neck_scan_field import NeckScanField
 from lib.action.neck_scan_players import NeckScanPlayers
 from lib.action.neck_turn_to_ball import NeckTurnToBall
-from lib.action.neck_turn_to_ball_or_scan import NeckTurnToBallOrScan
+
+# from lib.action.neck_turn_to_ball_or_scan import NeckTurnToBallOrScan
 from lib.action.scan_field import ScanField
 from lib.debug.debug import log
 from lib.messenger.ball_pos_vel_messenger import BallPosVelMessenger
 from lib.messenger.player_pos_unum_messenger import PlayerPosUnumMessenger
 from lib.rcsc.types import GameModeType, ViewWidth, UNUM_UNKNOWN
+from base.sample_communication import SampleCommunication as comm
+
 from lib.action.hold_ball import HoldBall
+
+# from lib.action.keepaway_actions import HoldBall, GoToPoint
+from lib.action.keepaway_actions import SmartKick, GoToPoint, NeckTurnToBallOrScan
+
 from lib.action.turn_to_ball import TurnToBall
-from lib.action.go_to_point import GoToPoint
+
+# from lib.action.go_to_point import GoToPoint
 from lib.action.neck_body_to_point import NeckBodyToPoint
 from lib.action.neck_body_to_ball import NeckBodyToBall
+from lib.action.neck_turn_to_point import NeckTurnToPoint
 from base.basic_tackle import BasicTackle
 from lib.player_command.player_command import CommandType
 from lib.rcsc.server_param import ServerParam
 
+from base.generator_action import KickAction, ShootAction, KickActionType
+from base.generator_dribble import BhvDribbleGen
+from base.generator_pass import BhvPassGen
+from lib.action.intercept import Intercept
+
+from lib.messenger.pass_messenger import PassMessenger
 
 from pyrusgeom.soccer_math import *
 from pyrusgeom.rect_2d import Rect2D
 from pyrusgeom.vector_2d import Vector2D
 from pyrusgeom.geom_2d import *
 
+from base.tools import Tools
+import random
+from lib.rcsc.types import ViewWidth
+from lib.action.view_wide import ViewWide
 from typing import TYPE_CHECKING
+
+import math as Math
 
 if TYPE_CHECKING:
     from lib.player.world_model import WorldModel
     from lib.player.player_agent import PlayerAgent
-
 
 # TODO TACKLE GEN
 # TODO GOAL KICK L/R
@@ -42,6 +62,7 @@ DEBUG = True
 
 def get_decision(agent: "PlayerAgent"):
     wm: "WorldModel" = agent.world()
+
     st = StrategyFormation().i()
     st.update(wm)
 
@@ -60,6 +81,7 @@ def get_decision(agent: "PlayerAgent"):
         f"is? {wm.self()._kickable}"
     )
     if wm.self().is_kickable():
+        ## TODO: check this
         return BhvKick().execute(agent)
     if BhvMove().execute(agent):
         return True
@@ -67,166 +89,15 @@ def get_decision(agent: "PlayerAgent"):
     return ScanField().execute(agent)
 
 
-## TODO: 2021-07-20 17:10:00 keepaway modification
+# working code - should
 
 
-def keepaway_decision(agent: "PlayerAgent"):
-    # pylint: disable=wildcard-import, method-hidden
-    # pylint: enable=too-many-lines
-
+def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_set, event_to_wait):
     wm: "WorldModel" = agent.world()
-
-    def _get_open_for_pass_from_in_rectangle(
-        agent, wm, rect: Rect2D, pos_from: Vector2D, teammate
-    ):
-        best_point = wm._least_congested_point_for_pass_in_rectangle(
-            teammate, rect, pos_from
-        )
-
-        if teammate.pos().dist(best_point) < 1.5:
-            return NeckBodyToPoint(wm.ball().pos()).execute(agent)
-        else:
-            return GoToPoint(best_point, 0.2, 100).execute(agent)
-
-    def _predict_player_pos(wm, agent, cycle, dash_power):
-        """Predict the player position given a dash command."""
-        ss = ServerParam.i()
-
-        # p = self.world().self()
-        # dash_dir = agent._last_body_command[-1].dash_dir()
-        dash_dir.normalize()
-        angle = agent.body()
-        power = dash_power * ss._player_decay() * cycle  ## pow
-        p_vel = Vector2D.polar2vector(power, angle)
-        p_pos = agent.pos() + p_vel
-        return p_pos, p_vel
-
-    def _predict_ball(wm, agent):
-        """Predict the ball position and velocity given a kick command."""
-        ss = ServerParam.i()
-
-        ball_pos = wm.ball().pos()
-        ball_vel = wm.ball().vel()
-
-        if agent._last_body_command[-1] is CommandType.KICK:
-            kick_power = agent._last_body_command[-1].kick_power()
-            kick_dir = agent._last_body_command[-1].kick_dir()
-            kick_dir.normalize()
-            angle = ball_pos.th()
-            power = kick_power * ss.ball_decay()
-            ball_vel += Vector2D.polar2vector(power, angle)
-            ball_pos += ball_vel
-
-        return ball_pos, ball_vel
-
-    def _keeper_support(agent, wm, teammate):
-        # fastest = wm.intercept_table().fastest_teammate()
-        # int iCycles = WM->predictNrCyclesToObject( fastest, OBJECT_BALL )
-        # VecPosition posPassFrom = WM->predictPosAfterNrCycles( OBJECT_BALL, iCycles )
-
-        ## position to pass from the fastest teammate.
-        # wm.intercept_table().predict_teammate(self)
-        # pos_pass_from = wm.intercept_table().fastest_teammate().pos()
-        # pos_pass_from = _predict_player_pos(wm, teammate, 1, 100)[0]
-        pos_pass_from = Vector2D(0, 0)
-
-        ## fix the position to pass from to be in the keep-away rectangle
-        # rect = wm._get_keepaway_rec("real")
-        rect = wm._keepaway_rect()
-
-        _get_open_for_pass_from_in_rectangle(agent, wm, rect, pos_pass_from, teammate)
-        # ObjectT lookObject = self._choose_look_object( 0.97 )
-
-        return NeckBodyToPoint(rect.center()).execute(agent)
-
-    def _interpret_keeper_action(action):
-        if action == 0:
-            ## interpret HOLD action
-            return HoldBall().execute(agent)
-        elif action == 1:
-            ## TODO:
-            ## Normal Passing
-            # ACT->putCommandInQueue( soc = directPass( tmPos, PASS_NORMAL ) )
-            ## Or Fast Passing
-            # ACT->putCommandInQueue( soc = directPass( tmPos, PASS_FAST ) );
-
-            ## interpret PASS action
-            return BhvKick().execute(agent)
-
-    log.sw_log().team().add_text(
-        f"is kickable? dist {wm.ball().dist_from_self()} "
-        f"ka {wm.self().player_type().kickable_area()} "
-        f"seen pos count {wm.ball().seen_pos_count()} "
-        f"is? {wm.self()._kickable}"
-    )
-
-    ## Implementations of keeper with the ball
-    action = None
-
-    if wm.self().is_kickable():
-        MAX_STATE_VARS = 100000000
-        state = wm._retrieve_observation()
-        # print("state", state)
-        if len(state) > 0:
-            ## if we can calculate state vars
-            ## Call startEpisode() on the first SMDP step.
-            action = 0
-            # if wm._get_last_action_time() == UNUM_UNKNOWN:
-            #     action = self.start_episode(state)
-            # elif (
-            #     wm._get_last_action_time() == wm._get_current_cycle() - 1
-            #     and wm._last_action > 0
-            # ):
-            #     ## if we were in the middle of a pass last cycle
-            #     action = wm._last_action  ## then we follow through with it
-
-            # ## Call step() on all but first SMDP step
-            # else:
-            #     action = self.step(wm._reward(), state)
-            #     wm._set_last_action(action)
-        else:
-            ## if we don't have enough info to calculate state vars
-            action = 1  ## hold ball
-            # LogDraw.logText( "state", VecPosition( 35, 25 ),"clueless", 1, COLOR_RED )
-            return _interpret_keeper_action(action)
-
-    # If fastest, intercept the ball.
-    fastest_teammate = wm.intercept_table().fastest_teammate()
-
-    if fastest_teammate is None:
-        if DEBUG:
-            log.os_log().debug("I am fastest to ball; can get there in cycles")
-            ## If we are the fastest to the ball, intercept it.
-        return BasicTackle(0.8, 80).execute(agent)
-
-    log.os_log().debug("I am not fastest to ball")
-
-    return _keeper_support(agent, wm, fastest_teammate)
-
-    # return BhvKick().execute(agent)
-    # if BhvMove().execute(agent):
-    #     return True
-    # log.os_log().warn("NO ACTION, ScanFIELD")
-    # return ScanField().execute(agent)
-
-
-def taker_decision(agent: "PlayerAgent"):
-    wm: "WorldModel" = agent.world()
-
-    def _get_in_set_in_cone(wm, radius, pos_from, pos_to):
-        """Returns the number of players in the given set in the cone from posFrom to posTo with the given radius."""
-        count = 0
-        for p in wm._opponents:
-            if p.pos_valid():
-                if (
-                    pos_from.dist(pos_to) - p.pos().dist(pos_to) < radius
-                ):  ## TODO: check this
-                    count += 1
-        return count
 
     def _get_marking_position(wm, pos, dDist):
         """Returns the marking position."""
-
+        # print("get marking position")
         ball_pos = wm.ball().pos()
         ball_angle = (ball_pos - pos._pos).dir()
         return pos._pos + Vector2D.polar2vector(dDist, ball_angle)
@@ -239,92 +110,429 @@ def taker_decision(agent: "PlayerAgent"):
         pos_agent = p.pos()
         pos_ball = wm.ball().pos()
 
+        # print("mark position", pos_mark)
+        # print("mark position", pos_ball)
+
         if obj == "ball":
             if pos_mark.dist(pos_agent) < 1.5:
-                return TurnToBall().execute(agent)
+                TurnToBall().execute(agent)
             else:
-                return GoToPoint(pos_mark, 0.2, 100).execute(agent)
+                GoToPoint(pos_mark, 0.2, 100).execute(agent)
                 # return self.move_to_pos(pos_mark, 30.0, 3.0, False)
 
-        if pos_agent.dist(pos_mark) < 2.0:
-            ang_opp = (p.pos() - pos_agent).th()
-            ang_ball = (pos_ball - pos_agent).th()
+            if pos_agent.dist(pos_mark) < 2.0:
+                ang_opp = (p.pos() - pos_agent).th()
+                ang_ball = (pos_ball - pos_agent).th()
+                normalized_ang_opp = AngleDeg.normalize_angle(ang_opp + 180)
 
-            normalized_ang_opp = AngleDeg.normalize_angle(ang_opp + 180)
-            if ang_ball.is_within(ang_opp, normalized_ang_opp):
-                ang_opp += 80
-            else:
-                ang_opp -= 80
-            ang_opp = AngleDeg.normalize_angle(ang_opp)
-            # Log.log(513, "mark: turn body to ang %f", angOpp);
-            target = pos_agent + Vector2D(1.0, ang_opp, POLAR)
-            return NeckBodyToPoint(target).execute(agent)
-            # return self.turn_body_to_point(pos_agent + Vector2D(1.0, ang_opp, POLAR))
+                if ang_ball.is_within(ang_opp, normalized_ang_opp):
+                    ang_opp += 80
+                else:
+                    ang_opp -= 80
 
-        print("mark: move to marking position", pos_mark)
-        # Log.log(513, "move to marking position");
-        return GoToPoint(pos_mark, 0.2, 100).execute(agent)
-        # return self.move_to_pos(pos_mark, 25, 3.0, False)
+                ang_opp = AngleDeg.normalize_angle(ang_opp)
+                target = pos_agent + Vector2D(1.0, ang_opp, POLAR)
+                NeckBodyToPoint(target).execute(agent)
+                return
 
-    def mark_most_open_opponent(wm, keepers):
+        # print("mark: move to marking position", pos_mark)
+        GoToPoint(pos_mark, 0.2, 100).execute(agent)
+        return
+
+    def mark_most_open_opponent(wm):
         """Mark the most open opponent."""
-
+        # print("mark most open opponent")
+        keepers = wm.opponents()
         if len(keepers) == 0:
             return
         else:
             pos_from = keepers[0].pos()
-
             min_player = None
             min = 1000
-            for p in wm._opponents:
-                if p.pos_valid():
-                    point = p.pos()
-                    if point.abs_y() == 37:
-                        continue
-                    num = _get_in_set_in_cone(wm, 0.3, pos_from, point)
-                    if num < min:
-                        min = num
-                        min_player = p
+        for p in keepers:
+            if p.pos_valid():
+                point = p.pos()
+                if point.abs_y() == 37:
+                    continue
+                num = get_in_set_in_cone(wm, 0.3, pos_from, point)
+                if num < min:
+                    min = num
+                    min_player = p
 
-            return mark_opponent(wm, min_player, 4.0, "ball")
+        return mark_opponent(wm, min_player, 4.0, "ball")
 
-    # If we don't know where the ball is, search for it. PS->getBallConfThr() = 0.90
-    if wm._get_confidence("ball") < 0.90:
-        log.os_log().warn("NO ACTION, ScanFIELD")
+    def do_heard_pass_receive(wm, agent):
+        if (
+            wm.messenger_memory().pass_time() != wm.time()
+            or len(wm.messenger_memory().pass_()) == 0
+            or wm.messenger_memory().pass_()[0]._receiver != wm.self().unum()
+        ):
+            return False
+
+        self_min = wm.intercept_table().self_reach_cycle()
+        intercept_pos = wm.ball().inertia_point(self_min)
+        heard_pos = wm.messenger_memory().pass_()[0]._pos
+
+        log.sw_log().team().add_text(
+            f"(sample palyer do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}"
+        )
+
+        if (
+            not wm.kickable_teammate()
+            and wm.ball().pos_count() <= 1
+            and wm.ball().vel_count() <= 1
+            and self_min < 20
+        ):
+            log.sw_log().team().add_text(
+                f"(sample palyer do heard pass) intercepting!, self_min={self_min}"
+            )
+            log.debug_client().add_message("Comm:Receive:Intercept")
+            Intercept().execute(agent)
+            agent.set_neck_action(NeckTurnToBall())
+        else:
+            log.sw_log().team().add_text(
+                f"(sample palyer do heard pass) go to point!, cycle={self_min}"
+            )
+            log.debug_client().set_target(heard_pos)
+            log.debug_client().add_message("Comm:Receive:GoTo")
+
+            GoToPoint(heard_pos, 0.5, ServerParam.i().max_dash_power()).execute(agent)
+            agent.set_neck_action(NeckTurnToBall())
+
+    def get_in_set_in_cone(wm, radius, pos_from, pos_to):
+        """Returns the number of players in the given set in the cone from posFrom to posTo with the given radius."""
+        count = 0
+        for p in wm._opponents:
+            if p.pos_valid():
+                if (
+                    pos_from.dist(pos_to) - p.pos().dist(pos_to) < radius
+                ):  ## TODO: check this
+                    count += 1
+        return count
+
+    def congestion(wm, point, consider_me):
+        ## Keepaway congestion method
+
+        """Returns the congestion at the given position."""
+        congest = 0
+        if consider_me and point != wm.self().pos():
+            congest += 1 / wm.self().pos().dist(point)
+
+        for p in wm._teammates:
+            if p.pos_valid() and p.pos() != point:
+                congest += 1 / p.pos().dist(point)
+
+        for p in wm._opponents:
+            if p.pos_valid() and p.pos() != point:
+                congest += 1 / p.pos().dist(point)
+
+        return congest
+
+    def least_congested_point_for_pass_in_rectangle(rect: Rect2D, pos_from):
+        """Returns the least congested point for a pass in the given rectangle."""
+
+        x_granularity = 5  # 5 samples by 5 samples
+        y_granularity = 5
+
+        x_buffer = 0.15  # 15% border on each side
+        y_buffer = 0.15
+
+        size = rect.size()
+        length = size.length()
+        width = size.width()
+        # print("size: ", size)
+        # print("length", length)
+
+        x_mesh = length * (1 - 2 * x_buffer) / (x_granularity - 1)
+        y_mesh = width * (1 - 2 * y_buffer) / (y_granularity - 1)
+
+        start_x = rect.bottom_right().x() + x_buffer * length
+        start_y = rect.top_left().y() + y_buffer * width
+
+        x = start_x
+        y = start_y
+
+        # print("X and Y ", x, y)
+
+        best_congestion = 1000
+        # best_point,
+        point = Vector2D(x, y)
+        tmp = None
+
+        for i in range(x_granularity):
+            for j in range(y_granularity):
+                tmp = congestion(wm, point, True)
+                if (
+                    tmp < best_congestion
+                    and get_in_set_in_cone(wm, 0.3, pos_from, point) == 0
+                ):
+                    best_congestion = tmp
+                    best_point = point
+                y += y_mesh
+            x += x_mesh
+            y = start_y
+
+        if best_congestion == 1000:
+            # take the point out of the rectangle -- meaning no point was valid.
+            best_point = rect.center()
+        return best_point
+
+    def get_open_for_pass_from_in_rectangle(
+        wm, rect: Rect2D, pos_from: Vector2D, fastest
+    ):
+        best_point = least_congested_point_for_pass_in_rectangle(rect, pos_from)
+        # print("best point", best_point)
+
+        if fastest.pos().dist(best_point) < 1.5:
+            NeckBodyToPoint(wm.ball().pos()).execute(agent)
+        else:
+            # print("go to point")
+            agent.do_move(0.0, 0.0)
+            # move(wm, agent)
+            # GoToPoint(best_point, 20, 100).execute(agent)
+        return
+
+    def keeper_support(wm, current_player, fastest):
+        ##. find the min reach cycle of the fastest teammate to the ball
+        sp = ServerParam.i()
+        # print("in keeper support")
+        first_ball_pos = current_player.ball().pos()
+
+        # TODO: fix player type
+        p = fastest
+        ptype = p.player_type()
+        min_reach_cycle = Tools.estimate_min_reach_cycle(
+            fastest._pos,
+            1.0,
+            first_ball_pos,
+            first_ball_pos.th(),
+        )
+        # print("min reach cycle", min_reach_cycle)
+
+        ## find dist of ball
+        ball_vel = current_player.ball().vel()
+        ball_pos = current_player.ball().pos()
+
+        first_ball_speed = ball_vel.r()
+        dist_ball = (
+            first_ball_speed
+            * (1 - pow(sp.ball_decay(), min_reach_cycle))
+            / (1 - sp.ball_decay())
+        )
+        ball_angle = ball_vel.th()
+
+        ball_pos += Vector2D.polar2vector(dist_ball, ball_angle)
+        ball_vel += ball_vel * pow(sp.ball_decay(), min_reach_cycle)
+
+        pos_pass_from = ball_pos
+
+        # fix the position to pass from to be in the keep-away rectangle
+        # rect = agent.get_keepaway_rec("real")
+        # print("old rect", rect)
+
+        rect = current_player.keepaway_rect()
+        # print("rect", rect)
+        get_open_for_pass_from_in_rectangle(wm, rect, pos_pass_from, p)
+        # # ObjectT lookObject = self._choose_look_object( 0.97 )
+        NeckBodyToPoint(rect.center()).execute(agent)  ##
+        return
+
+    def move(wm, agent):
+        print("move")
+        # t = wm.self().pos()
+        #  + (wm.ball().pos() - wm.self().pos()).rotate(1 * 90).normalize()
+
+        # new_pos = Vector2D(
+        #     wm.self().pos().x() + (wm.self().dist_from_ball() * Math.cos(90)),
+        #     wm.self().pos().y() + (wm.self().dist_from_ball() * Math.sin(90)),
+        # )
+
+        # print("new pos", new_pos)
+
+        target = wm.ball().pos()
+        # target = agent.ball().pos
+
+        # print("target", target)
+
+        if wm.self().unum() == 2:
+            #     # print("my pos", wm.self().pos())
+            pass
+            # print("distance from ball: ", wm.self().dist_from_ball())
+
+        # d = target.dist(agent._pos())
+        # cycle = int(d / 0.3)
+        # return agent.do_move(0.0, 0.0)
+        # print("target", target)
+        GoToPoint(target, 0.2, 100).execute(agent)
+        return
+
+    def random_point_in_rect(rect):
+        x = random.uniform(rect.left(), rect.left() + 20)
+        y = random.uniform(rect.top(), rect.top() + 20)
+        return Vector2D(x, y)
+
+    def search_ball(wm, agent):
+        # print("search ball")
+        # TurnToBall().execute(agent)
+        # move(wm, agent)
+        # if ScanField().execute(agent):
+        #     if wm.self().unum() == 1:
+        #         move(wm, agent)
+        # print("ball found")
+        # if wm.self().unum() == 2:
+        # print("2 distance from ball : ", wm.self().dist_from_ball())
+        # move(wm, agent)
         return ScanField().execute(agent)
 
-    # Maintain possession if you have the ball. not totally sure will debug later
-    if wm.self().is_kickable() and (len(wm.self()._teammates_from_ball) == 0):
-        return HoldBall().execute(agent)
+    def hold(wm, agent):
+        HoldBall().execute(agent)
+        return
 
-    # If not first or second closest, then mark open opponent.
-    closest_taker_from_ball = wm._teammates_from_ball
-    if agent not in closest_taker_from_ball[0:2]:
-        # find the closest keeper to the ball
-        closest_keeper_from_ball = wm._opponents_from_ball
-        # print("closest keeper from ball", closest_keeper_from_ball)
-        # mark the keeper with the ball.
-        mark_most_open_opponent(wm, closest_keeper_from_ball)  ## should be a behavior
-        return NeckTurnToBall().execute(agent)
+    def pass_ball(wm, agent):
+        pass_speed = 0.8  ## in player settings
 
-    ## If teammate has it, don't mess with it.
-    d = closest_taker_from_ball.dist_to_ball()
+        agent.do_kick_to(2, 18, Vector2D(5, 0))
+        return
 
-    # if (SoccerTypes::isTeammate( closest ) && closest != WM->getAgentObjectType() & dDist < SS->getMaximalKickDist()):
-    if d < 0.3:
-        NeckTurnToBall().execute(agent)
-        # TurnToAngle().execute(self)
-        return NeckBodyToBall().execute(agent)
-    else:
-        # Otherwise try to intercept the ball
-        # ACT->putCommandInQueue( soc = intercept( false ) ) ## TODO check if this is the right intercept
-        # ACT->putCommandInQueue( turnNeckToObject( OBJECT_BALL, soc ) );
-        NeckTurnToBall().execute(agent)
-        if BhvMove().execute(agent):
-            return True
+    def keeper(wm: "WorldModel", agent: "PlayerAgent"):
+        # if wm.self()._is_new_episode() == True:
+        #     wm.self().end_episode(wm._reward())  #
+        #     wm.set_new_episode()
+        #     self.world().set_last_action(-1)  #
+        #     time_start_episode = self.world().time()  #
+        if DEBUG:
+            log.sw_log().world().add_text(f"ball pos = {wm.ball().pos()}")
 
-    # if wm.game_mode().type() != GameModeType.PlayOn:
-    if BhvMove().execute(agent):
+        # if wm.self()._get_confidence("ball") < 0.90:
+        ## Search for the ball and return message.
+        # search_ball(wm, agent)
+        if wm._get_confidence("ball") < 0.90:
+            # print("search ball")
+            if ScanField().execute(agent):
+                ball_pos = wm.ball().pos()
+                # print("ball pos", ball_pos)
+                # GoToPoint(ball_pos, 0.2, 100).execute(agent)
+                move(wm,agent)
+                return
+        return
+
+    def interpret_keeper_action(wm, agent, action):
+        if action == 0:
+            hold(wm, agent)
+        elif action == 1:
+            BhvKick().execute(agent)
+            # my teammates are
+            # k = wm.teammates_from_ball()
+            # if len(k) > 0:
+            #     print("pass ball")
+            #     temp_pos = k[0].pos()
+            #     agent.do_kick_to(2, 18, temp_pos)
+        return
+
+    def handcoded():
+        obs = wm._retrieve_observation()
+        print("obs", obs)
+        return 0
+
+    def learned_policy():
+        obs = wm._retrieve_observation()
+        if len(obs) > 0:
+            if wm._get_last_action_time() is None:
+                # action = wm.self().start_episode(state)
+                # print("ball", wm.ball().pos())
+                action = 0
+            elif (
+                wm._get_last_action_time() == wm._get_current_cycle() - 1
+            ) and wm._last_action > 0:
+                action = wm._last_action
+                # pass_ball(wm, agent)
+                # print("continue action")
+            else:
+                # action = self.step(wm._reward(), state)
+                wm._set_last_action(action)
+                # print("in step")
+        else:
+            action = 0
+        # print("action", action)
+        return action
+
+    def keeper_with_ball(wm: "WorldModel", agent: "PlayerAgent", policy):
+        if policy == "random":
+            action = random.randint(0, 1)
+            print("random action", action)
+        elif policy == "always-hold":
+            action = 0
+        elif policy == "handcoded":
+            action = handcoded()
+        else:
+            action = learned_policy()
+        return interpret_keeper_action(wm, agent, action)
+    import copy
+    if wm.our_team_name() == "keepers":
+        barrier.wait()
+        keeper(wm, agent)
+        if wm.self().is_kickable():
+            ## barrier (return availability actions)
+            ## update availability actions (hardcoded for now)
+            # print(f"Worker {wm.self().unum()} reached the wait point.")
+            # barrier.wait()
+            proc_id = wm.self().unum()  # In this case, process with ID 0 sets the event, but you can change this
+            print(f"Subprocess {proc_id}: Setting the wait event for other subprocesses.")
+            wm._available_actions[wm.self().unum()] = 2
+
+            # barrier.wait()
+            print("available actions : " , wm._available_actions, "at time ", wm.time())
+            # print("number of actions updated in world model")
+            self._count_list[wm.self().unum()] = 2
+            # count_list =  wm._available_actions
+            # print("keeper ", wm.self().unum(), " is kickable", "at time ", wm.time())
+            keeper_with_ball(wm, agent, "random")
+            # event_to_set.set()
+            
+            # print(f"Worker {wm.self().unum()} resumed.")
+
+        # print(f"Subprocess {wm.self().unum()}: Waiting for event from another subprocess...")
+        # event_to_set.wait()  # Every subprocess waits for the event to be set
+        # print(f"Subprocess {wm.self().unum()}: Waiting for main process event...")
+        # event_to_wait.wait()
+        # print(f"Subprocess {wm.self().unum()}: Woken up by main process!")
+
+
+        # fastest = wm.get_teammate_nearest_to_ball(5)
+        # if fastest is not None:
+        #     if fastest.unum == wm.self()._unum:
+        #         Intercept().execute(agent)
+        #         agent.set_neck_action(NeckTurnToBall())
+        #         print("fastest")
+        #     # print("fastest player ", fastest._pos)
+        #     keeper_support(agent, wm, fastest)
+
+    if wm.our_team_name() == "takers":
+        # print("taker", wm._get_confidence("ball"))
+        # move(wm, agent)
+        agent.set_neck_action(NeckTurnToBall())
+        
+
+        # if wm._get_confidence("ball") < 0.90:
+        #     # print(" taker search ball")
+        #     search_ball(wm, agent)
+        #     return
+        # # Maintain possession if you have the ball.
+        # if wm.self().is_kickable() and (len(wm.teammates_from_ball()) == 0):
+        #     # print(" taker hold ball")
+        #     return HoldBall().execute(agent)
+        # closest_taker_from_ball = wm.teammates_from_ball()
+        # if wm.self() not in closest_taker_from_ball:
+        #     mark_most_open_opponent(wm)  ## should be a behavior
+        #     NeckTurnToBall().execute(agent)
+        #     return
+        # d = closest_taker_from_ball.dist_to_ball()
+        # if d < 0.3:
+        #     NeckTurnToBall().execute(agent)
+        #     # TurnToAngle().execute(self)
+        #     NeckBodyToBall().execute(agent)
+        #     return
+
+        # Intercept().execute(agent)
+        # agent.set_neck_action(NeckTurnToBall())
         return True
-    log.os_log().warn("NO ACTION, ScanFIELD")
-    return ScanField().execute(agent)
