@@ -261,16 +261,20 @@ from lib.rcsc.types import GameModeType
 
 import multiprocessing
 class KeepawayPlayer(PlayerAgent):
-    def __init__(self, team_name, shared_values, manager, lock, event,event_from_subprocess,main_process_event,world):
+    def __init__(self, team_name, shared_values, manager, lock, event,event_from_subprocess,main_process_event,world,obs,last_action_time,reward,terminated):
         # super().__init__()
-        super().__init__(shared_values, manager, lock, event, team_name)
+        super().__init__(shared_values, manager, lock, event, world, terminated,team_name)
         self._communication = SampleCommunication()
-        self._count_list = shared_values
-        self._barrier = manager
-        self._event_from_subprocess = event_from_subprocess
+        self._count_list = shared_values # actions
+        self._barrier = manager #
+        self._event_from_subprocess = event_from_subprocess #
         self._main_process_event = main_process_event
         self._real_world = world
         self._full_world = world
+        self._obs = obs
+        self._last_action_time = last_action_time
+        self._reward = reward
+        self._terminated = terminated
 
         # TODO: check the use of full or real world.
         # self._full_world = world 
@@ -293,16 +297,15 @@ class KeepawayPlayer(PlayerAgent):
 
     def action_impl(self):
         wm = self.world()
-        # if self.world().team_name_left() == "takers":
-        # pass
-        # print("team name: ", self.world().team_name())
         if self.do_preprocess():
             return
 
         # get_decision(self)
         # self.count()
         # print("world: ", self._real_world.time())
-        get_decision_keepaway(self, self._count_list, self._barrier, self._event_from_subprocess, self._main_process_event)
+        # if self._reward.get_lock:
+        #     print("reward here : ",  self._reward.value)
+        get_decision_keepaway(self, self._count_list, self._barrier, self._event_from_subprocess, self._main_process_event,self._obs,self._last_action_time,self._reward,self._terminated,self._full_world)
 
     def do_preprocess(self):
         wm = self.world()

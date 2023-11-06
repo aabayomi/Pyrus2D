@@ -56,14 +56,10 @@ class MultiAgentEnv(object):
         """Returns initial observations and states."""
         raise NotImplementedError
 
-    def render(self):
-        raise NotImplementedError
-
+   
     def close(self):
         raise NotImplementedError
 
-    def seed(self):
-        raise NotImplementedError
 
     def save_replay(self):
         """Save a replay."""

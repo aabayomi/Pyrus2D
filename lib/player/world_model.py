@@ -53,13 +53,14 @@ def player_count_value(p: PlayerObject):
 def player_valid_check(p: PlayerObject):
     return p.pos_valid()
 
+import multiprocessing
 
 class WorldModel:
     DEBUG = True
     DIR_CONF_DIVS = 72
     DIR_STEP = 360.0 / DIR_CONF_DIVS
 
-    def __init__(self, name):
+    def __init__(self, name, manager = None):
         self._name = name
         self._is_full_state = True if name == "full" else False
         self._player_types = [PlayerType() for _ in range(18)]
@@ -71,7 +72,6 @@ class WorldModel:
         self._their_players: list[PlayerObject] = []
         self._our_players: list[PlayerObject] = []
 
-        
         self._teammates_from_ball: list[PlayerObject] = []
         self._opponents_from_ball: list[PlayerObject] = []
         self._teammates_from_self: list[PlayerObject] = []
@@ -146,20 +146,26 @@ class WorldModel:
         self._step_count = 0
         self._observation = None
         self._result = {}
-        self._last_action_time = None
+        
         self._last_action = None
         self._is_new_episode = False
-         # self._time_list: list[GameTime] = [None,None,None]
-        self._time_list = [0,0,0,0]
+        self._time_list = [0, 0, 0, 0]
         self._available_actions = [None] * 4
 
         # self._barrier = manager
         self._info = {}
-        self._agents = [1,2,3] # hardcoded for now
+        self._agents = [1, 2, 3]  # hardcoded for now
         self.observations = {agent: None for agent in self._agents}
+        # self.last_action_time = [None] *  3 # hand-coded for now change later
+        self.last_action_time = 0 # hand-coded for now change later
 
-        
-       
+        if manager is not None: 
+            self._obs = manager.dict(self.observations)
+            self._reward = multiprocessing.Value("i", 0)
+            self._terminated = multiprocessing.Value('b', False)
+            # self._last_action_time = manager.array(self.last_action_time)
+            self._last_action_time = multiprocessing.Value("i", self.last_action_time)
+
 
     def init(self, team_name: str, side: SideID, unum: int, is_goalie: bool):
         self._our_team_name = team_name
@@ -1982,21 +1988,32 @@ class WorldModel:
                 return True
         return False
 
-################################################  Keep-away Utils ##########################################
+    ################################################  Keep-away Utils ##########################################
+
+
+    def check_ball(self):
+        """Check if the ball is in the field."""
+        field = self.keepaway_rect()
+        return field.contains(self.ball().pos())
 
     def get_avail_agent_actions(self, agent_id: int):
-        """Returns the available actions for the agent. """
+        """Returns the available actions for the agent."""
         l = len(self._teammates)
-        agent_idx = agent_id 
+        agent_idx = agent_id
         self._available_actions[agent_idx] = l
         return self._available_actions
-
 
     def is_new_episode(self):
         return self._is_new_episode
 
     def set_new_episode(self):
         self._is_new_episode = True
+
+    def start_new_episode(self):
+        self._is_new_episode = False
+
+    def is_terminal(self):
+        return self._terminated
 
     def reset(self):
         """Reset the environment and return initial observation."""
@@ -2027,6 +2044,10 @@ class WorldModel:
         self._observation = self._result
         return self._observation
 
+    def get_observation(self, agent_id: int):
+        """Returns the observation of the agent."""
+        self.observations[agent_id] = self._retrieve_observation()
+        return self.observations
 
     def _convert_players_observation(self):
         ## same as playerStateVars
@@ -2100,10 +2121,10 @@ class WorldModel:
     def _get_ball_time_info(self):
         return self._messenger_memory.ball_time()
 
-    def _reward(self):
+    def reward(self,current_cycle, last_action_time):
         """Return the reward."""
-        reward = self._time.cycle() - self._get_last_action_time()
-        return reward
+        # reward = self._time.cycle() - self._get_last_action_time()
+        return current_cycle - last_action_time
 
     def _set_last_action(self, action):
         self._last_action = action
@@ -2259,10 +2280,6 @@ class WorldModel:
         ball_angle = (ball_pos - pos).getDirection()
         return pos + Vector2D.polar2vector(dDist, ball_angle)
 
-   
-
-   
-
     # def _mark_opponent(self, p, dDist):  # TODO: check this.
     #     """Mark the given opponent."""
 
@@ -2400,5 +2417,3 @@ class WorldModel:
 #     ), "reset() must be called before observation()"
 
 #     return copy.deepcopy(self._observation)
-
-

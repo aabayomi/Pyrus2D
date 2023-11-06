@@ -92,7 +92,7 @@ def get_decision(agent: "PlayerAgent"):
 # working code - should
 
 
-def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_set, event_to_wait):
+def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_set, event_to_wait,obs,last_action_time,reward,terminated,full_world):
     wm: "WorldModel" = agent.world()
 
     def _get_marking_position(wm, pos, dDist):
@@ -281,8 +281,6 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
         wm, rect: Rect2D, pos_from: Vector2D, fastest
     ):
         best_point = least_congested_point_for_pass_in_rectangle(rect, pos_from)
-        # print("best point", best_point)
-
         if fastest.pos().dist(best_point) < 1.5:
             NeckBodyToPoint(wm.ball().pos()).execute(agent)
         else:
@@ -338,7 +336,7 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
         return
 
     def move(wm, agent):
-        print("move")
+        # print("move")
         # t = wm.self().pos()
         #  + (wm.ball().pos() - wm.self().pos()).rotate(1 * 90).normalize()
 
@@ -403,11 +401,7 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
         if DEBUG:
             log.sw_log().world().add_text(f"ball pos = {wm.ball().pos()}")
 
-        # if wm.self()._get_confidence("ball") < 0.90:
-        ## Search for the ball and return message.
-        # search_ball(wm, agent)
         if wm._get_confidence("ball") < 0.90:
-            # print("search ball")
             if ScanField().execute(agent):
                 ball_pos = wm.ball().pos()
                 # print("ball pos", ball_pos)
@@ -420,22 +414,24 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
         if action == 0:
             hold(wm, agent)
         elif action == 1:
-            BhvKick().execute(agent)
+            # BhvKick().execute(agent)
             # my teammates are
-            # k = wm.teammates_from_ball()
-            # if len(k) > 0:
-            #     print("pass ball")
-            #     temp_pos = k[0].pos()
-            #     agent.do_kick_to(2, 18, temp_pos)
+            k = wm.teammates_from_ball()
+            # print("k", k)
+            if len(k) > 0:
+                temp_pos = k[0].pos()
+                # print("pass ball", temp_pos)
+                agent.do_kick_to(50, 18, temp_pos)
         return
 
     def handcoded():
         obs = wm._retrieve_observation()
-        print("obs", obs)
+        # print("obs", obs)
         return 0
 
     def learned_policy():
         obs = wm._retrieve_observation()
+
         if len(obs) > 0:
             if wm._get_last_action_time() is None:
                 # action = wm.self().start_episode(state)
@@ -459,7 +455,7 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
     def keeper_with_ball(wm: "WorldModel", agent: "PlayerAgent", policy):
         if policy == "random":
             action = random.randint(0, 1)
-            print("random action", action)
+            # print("random action", action)
         elif policy == "always-hold":
             action = 0
         elif policy == "handcoded":
@@ -467,35 +463,40 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
         else:
             action = learned_policy()
         return interpret_keeper_action(wm, agent, action)
-    import copy
-    if wm.our_team_name() == "keepers":
-        barrier.wait()
-        keeper(wm, agent)
-        if wm.self().is_kickable():
-            ## barrier (return availability actions)
-            ## update availability actions (hardcoded for now)
-            # print(f"Worker {wm.self().unum()} reached the wait point.")
-            # barrier.wait()
-            proc_id = wm.self().unum()  # In this case, process with ID 0 sets the event, but you can change this
-            print(f"Subprocess {proc_id}: Setting the wait event for other subprocesses.")
-            wm._available_actions[wm.self().unum()] = 2
+    
 
-            # barrier.wait()
-            print("available actions : " , wm._available_actions, "at time ", wm.time())
+    def keeper_with_ball_2(wm: "WorldModel", agent: "PlayerAgent", actions, last_action_time):
+        # print("keeper with ball")
+        # action = actions[wm.self().unum()]
+        action = random.randint(0, 1)
+        interpret_keeper_action(wm, agent, action)
+        ## Update last action time for action keeper
+        # if last_action_time[wm.self().unum()] == 0:
+        #     last_action_time[wm.self().unum()] = wm._get_last_action_time()
+        # with last_action_time.get_lock():
+        #     if last_action_time.value == 0:
+        #         last_action_time = wm._get_last_action_time()
+
+        # print("last action time", last_action_time)
+        pass
+
+    if wm.our_team_name() == "keepers":
+        ## barrier for synchronizing game cycle for all keepers
+        barrier.wait()
+        ## get observation .. 
+        keeper(wm, agent)
+        obs[wm.self().unum()] = wm._retrieve_observation()
+        
+        if wm.self().is_kickable():
+            proc_id = wm.self().unum()  # In this case, process with ID 0 sets the event, but you can change this
+            wm._available_actions[wm.self().unum()] = 2
+            # print("available actions : " , wm._available_actions, "at time ", wm.time())
             # print("number of actions updated in world model")
-            self._count_list[wm.self().unum()] = 2
+            count_list[wm.self().unum()] = 2
             # count_list =  wm._available_actions
             # print("keeper ", wm.self().unum(), " is kickable", "at time ", wm.time())
-            keeper_with_ball(wm, agent, "random")
-            # event_to_set.set()
-            
-            # print(f"Worker {wm.self().unum()} resumed.")
-
-        # print(f"Subprocess {wm.self().unum()}: Waiting for event from another subprocess...")
-        # event_to_set.wait()  # Every subprocess waits for the event to be set
-        # print(f"Subprocess {wm.self().unum()}: Waiting for main process event...")
-        # event_to_wait.wait()
-        # print(f"Subprocess {wm.self().unum()}: Woken up by main process!")
+            # keeper_with_ball(wm, agent, "random")
+            keeper_with_ball_2(wm, agent, wm._available_actions, last_action_time)
 
 
         # fastest = wm.get_teammate_nearest_to_ball(5)
@@ -506,6 +507,27 @@ def get_decision_keepaway(agent: "PlayerAgent", count_list, barrier, event_to_se
         #         print("fastest")
         #     # print("fastest player ", fastest._pos)
         #     keeper_support(agent, wm, fastest)
+
+        ## Update State and Environment
+        ## calculate reward
+        with last_action_time.get_lock():
+            last_action = last_action_time.value
+            with reward.get_lock():
+                reward.value = wm.reward(wm.get_current_cycle(),last_action)
+            # print("reward", reward.value)
+        
+        
+        ## is game over? 
+        # with terminated.get_lock():
+        #     terminated.value = True
+        # with wm._terminated.get_lock():
+            # terminated.value = .is_new_episode()
+        # full_world._terminated = True
+        # print("terminated in keepers : ", terminated.value)
+        # print("new episode in keepers : ", full_world._terminated)
+
+
+        # # print("terminated", terminated)
 
     if wm.our_team_name() == "takers":
         # print("taker", wm._get_confidence("ball"))

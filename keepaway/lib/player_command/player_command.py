@@ -1,4 +1,5 @@
 from enum import Enum, unique, auto
+from lib.rcsc.types import GameModeType
 
 
 @unique
@@ -28,6 +29,8 @@ class CommandType(Enum):
     # mode change commands
     CLANG = auto()
     EAR = auto()
+
+    CHANGE_MODE = auto()
 
     # other commands
     SENSE_BODY = auto()
@@ -88,3 +91,14 @@ class PlayerByeCommand:
 
     def type(self):
         return CommandType.BYE
+    
+class PlayerChangeModeCommand(PlayerCommand):
+    def __init__(self, mode: GameModeType):
+        super().__init__()
+        self._mode: GameModeType = mode
+
+    def type(self):
+        return CommandType.CHANGE_MODE
+
+    def str(self):
+        return f"(change_mode {self._mode.value})"

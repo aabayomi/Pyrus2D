@@ -9,7 +9,7 @@
 import atexit
 from warnings import warn
 from operator import attrgetter
-from copy import deepcopy
+import copy 
 import numpy as np
 import enum
 import math
@@ -27,7 +27,7 @@ from lib.player.world_model import WorldModel
 import multiprocessing
 import base.main_keepaway_player as kp
 import atexit
-
+import base.main_coach as main_c
 
 # from lib.player import WorldModel
 
@@ -39,7 +39,7 @@ class KeepawayEnv:
     def __init__(self, pitch_size=20, sparse_reward=False):
         """
         Initialize a keepaway environment.
-        ----------------------------------------------------------------
+        ---------------------------------
         Parameters:
 
         """
@@ -55,20 +55,23 @@ class KeepawayEnv:
         self._episode_count = 0
         self._episode_steps = 0
         self._total_steps = 0
-        self._obs = None
         self.force_restarts = 0
-        # self.last_action = np.zeros((self.num_keepers, self.n_actions))
-
-        self._world = WorldModel("real")  # for all agents
-        self._world.observations = {agent: None for agent in range(self.num_keepers)}
-        self._client: BasicClient = BasicClient()
+        self.episode_limit = 1000
+        self.timeouts = 0
+        self.continuing_episode = False
+        
+        
+        self._last_action = None
+        manager = multiprocessing.Manager()
+        self._world = WorldModel("real",manager)  # for all agents
+        # self._world.observations = {agent: None for agent in range(self.num_keepers)}
+        
 
         self._lock = self._world
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(3)
 
         ### Event implementation
-        # self._event =
         self._event_from_subprocess = multiprocessing.Event()
         self._main_process_event = (
             multiprocessing.Event()
@@ -76,12 +79,36 @@ class KeepawayEnv:
 
         # self._obs = self._world._obs
         # self._state = self._world._state
+       
         self._actions = [0] * 4
         # self._time_list = [0,0,0,0]
         # Create a shared list to hold the count for each process
         self._shared_values = multiprocessing.Array("i", self._actions)
 
-        manager = multiprocessing.Manager()
+        # self._world.observations = 
+        self._obs = self._world._obs
+        # self._last_action_time = self._world._last_action_time
+        #   
+        # self.last_action_time = [0] * 4
+        # self._last_action_time = multiprocessing.Array("i", self.last_action_time)
+        # Use a joint value instead 
+        self.last_action_time = 0
+        self._last_action_time = multiprocessing.Value("i", self.last_action_time)
+
+
+        # self._rewards = [0] * 4
+        # self._reward = multiprocessing.Array("i", self._rewards)
+        self._reward = self._world._reward
+        # self._rewards = multiprocessing.Value("i", self._reward )
+
+        ## episode
+        # self.terminated = False
+        # self._terminated = multiprocessing.Value('b', self.terminated)
+        self._terminated = self._world._terminated
+        # print("workd terminated ", self._world._terminated.value)
+
+
+
         # self._shared_values = manager.list([0, 0, 0, 0])
         self._keepers = [
             multiprocessing.Process(
@@ -97,37 +124,47 @@ class KeepawayEnv:
                     self._event_from_subprocess,
                     self._main_process_event,
                     self._world,
+                    self._obs,
+                    self._last_action_time,
+                    self._reward,
+                    self._terminated,
+                    
                 ),
                 name="keeper",
             )
             for i in range(self.num_keepers)
         ]
 
-        # self._takers = [
-        #     multiprocessing.Process(
-        #         target=kp.main,
-        #         args=(
-        #             "takers",
-        #             i,
-        #             False,
-        #             self._shared_values,
-        #             self._barrier,
-        #             self._lock,
-        #             self._event,
-        #             self._event_from_subprocess,
-        #             self._main_process_event,
-        #             self._world,
-        #         ),
-        #         name="takers",
-        #     )
-        #     for i in range(self.num_takers)
-        # ]
+        self._takers = [
+            multiprocessing.Process(
+                target=kp.main,
+                args=(
+                    "takers",
+                    i,
+                    False,
+                    self._shared_values,
+                    self._barrier,
+                    self._lock,
+                    self._event,
+                    self._event_from_subprocess,
+                    self._main_process_event,
+                    self._world,
+                    self._obs,
+                    self._last_action_time,
+                    self._reward,
+                    self._terminated,
+                ),
+                name="takers",
+            )
+            for i in range(self.num_takers)
+        ]
+
+        # self._coach = [multiprocessing.Process(target=main_c.main)]
+        # coach = mp.Process(target=main_c.main)
+        # coach.start()
 
         self._render = []
         self._sleep = time
-
-        # Try to avoid leaking SC2 processes on shutdown : fix this manage ..
-        # atexit.register(lambda: self.close())
 
     def _launch_monitor(self) -> int:
         """Launches the monitor."""
@@ -217,18 +254,16 @@ class KeepawayEnv:
     def reset(self):
         """Reset the environment. Required after each full episode."""
         self._episode_steps = 0
+        self._total_steps = 0
+        self.last_action = None
 
-        self.last_action = np.zeros((self.n_agents, self.n_actions))
-
-        return self.get_obs(), self.get_state()
+        return 
 
     def reward(self):
         """
         returns the reward for the current state
         """
-        reward = self.time().cycle() - self._last_decision_time().cycle()
-
-        return reward
+        return self._reward.value
 
     def _restart(self):
         self.full_restart()
@@ -236,7 +271,6 @@ class KeepawayEnv:
     def full_restart(self):
         """Restart the environment. Required after each full episode."""
         # TODO process management utility
-
         self._launch_game()
         self.force_restarts += 1
 
@@ -244,11 +278,15 @@ class KeepawayEnv:
         print("starting")
         for i in range(self.num_keepers):
             self._keepers[i].start()
-        
-        # self._sleep.sleep(0.5)
 
-        # for i in range(self.num_takers):
-        #    self._takers[i].start() 
+        self._sleep.sleep(0.5)
+
+        for i in range(self.num_takers):
+            self._takers[i].start()
+
+        self._sleep.sleep(2.0)
+        # print("starting coach")
+        # self._coach[0].start()
         atexit.register(self.close)
 
     def close(self):
@@ -257,17 +295,21 @@ class KeepawayEnv:
             p.terminate()
         for r in self._render:
             r.terminate()
-        # for t in self._takers:
-        #     t.terminate()
+        for t in self._takers:
+            t.terminate()
+
+        # self._coach[0].terminate()
 
     def get_avail_agent_actions(self, agent_id):
         """Returns the available actions for agent_id."""
-        print(self._actions)
-
+        # print(self._actions)
         # print("size of all players ", len(self._world._all_players))
         # print("actions ", self._world._available_actions, "at time ", self._world.time())
         return self._shared_values[agent_id]
-    
+
+    def get_obs(self):
+        return self._obs
+
     def observe(self):
         # for all agents
         state = 0
@@ -277,25 +319,67 @@ class KeepawayEnv:
         return state, reward, terminated
 
     def step(self, actions):
-    # -> tuple[
-    #     dict[AgentID, ObsType],
-    #     dict[AgentID, float],
-    #     dict[AgentID, bool],
-    #     dict[AgentID, bool],
-    #     dict[AgentID, dict]]:
         """A single environment step. Returns reward, terminated, info.
 
-        Args: 
+        Args:
             actions: list of actions for each agent
-        
+
         Returns:
             Tuple of time-step data for each agent
-        
-            
+
+
         applies all actions to the
-        send an action signal and return observation
+        send an action signal and return observation. 
         """
-        rewards = {}
+
+        # do i need this ..
+        if not actions:
+            self.agents = []
+            return {}, {}, {}, {}, {}
+
+        actions_int = [int(a) for a in actions]
+       
+        self._total_steps += 1
+        self._episode_steps += 1
+        total_reward = 0
+        ## not needed just for keepsake.
+        info = {}
+        terminated = False
+    
+        # passes the actions from the main process to the subprocesses. 
+        # this should update the shared values. 
+        self._actions = actions_int
+
+        self._observation = self._world._obs
+
+        game_state = self._terminated.value
+
+        if game_state == 1:
+            terminated = True
+            ## check details for sparse ( sparse implementation will take into account the
+            ## number of successful passes)
+            if not self.sparse_reward:
+                # total_reward += self.reward()
+                total_reward = self._reward.value
+                pass
+            else:
+                ## not implemented yet
+                total_reward = self._reward.value
+
+        # elif self._episode_steps >= self.episode_limit:
+        #     terminated = True
+        #     total_reward += self.reward()
+        #     if self.continuing_episode:
+        #         info["episode_limit"] = True
+        #     self.timeouts += 1
+
+        if terminated:
+            self._episode_count += 1
+
+        
+        # print("in step reward ", self._reward.value, "terminated ", self._terminated.value, "world terminated ", self._world._terminated.value)
+       
+        return total_reward, terminated, info
 
         # print(actions)
         ## main process waits for child process to finish
@@ -303,6 +387,3 @@ class KeepawayEnv:
         # print("Main Process: Waking up all subprocesses!")
         # self._main_process_event.set()
         # print("Main process completed.")
-
-       
-        return self.observe()

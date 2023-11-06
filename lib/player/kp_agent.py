@@ -15,9 +15,21 @@ from lib.player.sensor.visual_sensor import SeeParser
 from lib.player.soccer_action import ViewAction, NeckAction, FocusPointAction
 from lib.player.soccer_agent import SoccerAgent
 from lib.player.world_model import WorldModel
+
+# from lib.coach.gloabl_world_model import GlobalWorldModel
 from lib.network.udp_socket import IPAddress
 from pyrusgeom.soccer_math import min_max
-from lib.player_command.player_command import PlayerInitCommand, PlayerByeCommand
+from lib.player_command.player_command import (
+    PlayerInitCommand,
+    PlayerByeCommand,
+    PlayerCheckBallCommand,
+)
+from lib.player_command.coach_command import (
+    CoachInitCommand,
+    CoachLookCommand,
+    CoachLookCommand,
+    CoachTeamnameCommand,
+)
 from lib.player_command.player_command_support import (
     PlayerDoneCommand,
     PlayerTurnNeckCommand,
@@ -40,9 +52,13 @@ def get_time_msec():
     return int(time.time() * 1000)
 
 
+from pyrusgeom.angle_deg import AngleDeg
+from pyrusgeom.vector_2d import Vector2D
+
+
 class PlayerAgent(SoccerAgent):
     def __init__(
-        self, shared_values, manager, lock, event, team_name=team_config.TEAM_NAME
+        self, shared_values, barrier, lock, event, world,terminated,team_name=team_config.TEAM_NAME
     ):
         self._goalie: bool = False
         super(PlayerAgent, self).__init__()
@@ -73,17 +89,19 @@ class PlayerAgent(SoccerAgent):
 
         # self._real_world = WorldModel("real")
         self._real_world = None
-        self._full_world = WorldModel("full")
-        # self._full_world = None
+        # self._full_world = WorldModel("full")
+        self._full_world = world
         self._last_body_command = []
         self._is_synch_mode = True
         self._effector = ActionEffector(self)
         self._communication = None
 
         self._shared_values = shared_values
-        self._manager = manager
+        self._barrier = barrier
         self._lock = lock
         self._event = event
+
+        self._terminated = terminated
 
     def send_init_command(self):
         # TODO check reconnection
@@ -93,13 +111,26 @@ class PlayerAgent(SoccerAgent):
         # )
         com = PlayerInitCommand(self._team_name, 18, self._goalie)
         # TODO set team name from config
-        self._full_world._team_name = team_config.TEAM_NAME
 
+        # self._full_world._team_name = team_config.TEAM_NAME
+        self._full_world._team_name = self._team_name
+
+        print(com.str())
         if self._client.send_message(com.str()) <= 0:
             log.os_log().error("ERROR failed to connect to server")
             self._client.set_server_alive(False)
             return False
         return True
+
+    # def do_teamname(self):
+    #     command = CoachTeamnameCommand()
+    #     self._last_body_command.append(command)
+    #     return True
+
+    def check_ball(self):
+        command = PlayerCheckBallCommand()
+        print(command.str())
+        self._client.send_message(command.str())
 
     def send_bye_command(self):
         if self._client.is_server_alive() is True:  # TODO FALSE?
@@ -161,8 +192,19 @@ class PlayerAgent(SoccerAgent):
             self.hear_player_parser(message)
             pass
         elif sender == "referee":
+
+            print("referee message", message)
+            ##
+            # self._full_world().set_new_episode()
+            with self._terminated.get_lock():
+                self._terminated.value = True
             self.hear_referee_parser(message)
             # pass
+        elif sender == "coach":
+            print("coach message", message)
+
+    def init_dlog(self, message):
+        log.setup(self.world().team_name_l(), "coach", self._current_time)
 
     def hear_player_parser(self, message: str):
         log.debug_client().add_message(f"rcv msg:#{message}#")
@@ -193,7 +235,23 @@ class PlayerAgent(SoccerAgent):
 
     def hear_referee_parser(self, message: str):
         mode = message.split(" ")[-1].strip(")")
-        print("mode is ", mode)
+        # print("mode is ", mode)
+        ## Set new episode
+        # self._full_world().set_new_episode()
+        self.full_world()._terminated = True
+        # print("shared bool ", self._terminated.value)
+        self._terminated.value = True
+        # print("new episode is set" , self.full_world()._terminated)
+
+        self._barrier.wait()
+        ## start new episode
+        self.full_world().start_new_episode()
+        # print("new episode is started", self.full_world()._is_new_episode)
+        with self._terminated.get_lock():
+            self._terminated.value =  False
+            self.full_world()._terminated = False
+
+
         if not self._game_mode.update(mode, self._current_time):
             return
 
@@ -275,6 +333,9 @@ class PlayerAgent(SoccerAgent):
 
     def think_received(self):
         return self._think_received
+
+    # def do_change_mode(self, mode: GameModeType):
+    #     self._last_body_command.append(PlayerChangeModeCommand(mode))
 
     def is_decision_time(self, timeout_count: int, waited_msec):
         msec_from_sense = -1
@@ -419,6 +480,9 @@ class PlayerAgent(SoccerAgent):
         timeout_count: int = 0
         while self._client.is_server_alive():
             # with self._lock:
+            command = PlayerCheckBallCommand()
+            # self._client.send_message(command.str())
+
             length, message, server_address = self._client.recv_message()
             if len(message) == 0:
                 waited_msec += team_config.SOCKET_INTERVAL
@@ -427,6 +491,7 @@ class PlayerAgent(SoccerAgent):
                     self._client.set_server_alive(False)
                     break
             else:
+                # print(message.decode())
                 self.parse_message(message.decode())
                 last_time_rec = time.time()
                 waited_msec = 0
@@ -443,7 +508,6 @@ class PlayerAgent(SoccerAgent):
                     and self.world().see_time() == self._current_time
                 ):
                     # self._lock.wait()
-                    
                     self.action()
                     # self._lock.acquire()
                     # # with self._lock:
@@ -454,11 +518,11 @@ class PlayerAgent(SoccerAgent):
                     # current_values = list(self._shared_values)
                     # print(current_values)
                     # self._lock.release()
-                        # self._event.set()  # Signal that the numbers are ready to print
-                        # self.action()
-                        # self._event.wait()
-                        # print(current_values)
-                        # self._event.clear()  # Clear the event for the next iteration
+                    # self._event.set()  # Signal that the numbers are ready to print
+                    # self.action()
+                    # self._event.wait()
+                    # print(current_values)
+                    # self._event.clear()  # Clear the event for the next iteration
 
             self.flush_logs()
             if len(message) > 0:
@@ -514,6 +578,7 @@ class PlayerAgent(SoccerAgent):
             self.full_world().set_our_player_type(u, t)
 
     def parse_message(self, message: str):
+        # print("parse message is called", message)
         if message.startswith("(sense_body"):
             self.parse_sense_body_message(message)
         elif message.startswith("(see"):
@@ -534,8 +599,14 @@ class PlayerAgent(SoccerAgent):
             self._full_world.parse(message)
         elif message.startswith("(think"):
             self._think_received = True
+        elif message.find("(ok") != -1:
+            print(message)
+            # self._client.send_message(TrainerDoneCommand().str())
         else:
             log.os_log().error(f"Pyrus can not parse this message: {message}")
+
+    def do_check_ball(self):
+        self._client.send_message(PlayerCheckBallCommand().str())
 
     def do_dash(self, power, angle=0):
         if self.world().self().is_frozen():
@@ -571,6 +642,19 @@ class PlayerAgent(SoccerAgent):
             )
             return False
         self._last_body_command.append(self._effector.set_kick(power, rel_dir))
+        return True
+
+    # This method is not used in the code. It
+
+    def do_kick_to(self, power: float, rel_dir: AngleDeg, target: Vector2D):
+        if self.world().self().is_frozen():
+            log.os_log().error(
+                f"(do kick) player({self._real_world.self_unum()} is frozen!"
+            )
+            return False
+        self._last_body_command.append(
+            self._effector.set_kick_to(power, rel_dir, target)
+        )
         return True
 
     def do_tackle(self, power_or_dir: float, foul: bool):
@@ -813,15 +897,18 @@ class PlayerAgent(SoccerAgent):
     def action(self):
         # self._lock.acquire()
         # print("hello")
-                    # with self._lock:
-            #             #     print(self._team_name)
-            # self._shared_values[
-            #                 self.world().self_unum()
-            #             ] = self._current_time
-            #         current_values = list(self._shared_values)
-            #         print(current_values)
+        # with self._lock:
+        #             #     print(self._team_name)
+        # self._shared_values[
+        #                 self.world().self_unum()
+        #             ] = self._current_time
+        #         current_values = list(self._shared_values)
+        #         print(current_values)
         # self._lock.release()
-         
+        # self.check_ball()
+        # if self.do_teamname():
+        #     print("teamate")
+
         if (
             self.world().self_unum() is None
             or self.world().self().unum() != self.world().self_unum()

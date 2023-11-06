@@ -61,52 +61,6 @@ class WorldModelKeepaway(WorldModel):
    def __init__(self):
         super().__init__()
 
-   def get_keepers():
-       """
-       returns the total numbers of keepers in present in
-       the world
-       """
-
-       return keepers
-
-    def get_takers():
-        """
-            returns the total numbers of keepers in present in
-            the world
-        """
-        return takers
-   
-    # def set_keepers(keepers):
-    # def set_takers(takers):
-
-    def reset():
-       
-       self._ball 
-
-    ## TODO: implement expected pass reward shaping
-
-    def reward(self):
-
-        """
-        returns the reward for the current state
-        """
-        reward = self.time().cycle() - self._last_decision_time().cycle()
-
-        return reward
-   
-    def keepers_observation(self):
-       """
-       state variables for keepers 
-
-       """
-
-       return 
-   
-
-
-
-
-
    ### Implementation for High-level WM keepaway functions
    ##TODO: Maybe put this in a separate file
 

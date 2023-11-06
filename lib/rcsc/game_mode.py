@@ -118,13 +118,13 @@ class GameMode:
             game_mode = GameModeType.AfterGoal_Right
 
         if game_mode is None:
-            print("in game mode: ", type(mode))
-            print("game mode side : ", self._game_mode.side())
+            # print("in game mode: ", type(mode))
+            # print("game mode side : ", self._game_mode.side())
             if mode == "1":
                 pass
             else:
                 game_mode = GameModeType(mode)
-            print("after enum:  ", mode)
+            # print("after enum:  ", mode)
 
         if (
             self._game_mode.is_goalie_catch_ball()

@@ -11,6 +11,9 @@ class CommandType(Enum):
     RECONNECT = auto()  # ! < server reconnection command
     BYE = auto()  # ! < server disconnection command
 
+    # check ball command
+    CHECK_BALL = auto()
+
     # base commands
     MOVE = auto()
     DASH = auto()
@@ -42,6 +45,8 @@ class CommandType(Enum):
 
     ILLEGAL = auto()
 
+    
+
 
 class PlayerCommand:
     def type(self):
@@ -72,6 +77,19 @@ class PlayerInitCommand(PlayerCommand):
         return CommandType.INIT
 
 
+### This code tries to repleicate for trainer what is done for player in lib/player_command/player_command.py
+## instead of using the PlayerCommand class, we use the TrainerCommand class. i have just changed it to use the TrainerCommand class
+# class PlayerInitCommand(TrainerCommand):
+#     def __init__(self, version):
+#         super().__init__()
+#         self._version = version
+
+#     def type(self):
+#         return TrainerCommand.Type.INIT
+
+#     def str(self):
+#         return f"(init (version {self._version}))"
+
 class PlayerReconnectCommand(PlayerCommand):
     def __init__(self, team_name: str, unum: int):
         self._team_name = team_name
@@ -82,6 +100,7 @@ class PlayerReconnectCommand(PlayerCommand):
 
     def type(self):
         return CommandType.RECONNECT
+    
 
 
 class PlayerByeCommand:
@@ -93,6 +112,27 @@ class PlayerByeCommand:
 
     def type(self):
         return CommandType.BYE
+
+
+class PlayerCheckBallCommand(PlayerCommand):
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    def type(self):
+        return CommandType.CHECK_BALL
+
+    def str(self):
+        return f'"check_ball"'
+
+
+# (ok check_ball TIME BPOS)
+# TIME ::= sim. time of server
+# BPOS ::= in_field |
+# goal SIDE |
+# out of field
+# SIDE ::= l | r
 
 
 class PlayerMoveBallCommand(PlayerCommand):

@@ -6,10 +6,20 @@ from lib.messenger.free_form_messenger import FreeFormMessenger
 from lib.messenger.messenger import Messenger
 from lib.network.udp_socket import IPAddress
 from lib.coach.gloabl_world_model import GlobalWorldModel
+from lib.player.world_model import WorldModel
 from lib.player.soccer_agent import SoccerAgent
-from lib.player_command.coach_command import CoachChangePlayerTypeCommand, CoachCommand, CoachDoneCommand, \
-    CoachEyeCommand, CoachLookCommand, \
-    CoachFreeFormMessageCommand, CoachInitCommand, CoachSendCommands, CoachTeamnameCommand
+from lib.player_command.coach_command import (
+    CoachChangePlayerTypeCommand,
+    CoachCommand,
+    CoachDoneCommand,
+    CoachEyeCommand,
+    CoachLookCommand,
+    CoachFreeFormMessageCommand,
+    CoachInitCommand,
+    CoachSendCommands,
+    CoachTeamnameCommand,
+    CoachCheckBallCommand,
+)
 from lib.rcsc.game_mode import GameMode
 from lib.rcsc.game_time import GameTime
 from lib.rcsc.server_param import ServerParam
@@ -20,6 +30,7 @@ import team_config
 
 # TODO PLAYER PARAMS?
 
+
 class CoachAgent(SoccerAgent):
     def __init__(self):
         super().__init__()
@@ -28,20 +39,27 @@ class CoachAgent(SoccerAgent):
         self._current_time: GameTime = GameTime(-1, 0)
         self._game_mode: GameMode = GameMode()
         self._world: GlobalWorldModel = GlobalWorldModel()
+        # self._world: WorldModel = WorldModel("full")
         self._is_synch_mode: bool = True
         self._last_body_command: list[CoachCommand] = []
         self._free_from_messages: list[FreeFormMessenger] = []
 
     def send_init_command(self):
         # TODO check reconnection
-
         # TODO make config class for these data
-        com = CoachInitCommand(team_config.TEAM_NAME, team_config.COACH_VERSION)
+        # com = CoachInitCommand(team_config.TEAM_NAME, team_config.COACH_VERSION)
+
+        com = CoachInitCommand("keepers", team_config.COACH_VERSION)
+
+        print(com.str())
 
         if self._client.send_message(com.str()) <= 0:
+            print("ERROR failed to connect to server")
+
             log.os_log().error("ERROR failed to connect to server")
             self._client.set_server_alive(False)
             return False
+        return True
 
     def send_bye_command(self):
         if self._client.is_server_alive() is True:
@@ -66,7 +84,7 @@ class CoachAgent(SoccerAgent):
         self.world().update_after_see(self._current_time)
 
     def parse_cycle_info(self, message: str, by_see_global: bool):
-        cycle = int(message.split(' ')[1])
+        cycle = int(message.split(" ")[1])
         self.update_current_time(cycle, by_see_global)
 
     def update_current_time(self, new_time: int, by_see_global: bool):
@@ -75,20 +93,20 @@ class CoachAgent(SoccerAgent):
                 self._current_time.assign(new_time, 0)
             else:
                 if by_see_global:
-                    self._current_time.assign(self._current_time.cycle(),
-                                              self._current_time.stopped_cycle() + 1)
+                    self._current_time.assign(
+                        self._current_time.cycle(),
+                        self._current_time.stopped_cycle() + 1,
+                    )
         else:
             self._current_time.assign(new_time, 0)
 
     def hear_parser(self, message: str):
         self.parse_cycle_info(message, False)
 
-        _, cycle, sender = tuple(
-            message.split(" ")[:3]
-        )
+        _, cycle, sender = tuple(message.split(" ")[:3])
         cycle = int(cycle)
 
-        if sender[0].isnumeric() or sender[0] == '-':  # PLAYER MESSAGE
+        if sender[0].isnumeric() or sender[0] == "-":  # PLAYER MESSAGE
             self.hear_player_parser(message)
         elif sender == "referee":
             self.hear_referee_parser(message)
@@ -118,43 +136,79 @@ class CoachAgent(SoccerAgent):
         # TODO FULL STATE WORLD update
 
     def analyze_change_player_type(self, msg: str):
-        data = msg.strip('()').split(' ')
+        data = msg.strip("()").split(" ")
         n = len(data)
         if n == 4:
             pass
         elif n == 3:
-            unum, type = int(data[1]), int(data[2].removesuffix(')\x00'))
+            unum, type = int(data[1]), int(data[2].removesuffix(")\x00"))
             self.world().change_player_type(self.world().our_side(), unum, type)
         elif n == 2:
-            unum = int(data[1].removesuffix(')\x00'))
-            self.world().change_player_type(self.world().their_side(), unum, HETERO_UNKNOWN)
+            unum = int(data[1].removesuffix(")\x00"))
+            self.world().change_player_type(
+                self.world().their_side(), unum, HETERO_UNKNOWN
+            )
 
     def handle_start(self):
+        # print(self._client)
+        # print(team_config.COACH_PORT)
+
         if self._client is None:
             return False
 
         if team_config.COACH_VERSION < 18:
-            log.os_log().error("PYRUS2D base code does not support coach version less than 18.")
+            log.os_log().error(
+                "PYRUS2D base code does not support coach version less than 18."
+            )
+            print("PYRUS2D base code does not support coach version less than 18.")
             self._client.set_server_alive(False)
             return False
 
         # TODO check for config.host not empty
 
-        if not self._client.connect_to(IPAddress(team_config.HOST, team_config.COACH_PORT)):
+        # print(self._client.connect_to(IPAddress(team_config.HOST, 6002)))
+
+        if not self._client.connect_to(
+            IPAddress(team_config.HOST, team_config.COACH_PORT)
+        ):
             log.os_log().error("ERROR failed to connect to server")
+            print("ERROR failed to connect to server")
             self._client.set_server_alive(False)
             return False
+
+        # print("coach agent handle start 2")
+        # print(self.send_init_command())
 
         if not self.send_init_command():
             return False
         return True
 
+    def handle_exit(self):
+        if self._client.is_server_alive():
+            self.send_bye_command()
+        # log.os_log().info(f"player( {self._real_world.self_unum()} ): finished")
+
+    # def run(self):
+    #     while self._client.is_server_alive():
+    #         # self.do_check_ball()
+    #         length, message, server_address = self._client.recv_message()
+    #         if len(message) != 0:
+    #             print("coach ", message)
+    #             self.parse_message(message.decode())
+    #         else:
+    #             self._client.set_server_alive(False)
+    #             break
+
     def run(self):
+        # print("coach agent run")
         last_time_rec = time.time()
         while True:
             while True:
+                self.do_check_ball()
                 length, message, server_address = self._client.recv_message()
                 if len(message) != 0:
+                    print("coach ", message)
+
                     self.parse_message(message.decode())
                     last_time_rec = time.time()
                     break
@@ -172,7 +226,13 @@ class CoachAgent(SoccerAgent):
             if self.think_received:
                 self.action()
                 self._think_received = False
-            # TODO elif for not sync mode
+    # TODO elif for not sync mode
+
+    def do_check_ball(self):
+        # command = CoachCheckBallCommand()
+        # print(command.str())
+        command = CoachTeamnameCommand()
+        self._client.send_message(command.str())
 
     def parse_message(self, message):
         if message.find("(init") != -1:  # TODO Use startwith instead of find
@@ -192,9 +252,11 @@ class CoachAgent(SoccerAgent):
             self._think_received = True
         elif message.find("(ok") != -1:
             self._client.send_message(CoachDoneCommand().str())
+        else:
+            self._client.send_message(CoachTeamnameCommand().str())
 
     def init_dlog(self, message):
-        log.setup(self.world().team_name_l(), 'coach', self._current_time)
+        log.setup(self.world().team_name_l(), "coach", self._current_time)
 
     def world(self) -> GlobalWorldModel:
         return self._world
@@ -232,11 +294,15 @@ class CoachAgent(SoccerAgent):
 
     def do_change_player_type(self, unum: int, type: int):
         if not 1 <= unum <= 11:
-            log.os_log().error(f"(coach agent do change player type) illegal unum! unum={unum}")
+            log.os_log().error(
+                f"(coach agent do change player type) illegal unum! unum={unum}"
+            )
             return False
 
         if not HETERO_DEFAULT <= type < 18:  # TODO Player PARAM
-            log.os_log().error(f"(coach agent do change player type) illegal player type! type={type}")
+            log.os_log().error(
+                f"(coach agent do change player type) illegal player type! type={type}"
+            )
             return False
 
         self._last_body_command.append(CoachChangePlayerTypeCommand(unum, type))
