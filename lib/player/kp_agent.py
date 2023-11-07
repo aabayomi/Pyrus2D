@@ -115,7 +115,7 @@ class PlayerAgent(SoccerAgent):
         # self._full_world._team_name = team_config.TEAM_NAME
         self._full_world._team_name = self._team_name
 
-        print(com.str())
+        # print(com.str())
         if self._client.send_message(com.str()) <= 0:
             log.os_log().error("ERROR failed to connect to server")
             self._client.set_server_alive(False)
@@ -194,10 +194,10 @@ class PlayerAgent(SoccerAgent):
         elif sender == "referee":
 
             print("referee message", message)
-            ##
-            # self._full_world().set_new_episode()
-            with self._terminated.get_lock():
-                self._terminated.value = True
+
+            # with self._terminated.get_lock():
+            #     self._terminated.value = True
+            # self.full_world()._terminated = True
             self.hear_referee_parser(message)
             # pass
         elif sender == "coach":
@@ -235,19 +235,25 @@ class PlayerAgent(SoccerAgent):
 
     def hear_referee_parser(self, message: str):
         mode = message.split(" ")[-1].strip(")")
-        # print("mode is ", mode)
-        ## Set new episode
-        # self._full_world().set_new_episode()
-        self.full_world()._terminated = True
-        # print("shared bool ", self._terminated.value)
-        self._terminated.value = True
-        # print("new episode is set" , self.full_world()._terminated)
-
-        self._barrier.wait()
-        ## start new episode
-        self.full_world().start_new_episode()
-        # print("new episode is started", self.full_world()._is_new_episode)
+        keepaway_mode = message.split(" ")[-2:]
+        if keepaway_mode[-1].strip(')\x00') == "play_on":
+            print("mode is ", keepaway_mode[-1].strip(")"))
+            pass
+        else:
+            ## Set new episode
+            # self._full_world().set_new_episode()
+            print("end of episode")
+            with self._terminated.get_lock():
+                self.full_world()._terminated = True
+                self._terminated.value = True
+        
+        time.sleep(1)
+        self._barrier.wait(5)
+            
+        # self._terminated.value = True
+         
         with self._terminated.get_lock():
+            self.full_world().start_new_episode()
             self._terminated.value =  False
             self.full_world()._terminated = False
 
@@ -471,10 +477,6 @@ class PlayerAgent(SoccerAgent):
     ## new implementation. This method
 
     def run(self):
-        print("run method is called")
-        import multiprocessing
-        from multiprocessing import Process, Lock
-
         last_time_rec = time.time()
         waited_msec: int = 0
         timeout_count: int = 0
@@ -600,7 +602,8 @@ class PlayerAgent(SoccerAgent):
         elif message.startswith("(think"):
             self._think_received = True
         elif message.find("(ok") != -1:
-            print(message)
+            # print(message)
+            pass
             # self._client.send_message(TrainerDoneCommand().str())
         else:
             log.os_log().error(f"Pyrus can not parse this message: {message}")

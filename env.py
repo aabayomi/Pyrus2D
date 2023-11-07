@@ -29,8 +29,6 @@ import base.main_keepaway_player as kp
 import atexit
 import base.main_coach as main_c
 
-# from lib.player import WorldModel
-
 
 # class KeepawayEnv(MultiAgentEnv):
 class KeepawayEnv:
@@ -107,7 +105,7 @@ class KeepawayEnv:
         self._terminated = self._world._terminated
         # print("workd terminated ", self._world._terminated.value)
 
-
+        self._episode_reward = []
 
         # self._shared_values = manager.list([0, 0, 0, 0])
         self._keepers = [
@@ -239,7 +237,7 @@ class KeepawayEnv:
         ]
 
         # Build rcssserver command, and fork it off.
-        print(server_options)
+        # print(server_options)
         command = ["rcssserver"] + server_options
         popen = Popen(command)
 
@@ -253,9 +251,20 @@ class KeepawayEnv:
 
     def reset(self):
         """Reset the environment. Required after each full episode."""
+
+        print("resetting")
+
         self._episode_steps = 0
         self._total_steps = 0
         self.last_action = None
+        self._episode_reward = []
+        # self._reward = self._world._reward
+        # self._terminated = 
+        # self._world._terminated = multiprocessing.Value('b', False)
+        if self._world._terminated.get_lock():
+            self._world._terminated.value = False
+        # self._world._terminated = multiprocessing.Value('b', False)
+
 
         return 
 
@@ -276,18 +285,23 @@ class KeepawayEnv:
 
     def start(self):
         print("starting")
-        for i in range(self.num_keepers):
-            self._keepers[i].start()
+        if self._episode_count == 0:
+            for i in range(self.num_keepers):
+                self._keepers[i].start()
 
-        self._sleep.sleep(0.5)
+            self._sleep.sleep(0.5)
 
-        for i in range(self.num_takers):
-            self._takers[i].start()
+            for i in range(self.num_takers):
+                self._takers[i].start()
 
-        self._sleep.sleep(2.0)
-        # print("starting coach")
-        # self._coach[0].start()
-        atexit.register(self.close)
+            self._sleep.sleep(2.0)
+            # print("starting coach")
+            # self._coach[0].start()
+            
+            atexit.register(self.close)
+            self._episode_count += 1
+        else:
+            print("already started")
 
     def close(self):
         """Close the environment. No other method calls possible afterwards."""
@@ -310,13 +324,6 @@ class KeepawayEnv:
     def get_obs(self):
         return self._obs
 
-    def observe(self):
-        # for all agents
-        state = 0
-        reward = 0
-        terminated = False
-        info = {}
-        return state, reward, terminated
 
     def step(self, actions):
         """A single environment step. Returns reward, terminated, info.
@@ -338,7 +345,6 @@ class KeepawayEnv:
             return {}, {}, {}, {}, {}
 
         actions_int = [int(a) for a in actions]
-       
         self._total_steps += 1
         self._episode_steps += 1
         total_reward = 0
@@ -351,9 +357,7 @@ class KeepawayEnv:
         self._actions = actions_int
 
         self._observation = self._world._obs
-
-        game_state = self._terminated.value
-
+        game_state = self._world._terminated.value
         if game_state == 1:
             terminated = True
             ## check details for sparse ( sparse implementation will take into account the
@@ -376,14 +380,8 @@ class KeepawayEnv:
         if terminated:
             self._episode_count += 1
 
+        print("world terminated ", self._world._terminated.value)
         
         # print("in step reward ", self._reward.value, "terminated ", self._terminated.value, "world terminated ", self._world._terminated.value)
        
-        return total_reward, terminated, info
-
-        # print(actions)
-        ## main process waits for child process to finish
-        # self._barrier.wait()
-        # print("Main Process: Waking up all subprocesses!")
-        # self._main_process_event.set()
-        # print("Main process completed.")
+        return total_reward, terminated , info

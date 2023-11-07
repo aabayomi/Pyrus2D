@@ -2334,7 +2334,8 @@ class WorldModel:
     # \param time current time to compare with time object was last seen
     # \return confidence factor of this object
 
-    def _get_confidence(self, object):
+    def get_confidence(self, object):
+        
         """Returns the confidence of the information of ball."""
 
         if object == "ball":

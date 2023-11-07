@@ -277,7 +277,7 @@ class KeepawayPlayer(PlayerAgent):
         self._terminated = terminated
 
         # TODO: check the use of full or real world.
-        # self._full_world = world 
+        # self._full_world = world
     
   
     def count(self):

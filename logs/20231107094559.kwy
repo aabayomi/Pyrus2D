@@ -9,4 +9,4 @@
 # 4) Duration in simulator steps (100ms)
 # 5) (o)ut of bounds / (t)aken away
 #
-1	0	56	56	o
+1	0	80	80	t
