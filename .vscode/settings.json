@@ -1,0 +1,11 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none",
+    "cmake.configureOnOpen": false,
+    "cSpell.ignoreWords": [
+        "Keepaway"
+    ],
+    "julia.environmentPath": "/Users/abayomi/Desktop/Pyrus2D"
+}
