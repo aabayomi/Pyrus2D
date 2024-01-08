@@ -161,10 +161,10 @@ def get_decision_keepaway(
 
                 ang_opp = AngleDeg.normalize_angle(ang_opp)
                 target = pos_agent + Vector2D(1.0, ang_opp, POLAR)
-                NeckBodyToPoint(target).execute(agent)
-                return
-        GoToPoint(pos_mark, 0.2, 100).execute(agent)
-        return
+                
+                return NeckBodyToPoint(target).execute(agent)
+        
+        return GoToPoint(pos_mark, 0.2, 100).execute(agent)
 
     def mark_most_open_opponent(wm):
         """Mark the most open opponent."""
@@ -322,7 +322,7 @@ def get_decision_keepaway(
             best_point = rect.center()
         return best_point
 
-    def keeper_support(wm, current_player, fastest, agent):
+    def keeper_support(wm,fastest, agent):
         """Keeper support."""
         from lib.messenger.one_player_messenger import OnePlayerMessenger
 
@@ -390,7 +390,6 @@ def get_decision_keepaway(
     def hold(wm, agent):
         """ """
         from lib.action.neck_scan_players import NeckScanPlayers
-
         agent.set_neck_action(NeckScanPlayers())
         HoldBall().execute(agent)
         return
@@ -508,18 +507,20 @@ def get_decision_keepaway(
 
     if wm.our_team_name() == "keepers":
         barrier.wait()
-        # print("i am keeper ", wm.self().unum(), " at ", wm.self().pos())
-
         if wm.get_confidence("ball") < 0.90:
             search_ball(wm, agent)
-            # return
+        
+        # teammates_from_ball = wm.teammates_from_ball()
         ball_pos = wm.ball().pos()
-        GoToPoint(ball_pos, 0.2, 200).execute(agent)
-        # keeper(wm, agent)
-        # print("me ", wm.self().unum(), "dist to ball ", wm.self().pos().dist(ball_pos))
+        # GoToPoint(ball_pos, 0.2, 100).execute(agent)
+        
+        closest_keeper_from_ball = wm.all_teammates_from_ball()
+        if len(closest_keeper_from_ball) > 0:
+            if wm.self().unum() == closest_keeper_from_ball[0].unum():
+                GoToPoint(ball_pos, 0.2, 100).execute(agent)
 
+    
         if wm.self().pos().dist(ball_pos) < 5.0:
-            # GoToPoint(ball_pos, 0.2, 100).execute(agent)
             obs[wm.self().unum()] = wm._retrieve_observation()
             if wm.self().is_kickable():
                 wm._available_actions[wm.self().unum()] = 2
@@ -540,7 +541,7 @@ def get_decision_keepaway(
             ## . check with
             if fastest is not None:
                 print("Get Open")
-                keeper_support(wm, wm.self(), fastest, agent)
+                keeper_support(wm,fastest, agent)
 
         ## old implementation
         # if fastest is not None:
@@ -566,22 +567,22 @@ def get_decision_keepaway(
         barrier.wait()
         if wm.get_confidence("ball") < 0.90:
             search_ball(wm, agent)
-            move(wm, agent)
-            return
+        
+        ball_pos = wm.ball().pos()
+        GoToPoint(ball_pos, 0.2, 100).execute(agent)
 
         # Maintain possession if you have the ball.
         if wm.self().is_kickable() and (len(wm.teammates_from_ball()) == 0):
-            HoldBall().execute(agent)
-            return
+             return HoldBall().execute(agent)
+           
         closest_taker_from_ball = wm.teammates_from_ball()
         if wm.self() not in closest_taker_from_ball:
             mark_most_open_opponent(wm)
-            NeckTurnToBall().execute(agent)
-            return
+            return  NeckTurnToBall().execute(agent)
+            
         d = closest_taker_from_ball.dist_to_ball()
         if d < 0.3:
             NeckTurnToBall().execute(agent)
             NeckBodyToBall().execute(agent)
             return
-        Intercept().execute(agent)
-        return
+        return Intercept().execute(agent)

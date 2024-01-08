@@ -64,7 +64,7 @@ class SoccerWindow_Logger:
     def __init__(self, team_name: str, unum: int, time: GameTime):
         ## modified to be saved in the current working directory
         # self._file = open(f"/tmp/{team_name}-{unum}.log", 'w') - original code 
-        self._file = open(f"{team_name}-{unum}.log", 'w')
+        self._file = open(f"logs/{team_name}-{unum}.log", 'w')
         self._time: GameTime = time
 
         self._system = SoccerWindow_Logger.LoggerLevel(Level.SYSTEM, self._time)

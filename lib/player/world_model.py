@@ -153,7 +153,6 @@ class WorldModel:
         self._time_list = [0, 0, 0, 0]
         self._available_actions = [None] * 4
 
-        # self._barrier = manager
         self._info = {}
         self._agents = [1, 2, 3]  # hardcoded for now
         self.observations = {agent: None for agent in self._agents}

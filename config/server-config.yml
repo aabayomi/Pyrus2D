@@ -1,4 +1,6 @@
-# config.yml
+# server configuration file - server-config.yml
+# This file is used to configure the server.
+## server parameters for keepaway
 
 coach: 0
 coach_port: 6001
@@ -13,7 +15,7 @@ keeper_output: null
 keeper_policy: rand
 label: ""
 log_dir: "./logs"
-game_log_dir: "./"
+game_log_dir: "./logs"
 log_game: true
 log_text: true
 monitor: false

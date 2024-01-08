@@ -10,8 +10,6 @@ from experiments.policies.handcoded_agent import HandcodedPolicy
 def main():
     env = KeepawayEnv()
     episodes = 20
-    # print("Training episodes")
-    # print("launching game")
     env._launch_game()
     agents = env.num_keepers
     policy = HandcodedPolicy()
@@ -26,8 +24,9 @@ def main():
         while not terminated:
             obs = env.get_obs()
             actions, agent_infos = policy.get_actions(obs,greedy=True)
-            print("actions ", actions)
+            # print("actions ", actions)
             reward, terminated, info = env.step(actions)
+            print("reward ", reward, "terminated ", terminated, "info ", info)
             time.sleep(0.15)
             episode_reward += reward
 

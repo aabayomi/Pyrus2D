@@ -26,15 +26,10 @@ from lib.player_command.player_command import (
     PlayerByeCommand,
     PlayerCheckBallCommand,
 )
-from lib.player_command.coach_command import (
-    CoachInitCommand,
-    CoachLookCommand,
-    CoachLookCommand,
-    CoachTeamnameCommand,
-)
+
 from lib.player_command.player_command_support import (
     PlayerDoneCommand,
-    PlayerTurnNeckCommand
+    PlayerTurnNeckCommand,
 )
 
 from lib.player_command.player_command_body import (
@@ -79,6 +74,7 @@ class PlayerAgent(SoccerAgent):
         event,
         world,
         terminated,
+        reward,
         team_name=team_config.TEAM_NAME,
     ):
         self._goalie: bool = False
@@ -123,6 +119,8 @@ class PlayerAgent(SoccerAgent):
         self._event = event
 
         self._terminated = terminated
+        self._terminal_time = GameTime(0, 0)
+        self._reward = reward
 
     def send_init_command(self):
         # TODO check reconnection
@@ -266,6 +264,7 @@ class PlayerAgent(SoccerAgent):
             with self._terminated.get_lock():
                 self.full_world()._terminated = True
                 self._terminated.value = True
+                self._reward.value = self._current_time.cycle() - self._terminal_time.cycle()
 
         time.sleep(1)
         self._barrier.wait(5)
@@ -276,6 +275,8 @@ class PlayerAgent(SoccerAgent):
             self.full_world().start_new_episode()
             self._terminated.value = False
             self.full_world()._terminated = False
+            self._terminal_time = self._current_time.copy()
+            self._reward.value = 0
 
         if not self._game_mode.update(mode, self._current_time):
             return
@@ -765,7 +766,7 @@ class PlayerAgent(SoccerAgent):
             self.world(), command, self.world().ball().pos(), self.world().ball().vel()
         )
 
-        ## check this -- 
+        ## check this --
         if self.world().ball().pos().dist(agent_pred_pos) < 0.8 * maximal_kick_dist:
             return self._last_body_command.append(
                 self._effector.set_kick(d_power * 0.5, d_angle)
@@ -801,18 +802,18 @@ class PlayerAgent(SoccerAgent):
             lineSide = None
             if abs(pos_des_ball.get_y()) > SP.pitch_width() / 2.0:
                 lineSide = Line2D(
-                            Vector2D(0, (pos_des_ball.get_x()) * SP.pitch_length() / 2.0),
-                            90,
-                        )
+                    Vector2D(0, (pos_des_ball.get_x()) * SP.pitch_length() / 2.0),
+                    90,
+                )
             else:
                 lineSide = Line2D(
-                            Vector2D(0, -(pos_des_ball.get_x()) * SP.pitch_length() / 2.0),
-                            90,
-                        )
+                    Vector2D(0, -(pos_des_ball.get_x()) * SP.pitch_length() / 2.0),
+                    90,
+                )
             posIntersect = lineSide.getIntersection(lineBody)
             pos_des_ball = self.world().self().pos() + Vector2D.polar2vector(
-                    posIntersect.dist(self.world().self().pos()) - 0.2, ang_global
-                )
+                posIntersect.dist(self.world().self().pos()) - 0.2, ang_global
+            )
 
         vecDesired = pos_des_ball - self.world().ball().pos()
         vecShoot = vecDesired - self.world().ball().vel()
@@ -843,11 +844,11 @@ class PlayerAgent(SoccerAgent):
             # return
             # SoccerCommand(CMD_KICK, dPower, angActual)
             # print("power is line 774 ", d_power)
-            command =  self._effector.set_kick(d_power, ang_actual)
-            
+            command = self._effector.set_kick(d_power, ang_actual)
+
             return self._last_body_command.append(
-                    self._effector.set_kick(d_power, ang_actual)
-                )
+                self._effector.set_kick(d_power, ang_actual)
+            )
             # return command
 
     ## TODO: pass message
@@ -946,13 +947,17 @@ class PlayerAgent(SoccerAgent):
                 # accelerateBallToVelocity(vel_des)
 
                 print("saying pass message")
-                self.add_say_message(PassMessenger(teammate.unum_,
-                                                tar_pos,
-                                                self.effector().queued_next_ball_pos(),
-                                                self.effector().queued_next_ball_vel()))
-                
+                self.add_say_message(
+                    PassMessenger(
+                        teammate.unum_,
+                        tar_pos,
+                        self.effector().queued_next_ball_pos(),
+                        self.effector().queued_next_ball_vel(),
+                    )
+                )
+
                 self.accel_ball_vel(vel_des)
-                ## add message 
+                ## add message
                 return
             elif (
                 self.world().self().player_type().kick_power_rate()
@@ -976,13 +981,15 @@ class PlayerAgent(SoccerAgent):
                 )
 
                 # print("kick_ball_close_to_body 1")
-                self.add_say_message(PassMessenger(teammate.unum(),
-                                                tar_pos,
-                                                self.effector().queued_next_ball_pos(),
-                                                self.effector().queued_next_ball_vel()))
-                
+                self.add_say_message(
+                    PassMessenger(
+                        teammate.unum(),
+                        tar_pos,
+                        self.effector().queued_next_ball_pos(),
+                        self.effector().queued_next_ball_vel(),
+                    )
+                )
 
-                
                 return self.kick_ball_close_to_body(0, 0.16)
         # // can reach point
         else:
@@ -996,10 +1003,14 @@ class PlayerAgent(SoccerAgent):
                 # // perform shooting action
                 # accelerateBallToVelocity(velDes);
                 # print("saying pass message 2")
-                self.add_say_message(PassMessenger(teammate.unum(),
-                                                tar_pos,
-                                                self.effector().queued_next_ball_pos(),
-                                                self.effector().queued_next_ball_vel()))
+                self.add_say_message(
+                    PassMessenger(
+                        teammate.unum(),
+                        tar_pos,
+                        self.effector().queued_next_ball_pos(),
+                        self.effector().queued_next_ball_vel(),
+                    )
+                )
                 return self.accel_ball_vel(vel_des)
             else:
                 # Log.log(102, "point good, but reposition ball since need %f", dPower);
@@ -1026,11 +1037,15 @@ class PlayerAgent(SoccerAgent):
                 dist_opp = ball_pred_pos.dist(self.world().self().pos())
 
                 # print("kick_ball_close_to_body 2")
-                self.add_say_message(PassMessenger(teammate.unum(),
-                                                tar_pos,
-                                                self.effector().queued_next_ball_pos(),
-                                                self.effector().queued_next_ball_vel()))
-                
+                self.add_say_message(
+                    PassMessenger(
+                        teammate.unum(),
+                        tar_pos,
+                        self.effector().queued_next_ball_pos(),
+                        self.effector().queued_next_ball_vel(),
+                    )
+                )
+
             return self.kick_ball_close_to_body(0, 0.16)
 
     # def do_kick_to(self, power: float, rel_dir: AngleDeg, target: Vector2D):

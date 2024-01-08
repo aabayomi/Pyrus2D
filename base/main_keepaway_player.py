@@ -11,7 +11,7 @@ def main(team_name, i, is_goalie, shared_values, manager, lock, event, event_fro
     if not agent.handle_start():
         agent.handle_exit()
         return
-    print("Starting agent {}".format(i))
+    # print("Starting agent {}".format(i))
     agent.run()
 
 

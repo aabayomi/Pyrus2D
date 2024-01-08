@@ -278,7 +278,7 @@ class KeepawayPlayer(PlayerAgent):
     ):
         # super().__init__()
         super().__init__(
-            shared_values, manager, lock, event, world, terminated, team_name
+            shared_values, manager, lock, event, world, reward,terminated, team_name
         )
         self._communication = SampleCommunication()
         self._count_list = shared_values  # actions

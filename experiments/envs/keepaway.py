@@ -2,24 +2,38 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
+import sys
+import os
+
+# current_file_path = os.path.dirname(os.path.abspath(__file__))
+# parent_dir = os.path.dirname(current_file_path)
+# grand_parent_dir = os.path.dirname(parent_dir)
+# print(grand_parent_dir)
+# lib_path = os.path.join(grand_parent_dir, 'lib')
+# print(lib_path)
+sys.path.append(".")
+# sys.path.append("/Users/abayomi/Desktop/Pyrus2D/lib")
+# print(sys.path)
+
 import atexit
 from warnings import warn
 from operator import attrgetter
 import copy
 import numpy as np
-import enum
-import math
 from absl import logging
 from subprocess import Popen
 import yaml
 from optparse import OptionParser
 import time
+
+import numpy as np
+
 from lib.player.world_model import WorldModel
 import multiprocessing
 import base.main_keepaway_player as kp
 import atexit
 import base.main_coach as main_c
-from lib.rcsc.game_time import GameTime
 from experiments.envs.multiagentenv import MultiAgentEnv
 
 
@@ -95,7 +109,6 @@ class KeepawayEnv(MultiAgentEnv):
         # print("workd terminated ", self._world._terminated.value)
 
         self._episode_reward = []
-        
 
         # self._shared_values = manager.list([0, 0, 0, 0])
         self._keepers = [
@@ -262,10 +275,7 @@ class KeepawayEnv(MultiAgentEnv):
         """
         returns the reward for the current state
         """
-
-        r = self._world.time().cycle() - self._terminal_time.cycle()
-        return r
-        # return self._reward.value
+        return self._reward.value
 
     def _restart(self):
         self.full_restart()
@@ -350,6 +360,7 @@ class KeepawayEnv(MultiAgentEnv):
 
         # print("actions ", self._actions)
         self._shared_values = multiprocessing.Array("i", self._actions)
+
         self._observation = self._world._obs
         game_state = self._world._terminated.value
         if game_state == 1:
@@ -362,10 +373,7 @@ class KeepawayEnv(MultiAgentEnv):
                 pass
             else:
                 ## not implemented yet
-                # total_reward = self._reward.value
                 total_reward = self._reward.value
-
-            self._terminal_time = self._world.time()
 
         # elif self._episode_steps >= self.episode_limit:
         #     terminated = True

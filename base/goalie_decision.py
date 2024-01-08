@@ -10,7 +10,7 @@ from pyrusgeom.vector_2d import Vector2D
 from base.basic_tackle import BasicTackle
 from base.generator_action import KickAction
 from base.generator_pass import BhvPassGen
-from base.set_play.bhv_goalie_set_play import Bhv_GoalieSetPlay
+# from base.set_play.bhv_goalie_set_play import Bhv_GoalieSetPlay
 from lib.action.go_to_point import GoToPoint
 from lib.action.hold_ball import HoldBall
 from lib.action.intercept import Intercept

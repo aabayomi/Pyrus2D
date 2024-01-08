@@ -2,19 +2,20 @@ from __future__ import absolute_import, division, print_function
 
 import time
 from absl import logging
-from env import KeepawayEnv
-from experiments.policies.random_agent import RandomPolicy
+
 logging.set_verbosity(logging.DEBUG)
+from env import KeepawayEnv
+from experiments.policies.handcoded_agent import HandcodedPolicy
 
 
 def main():
     env = KeepawayEnv()
-    episodes = 10
-    print("Training episodes")
-    print("launching game")
+    episodes = 20
+    # print("Training episodes")
+    # print("launching game")
     env._launch_game()
     agents = env.num_keepers
-    policy = RandomPolicy()
+    policy = HandcodedPolicy()
 
     for e in range(episodes):
         print(f"Episode {e}")
@@ -25,15 +26,15 @@ def main():
 
         while not terminated:
             obs = env.get_obs()
-            actions, agent_infos = policy.get_actions(obs,greedy=False)
-            # print(actions)
+            actions, agent_infos = policy.get_actions(obs, greedy=True)
+            print("actions ", actions)
             reward, terminated, info = env.step(actions)
-            # print("reward ", reward, "terminated ", terminated, "info ", info)
             time.sleep(0.15)
             episode_reward += reward
 
     print("closing game")
     env.close()
+
 
 if __name__ == "__main__":
     main()
