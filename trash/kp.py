@@ -4,7 +4,7 @@ import logging
 
 
 # import base.main_keepaway_player as kp
-import base.main_keepaway_player as kp
+import keeepaway_utils.main_keepaway_player as kp
 import base.main_coach as main_c
 import multiprocessing as mp
 

@@ -18,7 +18,6 @@ from pyrusgeom.segment_2d import Segment2D
 from pyrusgeom.circle_2d import Circle2D
 
 
-
 from lib.player.soccer_action import NeckAction
 from lib.rcsc.server_param import ServerParam
 from lib.rcsc.types import GameModeType, ViewWidth
@@ -34,6 +33,8 @@ from lib.player.soccer_action import NeckAction
 from lib.player.soccer_action import *
 from lib.action.kick_table import KickTable, Sequence
 from lib.debug.level import Level
+from pyrusgeom.soccer_math import bound
+from lib.action.neck_turn_to_relative import NeckTurnToRelative
 
 import math as math
 
@@ -1012,6 +1013,51 @@ class NeckScanField(NeckAction):
                 target_angle = (target_pos - next_self_pos).th().degree()
 
         return target_angle
+
+
+class NeckBodyToPoint(NeckAction):
+    
+
+    def __init__(self, point: Vector2D, angle_buf: Union[AngleDeg, float] = 5.0):
+        super().__init__()
+        self._point = point.copy()
+        self._angle_buf = float(angle_buf)
+
+    def execute(self, agent: "PlayerAgent"):
+        log.debug_client().add_message("BodyToPoint/")
+        SP = ServerParam.i()
+        wm = agent.world()
+
+        angle_buf = bound(0.0, self._angle_buf, 180.0)
+
+        my_next = wm.self().pos() + wm.self().vel()
+        target_rel_angle = (self._point - my_next).th() - wm.self().body()
+
+        if (
+            SP.min_neck_angle() + angle_buf
+            < target_rel_angle.degree()
+            < SP.max_neck_angle() - angle_buf
+        ):
+            agent.do_turn(0.0)
+            agent.set_neck_action(NeckTurnToRelative(target_rel_angle))
+            return True
+
+        max_turn = (
+            wm.self().player_type().effective_turn(SP.max_moment(), wm.self().vel().r())
+        )
+        if target_rel_angle.abs() < max_turn:
+            agent.do_turn(target_rel_angle)
+            agent.set_neck_action(NeckTurnToRelative(0.0))
+            return True
+
+        agent.do_turn(target_rel_angle)
+        if target_rel_angle.degree() > 0.0:
+            target_rel_angle -= max_turn
+        else:
+            target_rel_angle += max_turn
+
+        agent.set_neck_action(NeckTurnToRelative(target_rel_angle))
+        return True
 
 
 class NeckTurnToBallOrScan(NeckAction):

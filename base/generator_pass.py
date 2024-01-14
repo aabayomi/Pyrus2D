@@ -125,7 +125,7 @@ class BhvPassGen(BhvKickGen):
                 )
             return
         # TODO sp.ourTeamGoalPos()
-        # print("ball pos in gen pass: ", wm.ball().pos())
+        print("ball pos in gen pass: ", wm.ball().pos())
         if receiver.pos().x() < wm.ball().pos().x() + 1.0 and receiver.pos().dist2(
             Vector2D(-52.5, 0)
         ) < pow(18.0, 2):
@@ -649,6 +649,8 @@ class BhvPassGen(BhvKickGen):
                     )
                     self.debug_list.append((self.index, receive_point, False))
                 continue
+            
+
 
             kick_count = Tools.predict_kick_count(
                 wm, wm.self().unum(), first_ball_speed, ball_move_angle
@@ -707,6 +709,8 @@ class BhvPassGen(BhvKickGen):
             candidate.target_unum = receiver.unum()
             candidate.start_ball_speed = first_ball_speed
             candidate.evaluate(wm)
+
+
             self.candidates.append(candidate)
 
             if self.best_pass is None or candidate.eval > self.best_pass.eval:

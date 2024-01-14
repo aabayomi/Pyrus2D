@@ -30,10 +30,11 @@ class Intercept:
         if not wm.ball().pos_valid():
             return False
 
-        if self.do_kickable_opponent_check(agent):
-            return True
+        # if self.do_kickable_opponent_check(agent):
+        #     return True
 
         table = wm.intercept_table()
+        # print (" intercept : ", table.self_reach_cycle())
         if table.self_reach_cycle() > 100:
             final_point = wm.ball().inertia_final_point()
             log.sw_log().intercept().add_text(
@@ -42,14 +43,19 @@ class Intercept:
                             center=final_point,
                             r=0.5,
                             color=Color(string='red'))
+            print ("GoToPoint in intercept ", final_point)
             GoToPoint(final_point,
                       2,
                       ServerParam.i().max_dash_power()).execute(agent)
             return True
 
         best_intercept: InterceptInfo = self.get_best_intercept(wm, table)
+
+        print ("Best Intercept : ", best_intercept)
+
         target_point = wm.ball().inertia_point(best_intercept.reach_cycle())
         if best_intercept.dash_cycle() == 0:
+            print("best_intercept.dash_cycle() == 0")
             face_point = self._face_point.copy()
             if not face_point.is_valid():
                 face_point.assign(50.5, wm.self().pos().y() * 0.75)
@@ -60,11 +66,13 @@ class Intercept:
                             center=face_point,
                             r=0.5,
                             color=Color(string='red'))
+            print ("Turning to Point in intercept ", final_point)
             TurnToPoint(face_point,
                         best_intercept.reach_cycle()).execute(agent)
             return True
 
         if best_intercept.turn_cycle() > 0:
+            print("Turning to Point in intercept")
             my_inertia = wm.self().inertia_point(best_intercept.reach_cycle())
             target_angle = (target_point - my_inertia).th()
             if best_intercept.dash_power() < 0:
@@ -78,6 +86,7 @@ class Intercept:
             return True
 
         if self._save_recovery and not wm.self().stamina_model().capacity_is_empty():
+            print("save recovery")
             consumed_stamina = best_intercept.dash_power()
             if best_intercept.dash_power() < 0:
                 consumed_stamina *= -2
@@ -95,6 +104,8 @@ class Intercept:
                         center=target_point,
                         r=0.5,
                         color=Color(string='red'))
+        
+        print ("Do inertia dash in intercept ", target_point)
         return self.do_inertia_dash(agent,
                                     target_point,
                                     best_intercept)
@@ -136,8 +147,12 @@ class Intercept:
 
         goal_pos = Vector2D(65, 0)
         our_goal_pos = Vector2D(-SP.pitch_half_length(), 0)
-        max_pitch_x = SP.pitch_half_length() - 1
-        max_pitch_y = SP.pitch_half_width() - 1
+        # max_pitch_x = SP.pitch_half_length() - 1
+        # max_pitch_y = SP.pitch_half_width() - 1
+        
+        max_pitch_x = SP.keepaway_length()/2 - 1
+        max_pitch_y = SP.keepaway_width()/2 - 1
+
         penalty_x = SP.our_penalty_area_line_x()
         penalty_y = SP.penalty_area_half_width()
         speed_max = wm.self().player_type().real_speed_max() * 0.9

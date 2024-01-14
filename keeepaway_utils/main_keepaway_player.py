@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from base.keepaway_player import KeepawayPlayer
+from keeepaway_utils.keepaway_player import KeepawayPlayer
 from lib.player.basic_client import BasicClient
 from lib.player.player_agent import PlayerAgent
 import sys

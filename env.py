@@ -16,7 +16,7 @@ from optparse import OptionParser
 import time
 from lib.player.world_model import WorldModel
 import multiprocessing
-import base.main_keepaway_player as kp
+import keeepaway_utils.main_keepaway_player as kp
 import atexit
 import base.main_coach as main_c
 from lib.rcsc.game_time import GameTime
@@ -36,12 +36,9 @@ class KeepawayEnv(MultiAgentEnv):
 
         self.num_keepers = 3
         self.num_takers = 2
-
         self.pitch_size = pitch_size
         self.sparse_reward = sparse_reward
-
         self.actions = 2  # 0: hold, 1: pass
-
         self._episode_count = 0
         self._episode_steps = 0
         self._total_steps = 0
@@ -65,39 +62,21 @@ class KeepawayEnv(MultiAgentEnv):
             multiprocessing.Event()
         )  # To be set by main process to wake up all subprocesses
 
-        # self._obs = self._world._obs
-        # self._state = self._world._state
-
         self._actions = [0] * 3
-        # self._time_list = [0,0,0,0]
         # Create a shared list to hold the count for each process
         self._shared_values = multiprocessing.Array("i", self._actions)
 
-        # self._world.observations =
         self._obs = self._world._obs
-        # self._last_action_time = self._world._last_action_time
-        #
-        # self.last_action_time = [0] * 4
-        # self._last_action_time = multiprocessing.Array("i", self.last_action_time)
         # Use a joint value instead
         self.last_action_time = 0
         self._last_action_time = multiprocessing.Value("i", self.last_action_time)
 
-        # self._rewards = [0] * 4
-        # self._reward = multiprocessing.Array("i", self._rewards)
+        ## reward
         self._reward = self._world._reward
-        # self._rewards = multiprocessing.Value("i", self._reward )
-
         ## episode
-        # self.terminated = False
-        # self._terminated = multiprocessing.Value('b', self.terminated)
         self._terminated = self._world._terminated
-        # print("workd terminated ", self._world._terminated.value)
-
         self._episode_reward = []
         
-
-        # self._shared_values = manager.list([0, 0, 0, 0])
         self._keepers = [
             multiprocessing.Process(
                 target=kp.main,
@@ -146,7 +125,7 @@ class KeepawayEnv(MultiAgentEnv):
             for i in range(self.num_takers)
         ]
 
-        ## TODO: add coach
+        ## uncomment to include some coaching
         # self._coach = [multiprocessing.Process(target=main_c.main)]
         # coach = mp.Process(target=main_c.main)
         # coach.start()

@@ -12,30 +12,22 @@ from lib.action.scan_field import ScanField
 from lib.debug.debug import log
 from lib.messenger.ball_pos_vel_messenger import BallPosVelMessenger
 from lib.messenger.player_pos_unum_messenger import PlayerPosUnumMessenger
-from lib.rcsc.types import GameModeType, ViewWidth, UNUM_UNKNOWN
-from base.sample_communication import SampleCommunication as comm
+
 
 from lib.action.hold_ball import HoldBall
 
-# from lib.action.keepaway_actions import HoldBall, GoToPoint
-from lib.action.keepaway_actions import SmartKick, GoToPoint, NeckTurnToBallOrScan
+from keeepaway_utils.keepaway_actions import SmartKick, GoToPoint, NeckTurnToBallOrScan,NeckBodyToPoint
 
 from lib.action.turn_to_ball import TurnToBall
-
-# from lib.action.go_to_point import GoToPoint
-from lib.action.neck_body_to_point import NeckBodyToPoint
 from lib.action.neck_body_to_ball import NeckBodyToBall
 from lib.action.neck_turn_to_point import NeckTurnToPoint
 from base.basic_tackle import BasicTackle
 from lib.player_command.player_command import CommandType
 from lib.rcsc.server_param import ServerParam
 
-from base.generator_action import KickAction, ShootAction, KickActionType
-from base.generator_dribble import BhvDribbleGen
 from base.generator_pass import BhvPassGen
 from lib.action.intercept import Intercept
 
-from lib.messenger.pass_messenger import PassMessenger
 
 from pyrusgeom.soccer_math import *
 from pyrusgeom.rect_2d import Rect2D
@@ -45,9 +37,6 @@ from pyrusgeom.segment_2d import Segment2D
 from pyrusgeom.geom_2d import *
 
 from base.tools import Tools
-import random
-from lib.rcsc.types import ViewWidth
-from lib.action.view_wide import ViewWide
 from typing import TYPE_CHECKING
 
 import math as Math
@@ -133,7 +122,6 @@ def get_decision_keepaway(
 
     def get_marking_position(wm, pos, dDist):
         """Returns the marking position."""
-        # print("get marking position")
         ball_pos = wm.ball().pos()
         ball_angle = (ball_pos - pos._pos).dir()
         return pos._pos + Vector2D.polar2vector(dDist, ball_angle)
@@ -161,9 +149,9 @@ def get_decision_keepaway(
 
                 ang_opp = AngleDeg.normalize_angle(ang_opp)
                 target = pos_agent + Vector2D(1.0, ang_opp, POLAR)
-                
+
                 return NeckBodyToPoint(target).execute(agent)
-        
+
         return GoToPoint(pos_mark, 0.2, 100).execute(agent)
 
     def mark_most_open_opponent(wm):
@@ -205,7 +193,7 @@ def get_decision_keepaway(
             or len(wm.messenger_memory().pass_()) == 0
             or wm.messenger_memory().pass_()[0]._receiver != wm.self().unum()
         ):
-            print("False")
+            # print("False")
             return False
 
         self_min = wm.intercept_table().self_reach_cycle()
@@ -215,7 +203,7 @@ def get_decision_keepaway(
         # print("heard pos ", heard_pos)
 
         log.sw_log().team().add_text(
-            f"(sample palyer do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}"
+            f"(sample player do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}"
         )
 
         if (
@@ -224,7 +212,9 @@ def get_decision_keepaway(
             and wm.ball().vel_count() <= 1
             and self_min < 20
         ):
-            print("sample palyer do heard pass) intercepting!" , "i am ", wm.self().unum())
+            print(
+                "sample player do heard pass) intercepting!", "i am ", wm.self().unum()
+            )
 
             log.sw_log().team().add_text(
                 f"(sample player do heard pass) intercepting!, self_min={self_min}"
@@ -234,15 +224,15 @@ def get_decision_keepaway(
             agent.set_neck_action(NeckTurnToBall())
 
         else:
-            print("(sample palyer do heard pass) go to point!,")
+            print("(sample player do heard pass) go to point!,  cycle ", self_min, " i am ", wm.self().unum())
 
             log.sw_log().team().add_text(
-                f"(sample palyer do heard pass) go to point!, cycle={self_min}"
+                f"(sample player do heard pass) go to point!, cycle={self_min}"
             )
             log.debug_client().set_target(heard_pos)
             log.debug_client().add_message("Comm:Receive:GoTo")
 
-            GoToPoint(heard_pos, 0.5, ServerParam.i().max_dash_power()).execute(agent)
+            GoToPoint(heard_pos, 1.0, ServerParam.i().max_dash_power()).execute(agent)
             agent.set_neck_action(NeckTurnToBall())
 
     def get_in_set_in_cone(wm, radius, pos_from, pos_to):
@@ -309,8 +299,6 @@ def get_decision_keepaway(
                     tmp < best_congestion
                     and get_in_set_in_cone(wm, 0.3, pos_from, point) == 0
                 ):
-                    # print("tmp", tmp)
-
                     best_congestion = tmp
                     best_point = point
                 y += y_mesh
@@ -321,8 +309,15 @@ def get_decision_keepaway(
             # take the point out of the rectangle -- meaning no point was valid.
             best_point = rect.center()
         return best_point
+    
+    def get_open(wm,best_point):
+        if wm.self().pos().dist(best_point) < 1.5:
+            NeckBodyToPoint(best_point).execute(agent)
+        else:
+            GoToPoint(best_point, 0.2, 100).execute(agent)
+        
 
-    def keeper_support(wm,fastest, agent):
+    def keeper_support(wm, fastest, agent):
         """Keeper support."""
         from lib.messenger.one_player_messenger import OnePlayerMessenger
 
@@ -334,6 +329,7 @@ def get_decision_keepaway(
             first_ball_pos,
             first_ball_pos.th(),
         )
+        # print("min_reach_cycle ", min_reach_cycle)
         ball_vel = wm.ball().vel()
         ball_pos = wm.ball().pos()
         first_ball_speed = ball_vel.r()
@@ -351,38 +347,33 @@ def get_decision_keepaway(
         rect = wm.keepaway_rect()
         best_point = least_congested_point_for_pass_in_rectangle(rect, pos_pass_from)
 
+       
         if do_heard_pass_receive(wm, agent) == False:
-            print("no pass heard")
-            print("i am ", wm.self()._unum, "going to ", best_point)
-            return GoToPoint(best_point, 0.2, 100).execute(agent)
+            # print("i am ", wm.self()._unum,"no pass heard")
+            # print("i am ", wm.self()._unum, "going to ", best_point)
+            GoToPoint(best_point, 0.2, 100).execute(agent)
+            return 
         else:
             print("pass was heard ")
+            # i am waiting for the pass.
+            agent.set_neck_action(NeckScanField())
             return
 
-        # if fastest.pos().dist(best_point) < 1.5:
-        #     print("Turn Neck to ball hers ")
-        #     # NeckBodyToPoint(wm.ball().pos()).execute(agent)
-        #     agent.set_neck_action(NeckScanPlayers())
+        # if wm.self().pos().dist(best_point) < 1.5:
+        #     print("NeckScanField")
+        #     return NeckBodyToPoint(wm.ball().pos()).execute(agent)
+        #     # agent.set_neck_action(NeckScanPlayers())
         # else:
         #     print("i am ", wm.self()._unum, "going to ", best_point)
 
         #     # agent.add_say_message(OnePlayerMessenger(wm.self().unum(),
         #     #                                     best_point))
         #     GoToPoint(best_point, 0.2, 100).execute(agent)
-
-        #     # print("going to best point", best_point)
-        #     # move(wm, agent, best_point)
-        #     # return GoToPoint(best_point, 0.2, 100).execute(agent)
         #     return
+        
         # # # # ObjectT lookObject = self._choose_look_object( 0.97 )
 
-    def move(wm, agent, target=None):
-        if target is None:
-            target = wm.ball().pos()
-            GoToPoint(target, 0.2, 100).execute(agent)
-        else:
-            GoToPoint(target, 0.2, 100).execute(agent)
-        return
+   
 
     def search_ball(wm, agent):
         return ScanField().execute(agent)
@@ -406,7 +397,7 @@ def get_decision_keepaway(
         if wm.get_confidence("ball") < 0.90:
             search_ball(wm, agent)
             return
-        move(wm, agent)
+        # move(wm, agent)
         return
 
     def test_kick(wm, agent, t):
@@ -421,6 +412,8 @@ def get_decision_keepaway(
         from lib.action.smart_kick import SmartKick
 
         action_candidates = BhvPassGen().generator(wm)
+
+        print("action candidates ", action_candidates)
 
         if len(action_candidates) == 0:
             print("Holding the ball")
@@ -441,9 +434,9 @@ def get_decision_keepaway(
 
         # print(" best action speed ", best_action.start_ball_speed)
 
-        SmartKick(
-            target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3
-        ).execute(agent)
+        # SmartKick(
+        #     target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3
+        # ).execute(agent)
         agent.set_neck_action(NeckScanPlayers())
 
         return
@@ -464,13 +457,17 @@ def get_decision_keepaway(
                         # print("passing to player ", tm.unum(), "at pos ", temp_pos)
                         print(
                             "i am ",
-                            wm.self().unum(),
+                            wm.self().unum(),"at pos ",wm.self().pos(),
                             "passing to player ",
                             tm.unum(),
                             "at pos ",
                             temp_pos,
                         )
+                        # ball_to_player.rotate(-wm.ball().vel().th())
                         agent.do_kick_to(tm, 1.5)
+                        # agent.do_kick_2(tm, 1.5)
+                        ## test pass logic 
+                        # agent.test_pass(tm, 1.5)
                         # test_kick(wm,agent,temp_pos)
                         agent.set_neck_action(NeckScanPlayers())
                         # agent.do_kick(temp_pos, 0.8)
@@ -509,17 +506,16 @@ def get_decision_keepaway(
         barrier.wait()
         if wm.get_confidence("ball") < 0.90:
             search_ball(wm, agent)
-        
+
         # teammates_from_ball = wm.teammates_from_ball()
         ball_pos = wm.ball().pos()
         # GoToPoint(ball_pos, 0.2, 100).execute(agent)
-        
+
         closest_keeper_from_ball = wm.all_teammates_from_ball()
         if len(closest_keeper_from_ball) > 0:
             if wm.self().unum() == closest_keeper_from_ball[0].unum():
                 GoToPoint(ball_pos, 0.2, 100).execute(agent)
 
-    
         if wm.self().pos().dist(ball_pos) < 5.0:
             obs[wm.self().unum()] = wm._retrieve_observation()
             if wm.self().is_kickable():
@@ -540,8 +536,8 @@ def get_decision_keepaway(
             ## TODO:: re-implement interception. this is not working properly.
             ## . check with
             if fastest is not None:
-                print("Get Open")
-                keeper_support(wm,fastest, agent)
+                # print("Get Open")
+                keeper_support(wm, fastest, agent)
 
         ## old implementation
         # if fastest is not None:
@@ -564,22 +560,22 @@ def get_decision_keepaway(
 
     if wm.our_team_name() == "takers":
         # pass
-        barrier.wait()
+        # barrier.wait()
         if wm.get_confidence("ball") < 0.90:
             search_ball(wm, agent)
-        
+
         ball_pos = wm.ball().pos()
         GoToPoint(ball_pos, 0.2, 100).execute(agent)
 
         # Maintain possession if you have the ball.
         if wm.self().is_kickable() and (len(wm.teammates_from_ball()) == 0):
-             return HoldBall().execute(agent)
-           
+            return HoldBall().execute(agent)
+
         closest_taker_from_ball = wm.teammates_from_ball()
         if wm.self() not in closest_taker_from_ball:
             mark_most_open_opponent(wm)
-            return  NeckTurnToBall().execute(agent)
-            
+            return NeckTurnToBall().execute(agent)
+
         d = closest_taker_from_ball.dist_to_ball()
         if d < 0.3:
             NeckTurnToBall().execute(agent)

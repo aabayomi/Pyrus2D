@@ -31,7 +31,7 @@ import numpy as np
 
 from lib.player.world_model import WorldModel
 import multiprocessing
-import base.main_keepaway_player as kp
+import keeepaway_utils.main_keepaway_player as kp
 import atexit
 import base.main_coach as main_c
 from experiments.envs.multiagentenv import MultiAgentEnv

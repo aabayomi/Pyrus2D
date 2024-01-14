@@ -211,7 +211,7 @@ class PlayerAgent(SoccerAgent):
             self.hear_player_parser(message)
             pass
         elif sender == "referee":
-            print("referee message", message)
+            # print("referee message", message)
 
             # with self._terminated.get_lock():
             #     self._terminated.value = True
@@ -260,11 +260,13 @@ class PlayerAgent(SoccerAgent):
         else:
             ## Set new episode
             # self._full_world().set_new_episode()
-            print("end of episode")
+            # print("end of episode")
             with self._terminated.get_lock():
                 self.full_world()._terminated = True
                 self._terminated.value = True
-                self._reward.value = self._current_time.cycle() - self._terminal_time.cycle()
+                self._reward.value = (
+                    self._current_time.cycle() - self._terminal_time.cycle()
+                )
 
         time.sleep(1)
         self._barrier.wait(5)
@@ -853,15 +855,331 @@ class PlayerAgent(SoccerAgent):
 
     ## TODO: pass message
     ## speed has to be precomupted.
+
+    def update_receiver(self):
+        receivers = []
+        log.sw_log().pass_().add_text("===update receivers".format())
+        for p in self.world().teammates():
+            if p is None:
+                log.sw_log().pass_().add_text("-----<<< TM is none")
+                continue
+            if p.unum() <= 0:
+                log.sw_log().pass_().add_text(f"-----<<< TM unum is {p.unum()}")
+                continue
+            if p.unum() == self.world().self().unum():
+                log.sw_log().pass_().add_text(f"-----<<< TM unum is {p.unum()} (self)")
+                continue
+            if p.pos_count() > 10:
+                log.sw_log().pass_().add_text(
+                    f"-----<<< TM unum pos count {p.pos_count()}"
+                )
+                continue
+            if p.is_tackling():
+                log.sw_log().pass_().add_text(f"-----<<< TM is tackling")
+                continue
+            log.sw_log().pass_().add_text(f"--->>>>> TM {p.unum()} is added")
+            receivers.append(p)
+        receivers = sorted(receivers, key=lambda p: p.pos().x(), reverse=True)
+        return receivers
+
+    def update_opponents(self):
+        receivers = []
+        log.sw_log().pass_().add_text("===update receivers".format())
+        for p in self.world().opponents():
+            if p is None:
+                log.sw_log().pass_().add_text("-----<<< TM is none")
+                continue
+            if p.unum() <= 0:
+                log.sw_log().pass_().add_text(f"-----<<< TM unum is {p.unum()}")
+                continue
+
+            if p.pos_count() > 10:
+                log.sw_log().pass_().add_text(
+                    f"-----<<< TM unum pos count {p.pos_count()}"
+                )
+                continue
+            if p.is_tackling():
+                log.sw_log().pass_().add_text(f"-----<<< TM is tackling")
+                continue
+            log.sw_log().pass_().add_text(f"--->>>>> TM {p.unum()} is added")
+            receivers.append(p)
+        receivers = sorted(receivers, key=lambda p: p.pos().x(), reverse=True)
+        return receivers
+
+    def predict_receiver_reach_step(
+        self, receiver, pos: Vector2D, use_penalty, pass_type
+    ):
+        ptype = receiver.player_type()
+
+        target_dist = receiver.inertia_point(1).dist(pos)
+        n_turn = (
+            1
+            if receiver.body_count() > 0
+            else Tools.predict_player_turn_cycle(
+                ptype,
+                receiver.body(),
+                receiver.vel().r(),
+                target_dist,
+                (pos - receiver.inertia_point(1)).th(),
+                ptype.kickable_area(),
+                False,
+            )
+        )
+        dash_dist = target_dist
+
+        # if use_penalty:
+        #     dash_dist += receiver.penalty_distance_;
+
+        if pass_type == "L":
+            dash_dist *= 1.05
+
+            dash_angle = (pos - receiver.pos()).th()
+
+            if (
+                dash_angle.abs() > 90.0
+                or receiver.body_count() > 1
+                or (dash_angle - receiver.body()).abs() > 30.0
+            ):
+                n_turn += 1
+
+        n_dash = ptype.cycles_to_reach_distance(dash_dist)
+
+        n_step = n_turn + n_dash if n_turn == 0 else n_turn + n_dash + 1
+        return n_step
+
+    def accel_ball_vel_to(
+        self,
+        receiver,
+        receive_point: Vector2D,
+        min_step,
+        max_step,
+        min_first_ball_speed,
+        max_first_ball_speed,
+        min_receive_ball_speed,
+        max_receive_ball_speed,
+        ball_move_dist,
+        ball_move_angle: AngleDeg,
+    ):
+        import pyrusgeom.soccer_math as smath
+
+        debug_pass = True
+        sp = ServerParam.i()
+        index = 0
+        for step in range(min_step, max_step + 1):
+            index += 1
+            first_ball_speed = smath.calc_first_term_geom_series(
+                ball_move_dist, sp.ball_decay(), step
+            )
+
+            if first_ball_speed < min_first_ball_speed:
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "##Pass {},to {} {}, step:{}, ball_speed:{}, first ball speed is low".format(
+                            index,
+                            receiver.unum(),
+                            receiver.pos(),
+                            step,
+                            first_ball_speed,
+                        )
+                    )
+                    # self.debug_list.append((index, receive_point, False))
+                break
+
+            if max_first_ball_speed < first_ball_speed:
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "##Pass {},to {} {}, step:{}, ball_speed:{}, first ball speed is high".format(
+                            index,
+                            receiver.unum(),
+                            receiver.pos(),
+                            step,
+                            first_ball_speed,
+                        )
+                    )
+                    # self.debug_list.append((self.index, receive_point, False))
+                continue
+
+            receive_ball_speed = first_ball_speed * pow(sp.ball_decay(), step)
+
+            if receive_ball_speed < min_receive_ball_speed:
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "##Pass {},to {} {}, step:{}, ball_speed:{}, rball_speed:{}, receive ball speed is low".format(
+                            index,
+                            receiver.unum(),
+                            receiver.pos(),
+                            step,
+                            first_ball_speed,
+                            receive_ball_speed,
+                        )
+                    )
+                    # self.debug_list.append((self.index, receive_point, False))
+                break
+
+            if max_receive_ball_speed < receive_ball_speed:
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "##Pass {},to {} {}, step:{}, ball_speed:{}, rball_speed:{}, receive ball speed is high".format(
+                            index,
+                            receiver.unum(),
+                            receiver.pos(),
+                            step,
+                            first_ball_speed,
+                            receive_ball_speed,
+                        )
+                    )
+                    # self.debug_list.append((self.index, receive_point, False))
+                continue
+            print("ball speed is ", first_ball_speed)
+            self.accel_ball_vel(
+                Vector2D.polar2vector(first_ball_speed * 0.5, ball_move_angle)
+            )
+            return
+
+    def do_kick_2(self, receiver, speed):
+        import pyrusgeom.soccer_math as smath
+        import math
+
+        debug_pass = True
+        sp = ServerParam.i()
+        min_receive_step = 4
+        max_receive_step = 20
+
+        min_leading_pass_dist = 3.0
+        max_leading_pass_dist = 0.8 * smath.inertia_final_distance(
+            sp.ball_speed_max(), sp.ball_decay()
+        )
+        max_receive_ball_speed = sp.ball_speed_max() * pow(
+            sp.ball_decay(), min_receive_step
+        )
+
+        ## not needed but for now minimum distance is set to half of the field
+        max_player_distance = 20.0
+        if receiver.pos().dist(self.world().ball().pos()) > max_player_distance:
+            if debug_pass:
+                log.sw_log().pass_().add_text(
+                    "#####LPass to {} {}, player is far".format(
+                        receiver.unum(), receiver.pos()
+                    )
+                )
+            return
+
+        abgle_divs = 8
+        angle_step = 360.0 / abgle_divs
+        dist_divs = 4
+        dist_step = 1.1
+
+        ptype = receiver.player_type()
+        max_ball_speed = self.world().self().kick_rate() * sp.max_power()
+        if self.world().game_mode().type() == GameModeType.PlayOn:
+            max_ball_speed = sp.ball_speed_max()
+        min_ball_speed = sp.default_player_speed_max()
+
+        max_receive_ball_speed = min(
+            max_receive_ball_speed,
+            ptype.kickable_area()
+            + (sp.max_dash_power() * ptype.dash_power_rate() * ptype.effort_max())
+            * 1.5,
+        )
+        min_receive_ball_speed = 0.001
+
+        angle_from_ball = (receiver.pos() - self.world().ball().pos()).th()
+        for d in range(1, dist_divs + 1):
+            ## compare this move distance with old implementation
+            player_move_dist = dist_step * d
+            a_step = 2 if player_move_dist * 2.0 * math.pi / abgle_divs < 0.6 else 1
+            for a in range(abgle_divs + 1):
+                angle = angle_from_ball + angle_step * a
+                receive_point = receiver.inertia_point(1) + Vector2D.from_polar(
+                    player_move_dist, angle
+                )
+                move_dist_penalty_step = 0
+                ball_move_line = Line2D(self.world().ball().pos(), receive_point)
+                player_line_dist = ball_move_line.dist(receiver.pos())
+                move_dist_penalty_step = int(player_line_dist * 0.3)
+                if (
+                    receive_point.x() > sp.keepaway_length() / 2 - 3.0
+                    or receive_point.x() < -sp.keepaway_length() / 2 + 5.0
+                    or receive_point.abs_y() > sp.keepaway_width() / 2 - 3.0
+                ):
+                    if debug_pass:
+                        log.sw_log().pass_().add_text(
+                            "#####LPass to {} {}, out of field".format(
+                                receiver.unum(), receive_point
+                            )
+                        )
+                    continue
+                ball_move_dist = self.world().ball().pos().dist(receive_point)
+
+                if (
+                    ball_move_dist < min_leading_pass_dist
+                    or max_leading_pass_dist < ball_move_dist
+                ):
+                    if debug_pass:
+                        log.sw_log().pass_().add_text(
+                            "#####LPass to {} {}, so far or so close".format(
+                                receiver.unum(), receive_point
+                            )
+                        )
+                    continue
+
+                teammates = self.update_receiver()
+                nearest_receiver = Tools.get_nearest_teammate(
+                    self.world(), receive_point, teammates
+                )
+                if nearest_receiver.unum() != receiver.unum():
+                    if debug_pass:
+                        log.sw_log().pass_().add_text(
+                            "#####LPass to {} {}, {} is closer than receiver ".format(
+                                receiver.unum(), receive_point, nearest_receiver.unum()
+                            )
+                        )
+                    continue
+                receiver_step = (
+                    self.predict_receiver_reach_step(receiver, receive_point, True, "L")
+                    + move_dist_penalty_step
+                )
+                ball_move_angle = (receive_point - self.world().ball().pos()).th()
+
+                min_ball_step = sp.ball_move_step(sp.ball_speed_max(), ball_move_dist)
+
+                start_step = max(max(min_receive_step, min_ball_step), receiver_step)
+
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "#####LPass to {} {}".format(receiver.unum(), receive_point)
+                    )
+                max_step = start_step + 3
+
+                self.accel_ball_vel_to(
+                    receiver,
+                    receive_point,
+                    start_step,
+                    max_step,
+                    min_ball_speed,
+                    max_ball_speed,
+                    min_receive_ball_speed,
+                    max_receive_ball_speed,
+                    ball_move_dist,
+                    ball_move_angle,
+                )
+
+                return
+
     def do_kick_to(self, teammate, speed):
         from lib.messenger.pass_messenger import PassMessenger
 
+        SP = ServerParam.i()
         tar_pos = teammate.pos()
         print("kick position ", tar_pos)
         debug_pass = True
         print("do kick to is called", tar_pos, speed)
 
-        SP = ServerParam.i()
+        ptype = teammate.player_type()
+        receive_point = ptype.inertiaFinalPoint(teammate.pos(), teammate.vel())
+        tar_pos = receive_point
+        print("receive point is ", receive_point)
+
         ball_pos = self.world().ball().pos()
         ball_vel = self.world().ball().vel()
         travel_dist = tar_pos - ball_pos
@@ -871,10 +1189,14 @@ class PlayerAgent(SoccerAgent):
         cal_travel_speed = Tools.get_kick_travel(
             travel_dist.r(), speed
         )  # check calculation
-        vel_des = Vector2D.polar2vector(cal_travel_speed, travel_dist.dir())
+
+        ## this is speed is consistent ()
+        vel_des = tar_pos - self.world().ball().pos()
+        vel_des.set_length(cal_travel_speed)
+
+        # vel_des = Vector2D.polar2vector(cal_travel_speed, travel_dist.dir())
         # vel_des = (tar_pos - curr_pos).normalized() * speed
         predict_pos = Tools.predict_pos_after_n_cycles(self.world().self(), 1, 0)
-        # print("predict pos is ", predict_pos)
 
         if predict_pos.dist(ball_pos + vel_des) < SP.ball_size() + SP.player_size():
             line_segment = Line2D(ball_pos, ball_pos + vel_des)
@@ -890,7 +1212,7 @@ class PlayerAgent(SoccerAgent):
                 # f"=============== Lead Pass to {r.unum()} pos: {r.pos()}")
                 log.os_log().debug(f"dist is {dist}")
                 log.sw_log().pass_().add_text(
-                    "##### kick results in collision, change vel_des from {} ".format(
+                    "#####Lkick results in collision, change vel_des from {} ".format(
                         vel_des
                     )
                 )
@@ -914,16 +1236,24 @@ class PlayerAgent(SoccerAgent):
         #     f"ball ({ball_pos.get_x()},{ball_pos.get_y()}), agent ({self.world().self().pos().get_x()},{self.world().self().pos().get_y()}), to ({tar_pos.get_x()},{tar_pos.get_y()}) ang {self.world().self().body()} {self.world().self().neck()}",
         # )
 
-        dist_opp = 1000.0
-        closest_opp = self.world().opponents_from_ball()
-        if closest_opp[0] is not None:
-            dist_opp = closest_opp[0].pos().dist(ball_pos)
+        # dist_opp = 1000.0
+        # closest_opp = self.world().opponents_from_ball()
+        # if closest_opp[0] is not None:
+        #     dist_opp = closest_opp[0].pos().dist(ball_pos)
 
-        # print("closest opponent ", closest_opp)
+        teammates = self.update_opponents()
+        nearest_opp = Tools.get_nearest_teammate(self.world(), receive_point, teammates)
+        if nearest_opp.unum() != teammate.unum():
+            if debug_pass:
+                log.sw_log().pass_().add_text(
+                    "#####LPass to {} {}, {} is closer than receiver ".format(
+                        teammate.unum(), receive_point, nearest_opp.unum()
+                    )
+                )
 
-        # dDistOpp = std::numeric_limits<double>::max();
-        # objOpp = WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
-        #                                  OBJECT_BALL, &dDistOpp);
+
+        dist_opp = nearest_opp.pos().dist(ball_pos)
+
         # // can never reach point
         if vel_des.r() > SP.ball_speed_max():
             pow = SP.max_power()
@@ -937,12 +1267,17 @@ class PlayerAgent(SoccerAgent):
             if speedpred > 0.85 * SP.ball_accel_max():
                 if debug_pass:
                     log.sw_log().pass_().add_text(
-                        "##### pos {} {} too far, but can acc ball good to  {} , {} , {} ".format(
+                        "#####LPass pos {} {} too far, but can acc ball good to  {} , {} , {} ".format(
                             vel_des.x(), vel_des.y(), speed, speedpred, tmp
                         )
                     )
-                # Log.log(102, "pos (%f,%f) too far, but can acc ball good to %f k=%f,%f",
-                #         velDes.getX(), velDes.getY(), dSpeedPred, dSpeed, tmp);
+                # if debug_pass:
+                #     log.sw_log().pass_().add_text(
+                #         "##### pos {} {} too far, but can acc ball good to  {} , {} , {} ".format(
+                #             vel_des.x(), vel_des.y(), speed, speedpred, tmp
+                #         )
+                #     )
+
                 # // shoot nevertheless
                 # accelerateBallToVelocity(vel_des)
 
@@ -963,24 +1298,26 @@ class PlayerAgent(SoccerAgent):
                 self.world().self().player_type().kick_power_rate()
                 > 0.85 * SP.kick_power_rate()
             ):
-                log.sw_log().pass_().add_text("point too far, freeze ball")
-                # Log.log(102, "point too far, freeze ball"); // ball well-positioned
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "#####LPass point too far, freeze ball"
+                    )
                 # // freeze ball
                 return self.freeze_ball()
-                # return freezeBall();
             else:
                 # Log.log(102, "point too far, reposition ball (k_r = %f)",
                 #         WM->getActualKickPowerRate() / (SS->getKickPowerRate()));
                 # // else position ball better
                 # kickBallCloseToBody(0);
-                log.sw_log().pass_().add_text(
-                    "point too far, reposition ball".format(
-                        self.world().self().player_type().kick_power_rate()
-                        / SP.kick_power_rate()
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "#####LPass point too far, reposition ball".format(
+                            self.world().self().player_type().kick_power_rate()
+                            / SP.kick_power_rate()
+                        )
                     )
-                )
 
-                # print("kick_ball_close_to_body 1")
+                print("kick_ball_close_to_body 1")
                 self.add_say_message(
                     PassMessenger(
                         teammate.unum(),
@@ -993,13 +1330,14 @@ class PlayerAgent(SoccerAgent):
                 return self.kick_ball_close_to_body(0, 0.16)
         # // can reach point
         else:
+            print("can reach point")
+
             accBallDes = vel_des - ball_vel
             dPower = self.world().get_kick_power_speed(accBallDes.r())
             # // with current ball speed
             if dPower <= 1.05 * SP.max_power() or (
                 dist_opp < 2.0 and dPower <= 1.30 * SP.max_power()
             ):
-                # Log.log(102, "point good and can reach point %f", dPower);
                 # // perform shooting action
                 # accelerateBallToVelocity(velDes);
                 # print("saying pass message 2")
@@ -1013,11 +1351,13 @@ class PlayerAgent(SoccerAgent):
                 )
                 return self.accel_ball_vel(vel_des)
             else:
-                # Log.log(102, "point good, but reposition ball since need %f", dPower);
-                # SoccerCommand soc = kickBallCloseToBody(0);
-                # posPredBall
+                if debug_pass:
+                    log.sw_log().pass_().add_text(
+                        "#####LPass point good, but reposition ball since need {}".format(
+                            dPower
+                        )
+                    )
                 ## TODO: check this part this wrong
-                # print("point good, but reposition ball since need ", dPower)
                 # command = self.kick_ball_close_to_body(0, 0.16)
                 vecDesired = tar_pos - self.world().ball().pos()
                 vecShoot = vecDesired - self.world().ball().vel()
@@ -1036,7 +1376,6 @@ class PlayerAgent(SoccerAgent):
                 )
                 dist_opp = ball_pred_pos.dist(self.world().self().pos())
 
-                # print("kick_ball_close_to_body 2")
                 self.add_say_message(
                     PassMessenger(
                         teammate.unum(),
@@ -1298,29 +1637,17 @@ class PlayerAgent(SoccerAgent):
             self.update_full_world_before_decision()
 
     def action(self):
-        # self._lock.acquire()
-        # print("hello")
-        # with self._lock:
-        #             #     print(self._team_name)
-        # self._shared_values[
-        #                 self.world().self_unum()
-        #             ] = self._current_time
-        #         current_values = list(self._shared_values)
-        #         print(current_values)
-        # self._lock.release()
-        # self.check_ball()
-        # if self.do_teamname():
-        #     print("teamate")
-
         if (
             self.world().self_unum() is None
             or self.world().self().unum() != self.world().self_unum()
         ):
             return
         self.update_before_decision()
+
         KickTable.instance().create_tables(
             self.world().self().player_type()
         )  # TODO should be moved!
+
         self._effector.reset()
         self.action_impl()
         self.do_view_action()
