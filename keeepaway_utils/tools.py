@@ -7,6 +7,7 @@ from lib.rcsc.game_mode import GameModeType
 from lib.action.kick_table import calc_max_velocity
 import pyrusgeom.soccer_math as sm
 
+
 # from lib.rcsc.types import CommandType
 from lib.player_command.player_command import CommandType
 from pyrusgeom.vector_2d import Vector2D
@@ -129,9 +130,9 @@ class Tools:
     def get_kick_travel(distance, target_speed):
         SS = ServerParam.i()
         if target_speed < 0.0001:
-            return sm.calc_first_term_geom_series(distance, SS.ball_decay())
+            return sm.calc_first_term_geom_series(distance.x(), SS.ball_decay())
         steps = sm.calc_length_geom_series(
-            target_speed, 1.0 / SS.ball_decay(), distance
+            target_speed, 1.0 / SS.ball_decay(), distance.x()
         )
 
         sp = Tools.get_end_speed_from_first_speed(target_speed, steps, SS.ball_decay())
@@ -231,7 +232,7 @@ class Tools:
             )
         if update:
             pos = p.pos()
-            vel = p.vel()
+            vel += p.vel()
         return pos
 
     @staticmethod
@@ -272,7 +273,7 @@ class Tools:
                 ):
                     count += 1
         return count
-    
+
     @staticmethod
     def congestion(wm: "WorldModel", point, consider_me):
         """Returns the congestion at the given position."""
@@ -286,9 +287,8 @@ class Tools:
                 congest += 1 / p.pos().dist(point)
         return congest
 
-
     @staticmethod
-    def least_congested_point_for_pass_in_rectangle(rect: Rect2D, pos_from):
+    def least_congested_point_for_pass_in_rectangle(wm: "WorldModel", rect: Rect2D, pos_from):
         """Returns the least congested point for a pass in the given rectangle."""
 
         x_granularity = 5  # 5 samples by 5 samples
@@ -330,8 +330,6 @@ class Tools:
             # take the point out of the rectangle -- meaning no point was valid.
             best_point = rect.center()
         return best_point
-    
-
 
     # @staticmethod
     # def predict_pos_after_command(wm: "WorldModel", command):

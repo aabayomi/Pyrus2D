@@ -33,7 +33,7 @@ class Intercept:
         # if self.do_kickable_opponent_check(agent):
         #     return True
 
-        table = wm.intercept_table()
+        table = wm.intercept_table() # what is here?
         # print (" intercept : ", table.self_reach_cycle())
         if table.self_reach_cycle() > 100:
             final_point = wm.ball().inertia_final_point()

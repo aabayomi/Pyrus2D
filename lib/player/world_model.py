@@ -18,7 +18,7 @@ from lib.action.neck_body_to_point import NeckBodyToPoint
 from lib.rcsc.types import HETERO_DEFAULT, UNUM_UNKNOWN, GameModeType
 from pyrusgeom.soccer_math import *
 from pyrusgeom.rect_2d import Rect2D
-from pyrusgeom.vector_2d import Vector2D 
+from pyrusgeom.vector_2d import Vector2D
 from pyrusgeom.angle_deg import AngleDeg
 from lib.rcsc.server_param import ServerParam
 from lib.action.go_to_point import GoToPoint
@@ -54,14 +54,16 @@ def player_count_value(p: PlayerObject):
 def player_valid_check(p: PlayerObject):
     return p.pos_valid()
 
+
 import multiprocessing
+
 
 class WorldModel:
     DEBUG = True
     DIR_CONF_DIVS = 72
     DIR_STEP = 360.0 / DIR_CONF_DIVS
 
-    def __init__(self, name, manager = None):
+    def __init__(self, name, manager=None):
         self._name = name
         self._is_full_state = True if name == "full" else False
         self._player_types = [PlayerType() for _ in range(18)]
@@ -147,7 +149,7 @@ class WorldModel:
         self._step_count = 0
         self._observation = None
         self._result = {}
-        
+
         self._last_action = None
         self._is_new_episode = False
         self._time_list = [0, 0, 0, 0]
@@ -156,18 +158,26 @@ class WorldModel:
         self._info = {}
         self._agents = [1, 2, 3]  # hardcoded for now
         self.observations = {agent: None for agent in self._agents}
-        # self.last_action_time = [None] *  3 # hand-coded for now change later
-        self.last_action_time = 0 # hand-coded for now change later
+        self.last_action_time = 0  # hand-coded for now change later
 
-        self._all_teammates_from_ball: list[PlayerObject] = [] # . 
+        self._all_teammates_from_ball: list[PlayerObject] = []  # .
 
-        if manager is not None: 
+        # self.adjacency_matrix = np.zeros((11, 11), dtype=int)
+        self.adj_matrix = [0] * len(self._teammates)
+        self.threshold = 15
+
+        # self._adjacency_matrix = multiprocessing.Array("i", self.adj_matrix)
+
+        self._adjacency_matrix = multiprocessing.RawArray("d", 3 * 3)
+
+        if manager is not None:
             self._obs = manager.dict(self.observations)
             self._reward = multiprocessing.Value("i", 0)
-            self._terminated = multiprocessing.Value('b', False)
+            self._terminated = multiprocessing.Value("b", False)
             # self._last_action_time = manager.array(self.last_action_time)
             self._last_action_time = multiprocessing.Value("i", self.last_action_time)
-
+            # self._adjacency_matrix = manager.list(self.adj_matrix)
+            # self.threshold = multiprocessing.Value("i", 2)
 
     def init(self, team_name: str, side: SideID, unum: int, is_goalie: bool):
         self._our_team_name = team_name
@@ -189,9 +199,7 @@ class WorldModel:
         return (
             SideID.RIGHT
             if self._our_side == "r"
-            else SideID.LEFT
-            if self._our_side == "l"
-            else SideID.NEUTRAL
+            else SideID.LEFT if self._our_side == "l" else SideID.NEUTRAL
         )
 
     def our_player(self, unum):
@@ -395,12 +403,11 @@ class WorldModel:
 
     def teammates_from_ball(self):
         return self._teammates_from_ball
-    
-    
+
     ## utility methods for keep-away ##
     def all_teammates_from_ball(self):
         return self._all_teammates_from_ball
-    
+
     def _set_all_teammates_from_ball(self):
         self._all_teammates_from_ball = []
         for tm in self._our_players:
@@ -2006,7 +2013,6 @@ class WorldModel:
 
     ################################################  Keep-away Utils ##########################################
 
-
     def check_ball(self):
         """Check if the ball is in the field."""
         field = self.keepaway_rect()
@@ -2031,63 +2037,42 @@ class WorldModel:
     def is_terminal(self):
         return self._terminated
 
-    def reset(self):
-        """Reset the environment and return initial observation."""
-
-        self._episode_start = timeit.default_timer()
-        self._cumulative_reward = 0
-        self._step_count = 0
-        self._observation = None
-
-        self._teammates: list[PlayerObject] = []
-        self._opponents: list[PlayerObject] = []
-        self._unknown_players: list[PlayerObject] = []
-        return True
-
-    def num_of_takers(self):
-        return len(self._opponents)
-
-    def num_of_keepers(self):
-        return len(self._teammates)
-
     def _retrieve_observation(self):
         """
         Retrieve observation from the environment.
         this implementations the 13 state variables from the paper Peter Stone 2005.
         """
-
+        # print("heget observation")
         self._convert_players_observation()
         self._observation = self._result
+        # self.adj_matrix = self.adjacency_matrix()
+        # print("adjacency_matrix", self.adjacency_matrix())
         return self._observation
 
     def get_observation(self, agent_id: int):
         """Returns the observation of the agent."""
         self.observations[agent_id] = self._retrieve_observation()
         return self.observations
-    
-    
+
     def get_kick_power_speed(self, target_speed):
         return target_speed / ServerParam.i().kick_power_rate()
-     
-   
 
-    def find_angle(self,a,b, c):
+    def find_angle(self, a, b, c):
         """Find the angle between two vectors with respect to another vector."""
         x = b - a
         y = c - a
-        dot_product = Vector2D.inner_product_static(x,y)
+        dot_product = Vector2D.inner_product_static(x, y)
         # print("x y", x, y)
         # print("magnitude", x.r(), y.r())
         if (x.r() * y.r()) == 0:
             return 0
-        return AngleDeg.normalize_angle(AngleDeg.acos_deg(dot_product / (x.r() * y.r())))
-
+        return AngleDeg.normalize_angle(
+            AngleDeg.acos_deg(dot_product / (x.r() * y.r()))
+        )
 
     def _convert_players_observation(self):
-
-
-        """ Convert players observation from list to dictionary.
-            13 state variables from the paper Peter Stone 2005.
+        """Convert players observation from list to dictionary.
+        13 state variables from the paper Peter Stone 2005.
         """
 
         keepaway_field_center = Vector2D(0, 0)  # assumed to at (0,0)
@@ -2096,21 +2081,20 @@ class WorldModel:
         closest_keeper_ball = self.teammates_from_ball()
         # print("closest_keeper_ball ", len(closest_keeper_ball))
         all_keeper_closest_to_ball = self.all_teammates_from_ball()
-        
-       
+
         state_vars = []
 
         ## keeper to center distance 3 + 2 + 2 + 2 + 1 + 1 + 1 + 1 = 13
         # print("size of all players", len(self._all_players))
 
-        ## add all players to center distance 
+        ## add all players to center distance
         ## keeper + takers  may have to rearrange this later
         for p in self._all_players:
             if p.pos_valid():
                 dist = (p.pos() - keepaway_field_center).r()
                 state_vars.append(dist)
-        
-        ## keeper to keeper distance 
+
+        ## keeper to keeper distance
         for p in self._teammates_from_self:
             if p.pos_valid():
                 dist = p.dist_from_self()
@@ -2126,7 +2110,6 @@ class WorldModel:
 
         # print("opp_dist", opp_dist)
 
-    
         ## minimum distance between keeper and takers without ball 2
         for k in self._teammates:
             min_dist = 10000
@@ -2148,21 +2131,21 @@ class WorldModel:
         closest_keeper = all_keeper_closest_to_ball[0]
 
         for k in self._teammates:
-            min_angle =  10000
+            min_angle = 10000
             for t in self._opponents:
                 if closest_keeper != None:
-                    temp = self.find_angle(closest_keeper.pos(),k.pos(), t.pos())
+                    temp = self.find_angle(closest_keeper.pos(), k.pos(), t.pos())
                     if temp < min_angle:
                         min_angle = temp
             state_vars.append(min_angle)
             min_angle = 10000
-                
+
         self._result["state_vars"] = np.array(state_vars, dtype=np.float32)
 
     def _get_ball_time_info(self):
         return self._messenger_memory.ball_time()
 
-    def reward(self,current_cycle, last_action_time):
+    def reward(self, current_cycle, last_action_time):
         """Return the reward."""
         # reward = self._time.cycle() - self._get_last_action_time()
         return current_cycle - last_action_time
@@ -2180,7 +2163,51 @@ class WorldModel:
     def get_current_cycle(self):
         return self._time.cycle()
 
- 
+    def adjacency_matrix(self):
+        """Returns the adjacency matrix for the given players."""
+        import copy
+
+        n = len(self._teammates) + 1
+        # print("n", n)
+        # matrix = np.zeros((n, n))
+        ids = [p.unum() for p in self._teammates] + [self._self.unum()]
+        # print("ids", sorted(ids))
+        ids = sorted(ids)
+
+        matrix = np.frombuffer(self._adjacency_matrix, dtype=np.float64).reshape((n, n))
+        matrix[:] = 0  # Reset the matrix to zeros
+
+        all_players = copy.deepcopy(self._teammates) + [self._self]
+        all_players = sorted(all_players, key=lambda x: x.unum())
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                if all_players[i].pos_valid() and all_players[j].pos_valid():
+                    dist = all_players[i].pos().dist(all_players[j].pos())
+                    if dist <= self.threshold:
+                        matrix[i, j] = 1
+                        matrix[j, i] = 1
+        return matrix
+
+    def acg_adjacency_matrix(self):
+        """
+        Adversarial Coordination Graph.
+
+        Adjacency matrix with the opponents.
+        """
+        n = len(self._all_players)
+        matrix = np.zeros((n, n))
+        for i in range(n - 1):
+            for j in range(i + 1, n):
+                if (
+                    self._all_players[i].pos_valid()
+                    and self._all_players[j].pos_valid()
+                ):
+                    dist = self._all_players[i].pos().dist(self._all_players[j].pos())
+                    if dist <= self.threshold:
+                        matrix[i, j] = 1
+                        matrix[j, i] = 1
+        return matrix
+
     def _least_congested_point_for_pass_in_rectangle(
         self, agent, rect: Rect2D, pos_from
     ):
@@ -2281,37 +2308,13 @@ class WorldModel:
         SP = ServerParam.i()
         return Rect2D.from_center(0.0, 0.0, SP.keepaway_length(), SP.keepaway_width())
 
-
     # remove this code later
-   
-
-
 
     def _get_marking_position(self, pos, dDist):
         """Returns the marking position."""
         ball_pos = self._ball().pos()
         ball_angle = (ball_pos - pos).getDirection()
         return pos + Vector2D.polar2vector(dDist, ball_angle)
-
-    
-
-    # def mark_most_open_opponent(self, agents: "PlayerObject"):
-    #     """Mark the most open opponent."""
-
-    #     pos_from = agents[0].pos()
-
-    #     min_player = None
-    #     min = 1000
-    #     for p in self._opponents:
-    #         if p.pos_valid():
-    #             point = p.pos()
-    #             if abs(point.y) == 37:
-    #                 continue
-    #             num = self._get_in_set_in_cone(0.3, pos_from, point)
-    #             if num < min:
-    #                 min = num
-    #                 min_player = p
-    #     return self._mark_opponent(min_player, 4.0)
 
     # ! This method returns the confidence of the information of this object.
     # The confidence is related to the last time this object was seen and
@@ -2320,7 +2323,6 @@ class WorldModel:
     # \return confidence factor of this object
 
     def get_confidence(self, object):
-        
         """Returns the confidence of the information of ball."""
 
         if object == "ball":
@@ -2333,51 +2335,3 @@ class WorldModel:
             if d > 1.0:
                 return 0.0
             return d
-
-    # def predict_cycles_to_object(self, obj_from, obj_to):
-    #     """Returns the number of cycles to the object."""
-    #     prev_pos = Vector2D(0, 0)
-
-    #     if obj_from is None or obj_to is None or (obj_from.dist(obj_to) > 40):
-    #         return 101
-
-    #     if obj_from == PlayerObject() and obj_to == BallObject():
-    #         feature_type = FEATURE_INTERCEPT_CYCLES_ME
-    #         if self.isFeatureRelevant(feature_type):
-    #             return max(
-    #                 0,
-    #                 int(self.getFeature(feature_type).getInfo())
-    #                 - self.getCurrentCycle(),
-    #             )
-    #         else:
-    #             Log.log(460, "create intercept features")
-    #             self.createInterceptFeatures()
-    #             Log.log(460, "call predict again")
-    #             return self.predictNrCyclesToObject(objFrom, objTo)
-
-    #     if objTo == OBJECT_BALL and self.getBallSpeed() < 0.01:
-    #         return self.predictNrCyclesToPoint(objFrom, self.getBallPos())
-
-    #     iCycles = 0
-    #     iCyclesToObj = 100
-    #     posObj = VecPosition(0, 0)
-
-    #     while (
-    #         iCycles <= iCyclesToObj
-    #         and iCycles < PS.getPlayerWhenToIntercept()
-    #         and posObj.getDistanceTo(posPrev) > EPSILON
-    #     ):
-    #         iCycles += 1
-    #         posPrev = posObj
-    #         posObj = self.predictPosAfterNrCycles(objTo, iCycles)
-
-    #         if (
-    #             self.getGlobalPosition(objFrom).getDistanceTo(posObj)
-    #             / SS.getPlayerSpeedMax()
-    #             < iCycles + 1
-    #         ):
-    #             Log.log(460, "predictNrCyclesToPoint after %d cycles" % iCycles)
-    #             iCyclesToObj = self.predictNrCyclesToPoint(objFrom, posObj)
-
-    #     return iCyclesToObj
-

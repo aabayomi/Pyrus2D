@@ -6,8 +6,8 @@ import sys
 import team_config
 
 
-def main(team_name, i, is_goalie, shared_values, manager, lock, event, event_from_subprocess, main_process_event, world, obs,last_action_time,reward,terminated):
-    agent = KeepawayPlayer(team_name,shared_values, manager, lock, event,event_from_subprocess, main_process_event, world,obs,last_action_time,reward,terminated)
+def main(team_name, i, is_goalie, shared_values, manager, lock, event, event_from_subprocess, main_process_event, world, obs,last_action_time,reward,terminated,proximity_adj_mat,proximity_threshold):
+    agent = KeepawayPlayer(team_name,shared_values, manager, lock, event,event_from_subprocess, main_process_event, world,obs,last_action_time,reward,terminated,proximity_adj_mat,proximity_threshold)
     if not agent.handle_start():
         agent.handle_exit()
         return
@@ -16,4 +16,4 @@ def main(team_name, i, is_goalie, shared_values, manager, lock, event, event_fro
 
 
 if __name__ == "__main__":
-    main(team_name, i, is_goalie, shared_values, manager, lock, event,event_from_subprocess, main_process_event, world,obs,last_action_time,reward,terminated)
+    main(team_name, i, is_goalie, shared_values, manager, lock, event,event_from_subprocess, main_process_event, world,obs,last_action_time,reward,terminated,proximity_adj_mat,proximity_threshold)

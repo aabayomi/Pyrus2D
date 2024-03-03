@@ -3,7 +3,8 @@ import logging
 import time
 
 from lib.action.kick_table import KickTable
-from base.decision import get_decision
+
+# from base.decision import get_decision
 from lib.debug.debug import log
 from lib.debug.level import Level
 from lib.debug.color import Color
@@ -786,7 +787,7 @@ class PlayerAgent(SoccerAgent):
         return self.accel_ball_vel(vel_des)
 
     def kick_ball_close_to_body(self, angle, dKickRatio):
-        print("kick_ball_close_to_body -")
+        print("kick_ball_close_to_body - ")
         SP = ServerParam.i()
         ang = self.world().self().body()
         pred_pos = Tools.predict_pos_after_n_cycles(self.world().self(), 1, 0)
@@ -1242,15 +1243,22 @@ class PlayerAgent(SoccerAgent):
         #     dist_opp = closest_opp[0].pos().dist(ball_pos)
 
         teammates = self.update_opponents()
-        nearest_opp = Tools.get_nearest_teammate(self.world(), receive_point, teammates)
+
+        nearest_opp = Tools.get_nearest_teammate(
+            self.world(), receive_point, teammates
+        )  ## this fails sometimes
+        if nearest_opp is None:
+            nearest_opp_list = self.world().opponents_from_ball()
+            if nearest_opp_list[0] is not None:
+                nearest_opp = nearest_opp_list[0]
+
         if nearest_opp.unum() != teammate.unum():
             if debug_pass:
                 log.sw_log().pass_().add_text(
-                    "#####LPass to {} {}, {} is closer than receiver ".format(
+                    "#####kpLPass to {} {}, {} is closer than receiver ".format(
                         teammate.unum(), receive_point, nearest_opp.unum()
                     )
                 )
-
 
         dist_opp = nearest_opp.pos().dist(ball_pos)
 
@@ -1331,7 +1339,8 @@ class PlayerAgent(SoccerAgent):
         # // can reach point
         else:
             print("can reach point")
-
+            print("is pass accurate ?? ", tar_pos)
+            # not not target position here
             accBallDes = vel_des - ball_vel
             dPower = self.world().get_kick_power_speed(accBallDes.r())
             # // with current ball speed

@@ -67,7 +67,7 @@ class Takers:
         pos_ball = wm.ball().pos()
         if obj == "ball":
             if player_mark_pos.dist(player_pos) < 1.5:
-                TurnToBall().execute(agent)
+                return TurnToBall().execute(agent)
             else:
                 GoToPoint(player_mark_pos, 0.2, 100).execute(agent)
             if player_pos.dist(player_mark_pos) < 2.0:
@@ -134,9 +134,9 @@ class Keepers:
     def interpret_keeper_action(wm: "WorldModel", agent, action):
         print("interpret actions , ", action)
         if action == 0:
-            print("Holding Ball ")
+            print("I am " , wm.self().unum(), "Holding Ball ")
             # hold(wm, agent)
-            HoldBall().execute(agent)
+            return HoldBall().execute(agent)
         else:
             print("Passing ")
             k = wm.teammates_from_ball()
@@ -156,12 +156,13 @@ class Keepers:
                             temp_pos,
                         )
                         # ball_to_player.rotate(-wm.ball().vel().th())
-                        agent.do_kick_to(tm, 1.5)
+                        return agent.do_kick_to(tm, 1.5)
+                        
                         # agent.do_kick_2(tm, 1.5)
                         ## test pass logic
                         # agent.test_pass(tm, 1.5)
                         # test_kick(wm,agent,temp_pos)
-                        agent.set_neck_action(NeckScanPlayers())
+                        # agent.set_neck_action(NeckScanPlayers())
                         # agent.do_kick(temp_pos, 0.8)
             # k = wm.messenger_memory().players()
             # if len(k) > 0:
@@ -173,9 +174,9 @@ class Keepers:
             #             agent.do_kick_to(tm, 2.0)
             #             agent.set_neck_action(NeckScanPlayers())
 
-            else:
-                print("no teammates")
-                pass
+            # else:
+            #     print("no teammates")
+            #     pass
         return
 
     ## should be removed ** i dont know just yet
@@ -219,15 +220,26 @@ class Keepers:
             and self_min < 20
         ):
             print(
-                "sample player do heard pass) intercepting!", "i am ", wm.self().unum()
+                "sample player do heard pass) intercepting!",
+                "i am ",
+                wm.self().unum(),
+                "my pos ",
+                wm.self().pos(),
+                "my move distance ",
+                wm.self().pos().dist(heard_pos),
             )
 
             log.sw_log().team().add_text(
                 f"(sample player do heard pass) intercepting!, self_min={self_min}"
             )
             log.debug_client().add_message("Comm:Receive:Intercept")
-            Intercept().execute(agent)
-            agent.set_neck_action(NeckTurnToBall())
+            
+            print("Going to heard position first")
+            GoToPoint(heard_pos, 1.0, ServerParam.i().max_dash_power()).execute(agent)
+            return True
+            
+            # Intercept().execute(agent)
+            # agent.set_neck_action(NeckTurnToBall())
 
         else:
             print(
@@ -235,6 +247,10 @@ class Keepers:
                 self_min,
                 " i am ",
                 wm.self().unum(),
+                "my pos ",
+                wm.self().pos(),
+                "my move distance ",
+                wm.self().pos().dist(heard_pos),
             )
 
             log.sw_log().team().add_text(
@@ -245,6 +261,7 @@ class Keepers:
 
             GoToPoint(heard_pos, 1.0, ServerParam.i().max_dash_power()).execute(agent)
             agent.set_neck_action(NeckTurnToBall())
+            return True
 
     @staticmethod
     def keeper_support(wm, fastest, agent):
@@ -283,30 +300,30 @@ class Keepers:
 
         rect = wm.keepaway_rect()
         best_point = Tools.least_congested_point_for_pass_in_rectangle(
-            rect, pos_pass_from
+            wm, rect, pos_pass_from
         )
 
-        if Keepers.do_heard_pass_receive(wm, agent) == False:
-            # print("i am ", wm.self()._unum,"no pass heard")
-            # print("i am ", wm.self()._unum, "going to ", best_point)
-            return GoToPoint(best_point, 0.2, 100).execute(agent)
-        else:
-            print("pass was heard ")
-            # i am waiting for the pass.
-
-            return agent.set_neck_action(NeckScanField())
-
-        # if wm.self().pos().dist(best_point) < 1.5:
-        #     print("NeckScanField")
-        #     return NeckBodyToPoint(wm.ball().pos()).execute(agent)
-        #     # agent.set_neck_action(NeckScanPlayers())
+        # if Keepers.do_heard_pass_receive(wm, agent) == False:
+        #     # print("i am ", wm.self()._unum,"no pass heard")
+        #     # print("i am ", wm.self()._unum, "going to ", best_point)
+        #     return GoToPoint(best_point, 0.2, 100).execute(agent)
         # else:
-        #     print("i am ", wm.self()._unum, "going to ", best_point)
+        #     print("pass was heard ")
+        #     # i am waiting for the pass.
 
-        #     # agent.add_say_message(OnePlayerMessenger(wm.self().unum(),
-        #     #                                     best_point))
-        #     GoToPoint(best_point, 0.2, 100).execute(agent)
-        #     return
+        #     return agent.set_neck_action(NeckScanField())
+
+        if wm.self().pos().dist(best_point) < 1.5:
+            # print("NeckScanField")
+            return NeckBodyToPoint(wm.ball().pos()).execute(agent)
+            # agent.set_neck_action(NeckScanPlayers())
+        else:
+            # print("i am ", wm.self().unum(), "going to ", best_point)
+
+            # agent.add_say_message(OnePlayerMessenger(wm.self().unum(),
+            #                                     best_point))
+            return GoToPoint(best_point, 0.2, 100).execute(agent)
+           
 
         # # # # ObjectT lookObject = self._choose_look_object( 0.97 )
 

@@ -1,8 +1,11 @@
 import time
-from base.decision import (
-    get_decision,
-    get_decision_keepaway,
-)
+
+# from base.decision import (
+#     get_decision,
+#     get_decision_keepaway,
+# )
+
+from keeepaway_utils.decision import get_decision_keepaway
 
 from base.sample_communication import SampleCommunication
 from base.view_tactical import ViewTactical
@@ -11,7 +14,9 @@ from lib.action.intercept import Intercept
 from lib.action.neck_body_to_ball import NeckBodyToBall
 from lib.action.neck_turn_to_ball import NeckTurnToBall
 from lib.action.neck_turn_to_ball_or_scan import NeckTurnToBallOrScan
-from lib.action.scan_field import ScanField
+
+# from lib.action.scan_field import ScanField
+from keeepaway_utils.keepaway_actions import ScanField
 from lib.debug.debug import log
 from lib.debug.level import Level
 
@@ -38,10 +43,12 @@ class KeepawayPlayer(PlayerAgent):
         last_action_time,
         reward,
         terminated,
+        proximity_adj_mat,
+        proximity_threshold,
     ):
         # super().__init__()
         super().__init__(
-            shared_values, manager, lock, event, world, reward,terminated, team_name
+            shared_values, manager, lock, event, world, reward, terminated, team_name
         )
         self._communication = SampleCommunication()
         self._count_list = shared_values  # actions
@@ -54,6 +61,8 @@ class KeepawayPlayer(PlayerAgent):
         self._last_action_time = last_action_time
         self._reward = reward
         self._terminated = terminated
+        self._adj_matrix = proximity_adj_mat
+        self._proximity_threshold = proximity_threshold
 
         # TODO: check the use of full or real world.
         # self._full_world = world
@@ -74,6 +83,7 @@ class KeepawayPlayer(PlayerAgent):
 
     def action_impl(self):
         wm = self.world()
+
         if self.do_preprocess():
             return
 
@@ -100,6 +110,7 @@ class KeepawayPlayer(PlayerAgent):
             self._reward,
             self._terminated,
             self._full_world,
+            self._adj_matrix,
         )
 
     def do_preprocess(self):
@@ -145,9 +156,11 @@ class KeepawayPlayer(PlayerAgent):
         intercept_pos = wm.ball().inertia_point(self_min)
         heard_pos = wm.messenger_memory().pass_()[0]._pos
 
-        print("(sample palyer do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}".format(
-            heard_pos=heard_pos, intercept_pos=intercept_pos
-        ))
+        print(
+            "(sample palyer do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}".format(
+                heard_pos=heard_pos, intercept_pos=intercept_pos
+            )
+        )
 
         log.sw_log().team().add_text(
             f"(sample palyer do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}"
@@ -160,8 +173,18 @@ class KeepawayPlayer(PlayerAgent):
             and self_min < 20
         ):
             print(
-                "sample player do heard pass) intercepting!", "i am ", wm.self().unum()
+                "sample player do heard pass) intercepting!",
+                "i am ",
+                wm.self().unum(),
+                "my pos ",
+                wm.self().pos(),
+                "my move distance ",
+                wm.self().pos().dist(heard_pos),
             )
+
+            # print(
+            #     "sample player do heard pass) intercepting!", "i am ", wm.self().unum()
+            # )
             ## intercept pos == sender pos
             ## heard pos == receiver pos (where i should be to get the ball)
             log.sw_log().team().add_text(
@@ -169,11 +192,24 @@ class KeepawayPlayer(PlayerAgent):
             )
             log.debug_client().add_message("Comm:Receive:Intercept")
             # Intercept().execute(self)
+            print("Going to heard position first")
             GoToPoint(heard_pos, 0.5, ServerParam.i().max_dash_power()).execute(self)
-            
-            self.set_neck_action(NeckTurnToBall())
+            return True
+
+            # self.set_neck_action(NeckTurnToBall())
         else:
-            print("(sample player do heard pass) go to point!,  cycle ", self_min, " i am ", wm.self().unum())
+            # print("(sample player do heard pass) go to point!,  cycle ", self_min, " i am ", wm.self().unum())
+
+            print(
+                "(sample player do heard pass) go to point!,  cycle ",
+                self_min,
+                " i am ",
+                wm.self().unum(),
+                "my pos ",
+                wm.self().pos(),
+                "my move distance ",
+                wm.self().pos().dist(heard_pos),
+            )
 
             log.sw_log().team().add_text(
                 f"(sample palyer do heard pass) go to point!, cycle={self_min}"
@@ -183,5 +219,6 @@ class KeepawayPlayer(PlayerAgent):
 
             GoToPoint(heard_pos, 0.5, ServerParam.i().max_dash_power()).execute(self)
             self.set_neck_action(NeckTurnToBall())
+            return True
 
         # TODO INTENTION?!?

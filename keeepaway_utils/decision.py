@@ -37,6 +37,7 @@ def get_decision_keepaway(
     reward,
     terminated,
     full_world,
+    adj_matrix,
 ):
     wm: "WorldModel" = agent.world()
 
@@ -46,16 +47,20 @@ def get_decision_keepaway(
             ScanField().execute(agent)
 
         # teammates_from_ball = wm.teammates_from_ball()
-        ball_pos = wm.ball().pos()
         # GoToPoint(ball_pos, 0.2, 100).execute(agent)
+        # print("ball pos ", wm.ball().pos())
 
         closest_keeper_from_ball = wm.all_teammates_from_ball()
         if len(closest_keeper_from_ball) > 0:
             if wm.self().unum() == closest_keeper_from_ball[0].unum():
-                GoToPoint(ball_pos, 0.2, 100).execute(agent)
+                GoToPoint(wm.ball().pos(), 0.2, 100).execute(agent)
 
-        if wm.self().pos().dist(ball_pos) < 5.0:
+        if wm.self().pos().dist(wm.ball().pos()) < 5.0:
             obs[wm.self().unum()] = wm._retrieve_observation()
+            ##
+            adj_matrix = wm.adjacency_matrix()
+            # print("adj matrix ", adj_matrix)
+
             if wm.self().is_kickable():
                 wm._available_actions[wm.self().unum()] = 2
                 # count_list[wm.self().unum()] = 2
@@ -102,8 +107,7 @@ def get_decision_keepaway(
         if wm.get_confidence("ball") < 0.90:
             ScanField().execute(agent)
 
-        ball_pos = wm.ball().pos()
-        GoToPoint(ball_pos, 0.2, 100).execute(agent)
+        GoToPoint(wm.ball().pos(), 0.2, 100).execute(agent)
 
         # Maintain possession if you have the ball.
         if wm.self().is_kickable() and (len(wm.teammates_from_ball()) == 0):
@@ -111,11 +115,10 @@ def get_decision_keepaway(
 
         closest_taker_from_ball = wm.teammates_from_ball()
         if wm.self() not in closest_taker_from_ball:
-            Takers.mark_most_open_opponent(wm,agent)
+            Takers.mark_most_open_opponent(wm, agent)
             return NeckTurnToBall().execute(agent)
 
         d = closest_taker_from_ball.dist_to_ball()
         if d < 0.3:
-            NeckTurnToBall().execute(agent)
-            return
+            return NeckTurnToBall().execute(agent)
         return Intercept().execute(agent)

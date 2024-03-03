@@ -7,7 +7,6 @@ from lib.debug.os_logger import get_logger
 from lib.debug.sw_logger import SoccerWindow_Logger
 from lib.rcsc.game_time import GameTime
 
-
 class DebugLogger:
     def __init__(self):
         self._sw_log: SoccerWindow_Logger = SoccerWindow_Logger('NA', 1, GameTime(0, 0))

@@ -5,6 +5,7 @@ from lib.debug.color import Color
 from lib.debug.level import Level
 from lib.rcsc.game_time import GameTime
 
+logs_dir = "/logs"
 
 class SoccerWindow_Logger:
     class LoggerLevel:

@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, print_function
 import time
 from absl import logging
 logging.set_verbosity(logging.DEBUG)
-from env import KeepawayEnv
+# from env import KeepawayEnv
+from test_env.env import KeepawayEnv
 from experiments.policies.handcoded_agent import HandcodedPolicy
 
 
@@ -25,8 +26,10 @@ def main():
             obs = env.get_obs()
             actions, agent_infos = policy.get_actions(obs,greedy=True)
             # print("actions ", actions)
+
             reward, terminated, info = env.step(actions)
-            print("reward ", reward, "terminated ", terminated, "info ", info)
+            # print("reward ", reward, "terminated ", terminated, "info ", info)
+            # print("matrix jfjfj ", env.get_proximity_adj_mat())
             time.sleep(0.15)
             episode_reward += reward
 

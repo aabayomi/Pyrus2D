@@ -2,7 +2,8 @@ from typing import Union
 import logging
 import time
 from lib.action.kick_table import KickTable
-from base.decision import get_decision
+# from base.decision import get_decision
+import base 
 from lib.debug.debug import log
 from lib.debug.level import Level
 from lib.debug.color import Color
