@@ -1,0 +1,41 @@
+# server configuration file - server-config.yml
+# This file is used to configure the server.
+## server parameters for keepaway
+
+coach: 0
+coach_port: 6001
+field_length: 20
+field_width: 20
+file_per_player: false
+game_start: 8
+keeper_count: 3
+keeper_input: null
+keeper_learn: 0
+keeper_output: null
+keeper_policy: rand
+label: ""
+log_dir: "./logs"
+game_log_dir: "./logs"
+log_game: true
+log_text: true
+monitor: false
+log_keepaway: true
+online_coach_port: 6002
+port: 6000
+restricted_vision: false
+synch_mode: false
+taker_count: 2
+taker_input: null
+taker_learn: false
+taker_output: null
+taker_policy: hand
+log_level: 1
+fullstate: false
+hierarchical_fsm: false
+crossEntropy: false
+qlearning: false
+gamma: 1.0
+lambd: 0.0
+alpha: 0.125
+memory_check: false
+initial_weight: 0.0
