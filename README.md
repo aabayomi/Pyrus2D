@@ -62,7 +62,7 @@ git checkout keepaway-release
 Install keepaway as local package
 
 ```shell
-    pip install -e .
+pip install -e .
 ```
 
 ---
