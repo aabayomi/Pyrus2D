@@ -3,7 +3,7 @@ from keepaway.base.sample_player import SamplePlayer
 from keepaway.lib.player.basic_client import BasicClient
 from keepaway.lib.player.player_agent import PlayerAgent
 import sys
-import team_config
+from keepaway.config import team_config
 
 
 def main():

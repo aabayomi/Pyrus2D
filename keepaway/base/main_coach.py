@@ -2,7 +2,7 @@
 from keepaway.lib.player.basic_client import BasicClient
 from keepaway.base.sample_coach import SampleCoach
 
-import team_config
+from keepaway.config import team_config
 import sys
 
 

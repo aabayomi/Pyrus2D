@@ -4,7 +4,7 @@ from keepaway.lib.debug.debug import log
 from keepaway.lib.rcsc.player_type import PlayerType
 from keepaway.lib.rcsc.types import HETERO_DEFAULT, HETERO_UNKNOWN
 
-import team_config
+from keepaway.config import team_config
 
 def real_speed_max(lhs: PlayerType, rhs: PlayerType) -> bool:
     if abs(lhs.real_speed_max() - rhs.real_speed_max()) < 0.005:

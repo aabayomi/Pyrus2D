@@ -3,7 +3,7 @@ import socket
 
 from keepaway.lib.rcsc.types import Card, SideID, GameModeType, UNUM_UNKNOWN
 
-# import team_config 
+# from keepaway.config import team_config 
 from keepaway.config import team_config
 
 from typing import TYPE_CHECKING

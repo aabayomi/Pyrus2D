@@ -44,7 +44,7 @@ from keepaway.lib.rcsc.game_time import GameTime
 from keepaway.lib.rcsc.server_param import ServerParam
 from keepaway.lib.rcsc.types import UNUM_UNKNOWN, GameModeType, SideID, ViewWidth
 from keepaway.lib.messenger.messenger import Messenger
-# import team_config
+# from keepaway.config import team_config
 from keepaway.config import team_config
 from keepaway.lib.debug.timer import ProfileTimer as pt
 from keepaway.lib.parser.parser_message_fullstate_world import FullStateWorldMessageParser

@@ -2,7 +2,7 @@ from math import exp
 
 from pyrusgeom.soccer_math import bound
 
-import team_config
+from keepaway.config import team_config
 from keepaway.base.strategy import Strategy
 from keepaway.lib.debug.debug import log
 from keepaway.lib.messenger.ball_goalie_messenger import BallGoalieMessenger

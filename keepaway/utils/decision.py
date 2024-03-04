@@ -9,8 +9,6 @@ from keepaway.utils.keepaway_actions import (
 )
 
 from keepaway.lib.action.intercept import Intercept
-
-
 from pyrusgeom.soccer_math import *
 from typing import TYPE_CHECKING
 from keepaway.utils.keeepawy_utils import Takers, Keepers
@@ -46,10 +44,6 @@ def get_decision_keepaway(
         if wm.get_confidence("ball") < 0.90:
             ScanField().execute(agent)
 
-        # teammates_from_ball = wm.teammates_from_ball()
-        # GoToPoint(ball_pos, 0.2, 100).execute(agent)
-        # print("ball pos ", wm.ball().pos())
-
         closest_keeper_from_ball = wm.all_teammates_from_ball()
         if len(closest_keeper_from_ball) > 0:
             if wm.self().unum() == closest_keeper_from_ball[0].unum():
@@ -57,53 +51,19 @@ def get_decision_keepaway(
 
         if wm.self().pos().dist(wm.ball().pos()) < 5.0:
             obs[wm.self().unum()] = wm._retrieve_observation()
-            ##
-            adj_matrix = wm.adjacency_matrix()
-            # print("adj matrix ", adj_matrix)
-
             if wm.self().is_kickable():
                 wm._available_actions[wm.self().unum()] = 2
-                # count_list[wm.self().unum()] = 2
                 with count_list.get_lock():
-                    # print("action received  ", list(count_list))
                     pass
-                # print("ball is kickable, ", wm.self().unum())
                 Keepers.keeper_with_ball(wm, agent, count_list, last_action_time)
-                # return
         else:
-            # fastest = wm.get_teammate_nearest_to_ball(1)
-            # print("i should be intercepting ")
             fastest = wm.intercept_table().fastest_teammate()
-            # print("fastest player intercept table ", f)
-            # print("fastest player ", fastest)
-            ## TODO:: re-implement interception. this is not working properly.
-            ## . check with
             if fastest is not None:
-                # print("Get Open")
+               
                 Keepers.keeper_support(wm, fastest, agent)
 
-        ## old implementation
-        # if fastest is not None:
-        #     # Intercept().execute(agent)
-        #     if fastest.unum == wm.self()._unum:
-        #         print("intercepting")
-        #         # print("fastest player ", fastest._pos)
-        #         Intercept().execute(agent)
-        #     #         agent.set_neck_action(NeckTurnToBall())
-        #     #         # print("fastest")
-        #     #     # print("fastest player ", fastest._pos)
-        #     keeper_support(wm, wm.self(), fastest, agent)
-
-        ## Update State and Environment
-        ## calculate reward .
-        # with last_action_time.get_lock():
-        #     last_action = last_action_time.value
-        #     with reward.get_lock():
-        #         reward.value = wm.reward(wm.get_current_cycle(), last_action)
-
+       
     if wm.our_team_name() == "takers":
-        # pass
-        # barrier.wait()
         if wm.get_confidence("ball") < 0.90:
             ScanField().execute(agent)
 

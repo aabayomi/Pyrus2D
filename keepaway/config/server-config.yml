@@ -14,8 +14,8 @@ keeper_learn: 0
 keeper_output: null
 keeper_policy: rand
 label: ""
-log_dir: "./logs"
-game_log_dir: "./logs"
+log_dir: "./../logs"
+game_log_dir: "./../logs"
 log_game: true
 log_text: true
 monitor: false

@@ -1,20 +1,10 @@
-import math
-
 from pyrusgeom.geom_2d import *
 from keepaway.lib.rcsc.server_param import ServerParam
-from keepaway.lib.rcsc.player_type import PlayerType
-from keepaway.lib.rcsc.game_mode import GameModeType
-from keepaway.lib.action.kick_table import calc_max_velocity
-import pyrusgeom.soccer_math as sm
-
 # from keepaway.lib.rcsc.types import CommandType
-from keepaway.lib.player_command.player_command import CommandType
 from pyrusgeom.vector_2d import Vector2D
 from pyrusgeom.angle_deg import AngleDeg
 
 from keepaway.lib.action.turn_to_ball import TurnToBall
-from keepaway.lib.action.neck_body_to_ball import NeckBodyToBall
-from keepaway.base.basic_tackle import BasicTackle
 from keepaway.lib.rcsc.server_param import ServerParam
 
 from keepaway.utils.keepaway_actions import (
@@ -30,14 +20,9 @@ from keepaway.utils.tools import Tools
 
 
 from pyrusgeom.soccer_math import *
-from pyrusgeom.rect_2d import Rect2D
 from pyrusgeom.vector_2d import Vector2D
-from pyrusgeom.line_2d import Line2D
-from pyrusgeom.segment_2d import Segment2D
 from pyrusgeom.geom_2d import *
 from keepaway.lib.debug.debug import log
-from keepaway.lib.action.intercept import Intercept
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -117,66 +102,20 @@ class Keepers:
     def keeper_with_ball(
         wm: "WorldModel", agent: "PlayerAgent", actions, last_action_time
     ):
-        # print("keeper with ball")
-        # action = actions[wm.self().unum()]
         action = actions[wm.self().unum() - 1]
-        # print(
-        #     "agent ",
-        #     wm.self().unum(),
-        #     " action ",
-        #     actions,
-        #     "my act ",
-        #     actions[wm.self().unum() - 1],
-        # )
         Keepers.interpret_keeper_action(wm, agent, action)
 
     @staticmethod
     def interpret_keeper_action(wm: "WorldModel", agent, action):
-        print("interpret actions , ", action)
         if action == 0:
-            print("I am " , wm.self().unum(), "Holding Ball ")
-            # hold(wm, agent)
             return HoldBall().execute(agent)
         else:
-            print("Passing ")
             k = wm.teammates_from_ball()
             if len(k) > 0:
                 for tm in k:
                     if tm.unum() == action:
                         temp_pos = tm.pos()
-                        # print("passing to player ", tm.unum(), "at pos ", temp_pos)
-                        print(
-                            "i am ",
-                            wm.self().unum(),
-                            "at pos ",
-                            wm.self().pos(),
-                            "passing to player ",
-                            tm.unum(),
-                            "at pos ",
-                            temp_pos,
-                        )
-                        # ball_to_player.rotate(-wm.ball().vel().th())
                         return agent.do_kick_to(tm, 1.5)
-                        
-                        # agent.do_kick_2(tm, 1.5)
-                        ## test pass logic
-                        # agent.test_pass(tm, 1.5)
-                        # test_kick(wm,agent,temp_pos)
-                        # agent.set_neck_action(NeckScanPlayers())
-                        # agent.do_kick(temp_pos, 0.8)
-            # k = wm.messenger_memory().players()
-            # if len(k) > 0:
-            #     for tm in k:
-            #         print("player num ", tm.unum_)
-            #         if tm.unum_ == action:
-            #             temp_pos = tm.pos_
-            #             print("i am ",wm.self().unum(), "passing to player ", tm.unum_, "at pos ", temp_pos)
-            #             agent.do_kick_to(tm, 2.0)
-            #             agent.set_neck_action(NeckScanPlayers())
-
-            # else:
-            #     print("no teammates")
-            #     pass
         return
 
     ## should be removed ** i dont know just yet
@@ -186,29 +125,16 @@ class Keepers:
         check on pass .
 
         """
-        # print(" checking on pass ")
-        # print("pass ball changed .. ", len(wm.messenger_memory().balls()))
-        # print("pass time ", wm.messenger_memory().pass_time())
-        # print("world model time ", wm.time())
-        # print("length of pass ", wm.messenger_memory().pass_())
-        # if len(wm.messenger_memory().pass_()) > 0:
-        #     print("pass receiver ", wm.messenger_memory().pass_()[0]._receiver)
-        # print("memory players ", wm.messenger_memory().players())
-
         if (
             wm.messenger_memory().pass_time() != wm.time()
             or len(wm.messenger_memory().pass_()) == 0
             or wm.messenger_memory().pass_()[0]._receiver != wm.self().unum()
         ):
-            # print("False")
             return False
 
         self_min = wm.intercept_table().self_reach_cycle()
         intercept_pos = wm.ball().inertia_point(self_min)
         heard_pos = wm.messenger_memory().pass_()[0]._pos
-
-        # print("heard pos ", heard_pos)
-
         log.sw_log().team().add_text(
             f"(sample player do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}"
         )
@@ -219,39 +145,13 @@ class Keepers:
             and wm.ball().vel_count() <= 1
             and self_min < 20
         ):
-            print(
-                "sample player do heard pass) intercepting!",
-                "i am ",
-                wm.self().unum(),
-                "my pos ",
-                wm.self().pos(),
-                "my move distance ",
-                wm.self().pos().dist(heard_pos),
-            )
-
             log.sw_log().team().add_text(
                 f"(sample player do heard pass) intercepting!, self_min={self_min}"
             )
             log.debug_client().add_message("Comm:Receive:Intercept")
-            
-            print("Going to heard position first")
             GoToPoint(heard_pos, 1.0, ServerParam.i().max_dash_power()).execute(agent)
             return True
-            
-            # Intercept().execute(agent)
-            # agent.set_neck_action(NeckTurnToBall())
-
         else:
-            print(
-                "(sample player do heard pass) go to point!,  cycle ",
-                self_min,
-                " i am ",
-                wm.self().unum(),
-                "my pos ",
-                wm.self().pos(),
-                "my move distance ",
-                wm.self().pos().dist(heard_pos),
-            )
 
             log.sw_log().team().add_text(
                 f"(sample player do heard pass) go to point!, cycle={self_min}"
@@ -283,7 +183,6 @@ class Keepers:
             first_ball_pos,
             first_ball_pos.th(),
         )
-        # print("min_reach_cycle ", min_reach_cycle)
         ball_vel = wm.ball().vel()
         ball_pos = wm.ball().pos()
         first_ball_speed = ball_vel.r()
@@ -303,68 +202,7 @@ class Keepers:
             wm, rect, pos_pass_from
         )
 
-        # if Keepers.do_heard_pass_receive(wm, agent) == False:
-        #     # print("i am ", wm.self()._unum,"no pass heard")
-        #     # print("i am ", wm.self()._unum, "going to ", best_point)
-        #     return GoToPoint(best_point, 0.2, 100).execute(agent)
-        # else:
-        #     print("pass was heard ")
-        #     # i am waiting for the pass.
-
-        #     return agent.set_neck_action(NeckScanField())
-
         if wm.self().pos().dist(best_point) < 1.5:
-            # print("NeckScanField")
             return NeckBodyToPoint(wm.ball().pos()).execute(agent)
-            # agent.set_neck_action(NeckScanPlayers())
         else:
-            # print("i am ", wm.self().unum(), "going to ", best_point)
-
-            # agent.add_say_message(OnePlayerMessenger(wm.self().unum(),
-            #                                     best_point))
             return GoToPoint(best_point, 0.2, 100).execute(agent)
-           
-
-        # # # # ObjectT lookObject = self._choose_look_object( 0.97 )
-
-    # @staticmethod
-    # def test_kick(wm, agent, t):
-    #     """Test implementation for kick
-    #     target
-    #     speed
-    #     speed threshold
-    #     max step
-    #     similar to the goalie kick
-    #     """
-
-    #     from keepaway.lib.action.smart_kick import SmartKick
-
-    #     action_candidates = BhvPassGen().generator(wm)
-
-    #     print("action candidates ", action_candidates)
-
-    #     if len(action_candidates) == 0:
-    #         print("Holding the ball")
-    #         agent.set_neck_action(NeckScanPlayers())
-    #         return HoldBall().execute(agent)
-
-    #     best_action: KickAction = max(action_candidates)
-    #     target = best_action.target_ball_pos
-    #     print("Target : ", target)
-    #     log.debug_client().set_target(target)
-    #     log.debug_client().add_message(
-    #         best_action.type.value
-    #         + "to "
-    #         + best_action.target_ball_pos.__str__()
-    #         + " "
-    #         + str(best_action.start_ball_speed)
-    #     )
-
-    #     # print(" best action speed ", best_action.start_ball_speed)
-
-    #     # SmartKick(
-    #     #     target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3
-    #     # ).execute(agent)
-    #     agent.set_neck_action(NeckScanPlayers())
-
-    #     return

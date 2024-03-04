@@ -8,9 +8,6 @@ Handcoded policy keepaway.baseline adapted from Adaptive Behavior '05 article
 
 import numpy as np
 
-## TODO: Implement available actions for each agent mode.
-
-
 class HandcodedPolicy(object):
     def __init__(self):
         """Initializes the policy."""
@@ -32,7 +29,6 @@ class HandcodedPolicy(object):
         Returns:
         """
         for i in obs.keys():
-            # print(len(obs[i]["state_vars"]))
             if obs[i] is None:
                 return False
             if obs[i]["state_vars"] is None:
@@ -50,9 +46,6 @@ class HandcodedPolicy(object):
         scores[agent_id - 1] = -1000000.0
 
         my_distance_to_taker = obs["state_vars"][7 : 7 + self.num_takers]
-
-        print("i am {} my distance to takers {}".format(id, my_distance_to_taker))
-
         if my_distance_to_taker[0] > self.distance_threshold:
             return 0
 
@@ -63,13 +56,10 @@ class HandcodedPolicy(object):
                 scores[i] = (
                     self.dist_weight * obs["state_vars"][7 + i]
                     + obs["state_vars"][9 + i]
-                )  ## verify this indices
+                )  
 
-        # print("scores : ", scores)
         best = np.argmax(scores)
-        # print(best)
         if scores[best] > self.hold_distance:
-            # print("returning best ", best + 1)
             return best + 1
         else:
             return 0
@@ -77,16 +67,12 @@ class HandcodedPolicy(object):
     def get_actions(self, obs, greedy=False):
         """Returns the actions for the agents in the keepaway domain."""
 
-        # TODO: check this to make sure scores are computed correctly and simultaneously
-        # verify with available actions.
-        agent_ids = obs.keys()  # {1, 2, 3}
-        # print(agent_ids)
+        agent_ids = obs.keys() 
         ## Hold threshold (alpha)
         ## beta : Dist/Ang ratio (beta)
 
         ## Check if no observations are available.
         actions = [None] * len(agent_ids)
-        # print("observation ", obs.values())
         for id, agent_obs in obs.items():
             if agent_obs is None:
                 actions[id - 1] = 0
@@ -94,8 +80,4 @@ class HandcodedPolicy(object):
                 a = self.select_agent_action(agent_obs, id)
                 # print(id,a)
                 actions[id - 1] = a
-
-        # print("selected ", actions)
-        # print("actions : ", actions)
-        # return [1,1,1] , {}
         return actions, {}

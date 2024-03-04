@@ -25,8 +25,8 @@ from keepaway.lib.rcsc.game_time import GameTime
 from keepaway.lib.rcsc.server_param import ServerParam
 from keepaway.lib.rcsc.types import HETERO_DEFAULT, HETERO_UNKNOWN, GameModeType
 
-# import team_config
-from keepaway.config import team_config
+# from keepaway.config import team_config
+from keepaway.config from keepaway.config import team_config
 
 
 # TODO PLAYER PARAMS?

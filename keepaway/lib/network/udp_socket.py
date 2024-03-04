@@ -1,6 +1,6 @@
 import socket
 
-import team_config
+from keepaway.config import team_config
 
 MAX_BUFF_SIZE = 8192
 

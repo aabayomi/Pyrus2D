@@ -188,14 +188,14 @@ class Localizer:
         circum_inc = max(0.01, circum / 32.0)
         dir_loop = int(min_max(2, int(math.ceil(circum / circum_inc)), 32))
         dir_inc = dir_range / (dir_loop - 1)
-        keepaway.base_angle = AngleDeg(ave_dir - dir_err)
+        base_angle = AngleDeg(ave_dir - dir_err)
         for i_dir in range(dir_loop):
-            keepaway.base_angle += dir_inc
-            keepaway.base_vec = Vector2D.polar2vector(1.0, keepaway.base_angle)
+            base_angle += dir_inc
+            base_vec = Vector2D.polar2vector(1.0,base_angle)
             add_dist = 0.0
             for i_dist in range(dir_loop):
                 add_dist += dist_inc
-                self._points.append(marker_pos + (keepaway.base_vec * (min_dist + add_dist)))
+                self._points.append(marker_pos + (base_vec * (min_dist + add_dist)))
 
     def update_points_by_markers(self, view_width: ViewWidth, markers, self_face: float, self_face_error: float):
         counter = 0

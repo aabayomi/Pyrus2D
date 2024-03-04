@@ -142,7 +142,7 @@ class WorldModel:
 
         self._dir_count: list[int] = [1000 for _ in range(WorldModel.DIR_CONF_DIVS)]
 
-        ## keep-away information ##
+        ## keep-away Defined variables ##
 
         self._episode_start = timeit.default_timer()
         self._cumulative_reward = 0
@@ -161,23 +161,13 @@ class WorldModel:
         self.last_action_time = 0  # hand-coded for now change later
 
         self._all_teammates_from_ball: list[PlayerObject] = []  # .
-
-        # self.adjacency_matrix = np.zeros((11, 11), dtype=int)
-        self.adj_matrix = [0] * len(self._teammates)
         self.threshold = 15
-
-        # self._adjacency_matrix = multiprocessing.Array("i", self.adj_matrix)
-
-        self._adjacency_matrix = multiprocessing.RawArray("d", 3 * 3)
 
         if manager is not None:
             self._obs = manager.dict(self.observations)
             self._reward = multiprocessing.Value("i", 0)
             self._terminated = multiprocessing.Value("b", False)
-            # self._last_action_time = manager.array(self.last_action_time)
             self._last_action_time = multiprocessing.Value("i", self.last_action_time)
-            # self._adjacency_matrix = manager.list(self.adj_matrix)
-            # self.threshold = multiprocessing.Value("i", 2)
 
     def init(self, team_name: str, side: SideID, unum: int, is_goalie: bool):
         self._our_team_name = team_name
@@ -2042,11 +2032,8 @@ class WorldModel:
         Retrieve observation from the environment.
         this implementations the 13 state variables from the paper Peter Stone 2005.
         """
-        # print("heget observation")
         self._convert_players_observation()
         self._observation = self._result
-        # self.adj_matrix = self.adjacency_matrix()
-        # print("adjacency_matrix", self.adjacency_matrix())
         return self._observation
 
     def get_observation(self, agent_id: int):
@@ -2062,8 +2049,6 @@ class WorldModel:
         x = b - a
         y = c - a
         dot_product = Vector2D.inner_product_static(x, y)
-        # print("x y", x, y)
-        # print("magnitude", x.r(), y.r())
         if (x.r() * y.r()) == 0:
             return 0
         return AngleDeg.normalize_angle(
@@ -2079,28 +2064,19 @@ class WorldModel:
         self._set_players_from_ball_and_self()
 
         closest_keeper_ball = self.teammates_from_ball()
-        # print("closest_keeper_ball ", len(closest_keeper_ball))
         all_keeper_closest_to_ball = self.all_teammates_from_ball()
 
         state_vars = []
-
-        ## keeper to center distance 3 + 2 + 2 + 2 + 1 + 1 + 1 + 1 = 13
-        # print("size of all players", len(self._all_players))
-
-        ## add all players to center distance
-        ## keeper + takers  may have to rearrange this later
         for p in self._all_players:
             if p.pos_valid():
                 dist = (p.pos() - keepaway_field_center).r()
                 state_vars.append(dist)
 
-        ## keeper to keeper distance
         for p in self._teammates_from_self:
             if p.pos_valid():
                 dist = p.dist_from_self()
                 state_vars.append(dist)
 
-        ## keeper to taker distance.
         opp_dist = []
         for p in self._opponents_from_self:
             if p.pos_valid():
@@ -2108,9 +2084,6 @@ class WorldModel:
                 state_vars.append(dist)
                 opp_dist.append(dist)
 
-        # print("opp_dist", opp_dist)
-
-        ## minimum distance between keeper and takers without ball 2
         for k in self._teammates:
             min_dist = 10000
             for t in self._opponents:
@@ -2122,11 +2095,6 @@ class WorldModel:
             state_vars.append(min_dist)
             min_dist = 10000
 
-        ## minimum angle between closest keeper with ball and keepers without ball 2
-
-        # print("myself : ", self._self)
-        # print("closest_keeper_ball[0] : ", closest_keeper_ball)
-        # print("teammates : ", self._teammates)
 
         closest_keeper = all_keeper_closest_to_ball[0]
 
@@ -2147,7 +2115,6 @@ class WorldModel:
 
     def reward(self, current_cycle, last_action_time):
         """Return the reward."""
-        # reward = self._time.cycle() - self._get_last_action_time()
         return current_cycle - last_action_time
 
     def _set_last_action(self, action):
@@ -2168,10 +2135,7 @@ class WorldModel:
         import copy
 
         n = len(self._teammates) + 1
-        # print("n", n)
-        # matrix = np.zeros((n, n))
         ids = [p.unum() for p in self._teammates] + [self._self.unum()]
-        # print("ids", sorted(ids))
         ids = sorted(ids)
 
         matrix = np.frombuffer(self._adjacency_matrix, dtype=np.float64).reshape((n, n))
@@ -2191,7 +2155,6 @@ class WorldModel:
     def acg_adjacency_matrix(self):
         """
         Adversarial Coordination Graph.
-
         Adjacency matrix with the opponents.
         """
         n = len(self._all_players)
@@ -2236,8 +2199,6 @@ class WorldModel:
         for i in range(x_granularity):
             for j in range(y_granularity):
                 tmp = self._congestion(agent, point, True)
-                #       LogDraw.logCircle( "congestion", point, 0.3, 1, true,  COLOR_WHITE, tmp );
-
                 if (
                     tmp < best_congestion
                     and self._get_in_set_in_cone(0.3, pos_from, point) == 0
@@ -2249,7 +2210,6 @@ class WorldModel:
             y = start_y
 
         if best_congestion == 1000:
-            # take the point out of the rectangle -- meaning no point was valid
             c = (rect.bottom_right() + rect.top_right()) * 0.5
             best_point = c
         return best_point
@@ -2315,12 +2275,6 @@ class WorldModel:
         ball_pos = self._ball().pos()
         ball_angle = (ball_pos - pos).getDirection()
         return pos + Vector2D.polar2vector(dDist, ball_angle)
-
-    # ! This method returns the confidence of the information of this object.
-    # The confidence is related to the last time this object was seen and
-    # the specified time (normally the time of the last received message).
-    # \param time current time to compare with time object was last seen
-    # \return confidence factor of this object
 
     def get_confidence(self, object):
         """Returns the confidence of the information of ball."""

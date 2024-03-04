@@ -32,8 +32,8 @@ from keepaway.lib.rcsc.game_time import GameTime
 from keepaway.lib.rcsc.server_param import ServerParam
 from keepaway.lib.rcsc.types import UNUM_UNKNOWN, GameModeType, SideID, ViewWidth
 from keepaway.lib.messenger.messenger import Messenger
-# import team_config
-from keepaway.config import team_config
+# from keepaway.config import team_config
+from keepaway.config from keepaway.config import team_config
 from keepaway.lib.debug.timer import ProfileTimer as pt
 from keepaway.lib.parser.parser_message_fullstate_world import FullStateWorldMessageParser
 from keepaway.base.sample_communication import SampleCommunication
@@ -205,7 +205,6 @@ class PlayerAgent(SoccerAgent):
 
     def hear_referee_parser(self, message: str):
         mode = message.split(" ")[-1].strip(")")
-        print("referee message: ", mode)
         if not self._game_mode.update(mode, self._current_time):
             return
 
@@ -416,47 +415,6 @@ class PlayerAgent(SoccerAgent):
             self.flush_logs()
             if len(message) > 0:
                 print(pt.get())
-
-    # def run(self):
-    #     last_time_rec = time.time()
-    #     waited_msec: int = 0
-    #     timeout_count: int = 0
-    #     while True:
-    #         while True:
-    #             length, message, server_address = self._client.recv_message()
-    #             if len(message) == 0:
-    #                 waited_msec += team_config.SOCKET_INTERVAL
-    #                 timeout_count += 1
-    #                 if time.time() - last_time_rec > 3:
-    #                     self._client.set_server_alive(False)
-    #                     break
-    #             else:
-    #                 self.parse_message(message.decode())
-    #                 last_time_rec = time.time()
-    #                 waited_msec = 0
-    #                 timeout_count = 0
-    #                 break
-
-    #         if ServerParam.i().synch_mode():
-    #             if self.think_received:
-    #                 # self.main_loop()
-    #                 self.action()
-    #                 # self.action_impl()
-    #                 self._think_received = False
-    #         else:
-    #             if self.is_decision_time(timeout_count, waited_msec) or (
-    #                 self._last_decision_time != self._current_time
-    #                 and self.world().see_time() == self._current_time
-    #             ):
-    #                 # self.main_loop()
-    #                 self.action()
-    #                 # self.action_impl()
-    #         self.flush_logs()
-
-    #         if len(message) > 0:
-    #             print(pt.get())
-
-    #     self.send_bye_command()
 
     def debug_players(self):
         for p in (

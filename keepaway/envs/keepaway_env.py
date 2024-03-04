@@ -7,8 +7,6 @@ from warnings import warn
 from operator import attrgetter
 import copy
 import numpy as np
-import enum
-import math
 from absl import logging
 from subprocess import Popen
 import yaml
@@ -18,12 +16,10 @@ from keepaway.lib.player.world_model import WorldModel
 import multiprocessing
 import keepaway.utils.main_keepaway_player as kp
 import atexit
-import keepaway.base.main_coach as main_c
 from keepaway.envs.multiagentenv import MultiAgentEnv
 import os
 
 config_dir = os.path.dirname(os.getcwd()) + "/config"
-print(config_dir)
 
 class KeepawayEnv(MultiAgentEnv):
     """Keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0."""
@@ -53,8 +49,7 @@ class KeepawayEnv(MultiAgentEnv):
         self._last_action = None
         manager = multiprocessing.Manager()
         self._world = WorldModel("real", manager)  # for all agents
-        # self._world.observations = {agent: None for agent in range(self.num_keepers)}
-
+        
         self._lock = self._world
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(3)
@@ -66,14 +61,13 @@ class KeepawayEnv(MultiAgentEnv):
         )  # To be set by main process to wake up all subprocesses
 
         self._actions = [0] * 3
-        # Create a shared list to hold the count for each process
         self._shared_values = multiprocessing.Array("i", self._actions)
 
         self._obs = self._world._obs
         # Use a joint value instead
         self.last_action_time = 0
         self._last_action_time = multiprocessing.Value("i", self.last_action_time)
-        self._proximity_adj_mat = self._world._adjacency_matrix
+        self._proximity_adj_mat = None
 
         ## reward
         self._reward = self._world._reward
@@ -224,7 +218,7 @@ class KeepawayEnv(MultiAgentEnv):
 
     def _launch_game(self):
         """Launch a keepaway game instance."""
-        print("launching game")
+        # print("launching game")
         options = self._parse_options()
         self._render.append(self._launch_server(options))
         self._render.append(self._launch_monitor())
@@ -232,17 +226,13 @@ class KeepawayEnv(MultiAgentEnv):
     def reset(self):
         """Reset the environment. Required after each full episode."""
 
-        print("resetting")
+        # print("resetting")
         self._episode_steps = 0
         self._total_steps = 0
         self.last_action = None
         self._episode_reward = []
-        # self._reward = self._world._reward
-        # self._terminated =
-        # self._world._terminated = multiprocessing.Value('b', False)
         if self._world._terminated.get_lock():
             self._world._terminated.value = False
-        # self._world._terminated = multiprocessing.Value('b', False)
         return self._obs
 
     def reward(self):
@@ -252,7 +242,7 @@ class KeepawayEnv(MultiAgentEnv):
 
         r = self._world.time().cycle() - self._terminal_time.cycle()
         return r
-        # return self._reward.value
+        
 
     def _restart(self):
         self.full_restart()
@@ -321,51 +311,30 @@ class KeepawayEnv(MultiAgentEnv):
         send an action signal and return observation.
         """
 
-        # do i need this ..
         if not actions:
             self.agents = []
             return {}, {}, {}, {}, {}
 
-        # actions_int = [int(a) for a in actions]
         actions_int = actions
         self._total_steps += 1
         self._episode_steps += 1
         total_reward = 0
-        ## not needed just for keepsake.
         info = {}
         terminated = False
 
-        # passes the actions from the main process to the subprocesses.
-        # this should update the shared values.
-
         self._actions = copy.deepcopy(actions_int)
-
-        # print("actions ", self._actions)
         self._shared_values = multiprocessing.Array("i", self._actions)
         self._observation = self._world._obs
         game_state = self._world._terminated.value
         if game_state == 1:
             terminated = True
-            ## check details for sparse ( sparse implementation will take into account the
-            ## number of successful passes)
             if not self.sparse_reward:
-                # total_reward += self.reward()
                 total_reward = self._reward.value
                 pass
             else:
-                ## not implemented yet
-                # total_reward = self._reward.value
                 total_reward = self._reward.value
 
             self._terminal_time = self._world.time()
-
-        # elif self._episode_steps >= self.episode_limit:
-        #     terminated = True
-        #     total_reward += self.reward()
-        #     if self.continuing_episode:
-        #         info["episode_limit"] = True
-        #     self.timeouts += 1
-
         if terminated:
             self._episode_count += 1
         return total_reward, terminated, info

@@ -1,8 +1,12 @@
 import logging
 from typing import Union
-
 import coloredlogs
 import sys
+import os
+
+up_one_dir = os.path.dirname(os.getcwd())
+logs_dir  = os.path.join(up_one_dir, "logs")
+
 
 
 def get_logger(unum: Union[int, str] = None, on_file=False):
@@ -29,11 +33,11 @@ def get_logger(unum: Union[int, str] = None, on_file=False):
     )
     if on_file:
         if unum == 'coach':
-            file_name = 'logs/coach.txt'
+            file_name = f'{logs_dir}/coach.txt'
         elif unum > 0:
-            file_name = f'logs/player-{unum}.txt'
+            file_name = f'{logs_dir}/player-{unum}.txt'
         else:
-            file_name = f'logs/coach-log.txt'
+            file_name = f'{logs_dir}/coach-log.txt'
         ch = logging.StreamHandler(stream=open(file_name, 'w'))
         ch.setFormatter(logging.Formatter('%(asctime)s %(filename)s %(lineno)-3d  %(message)s',
                                           '%H:%M:%S:%s'))
