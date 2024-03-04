@@ -59,6 +59,12 @@ cd Pyrus2D
 git checkout keepaway-release
 ```
 
+Install keepaway as local package
+
+```shell
+    pip install -e .
+```
+
 ---
 ## Training agents for Keepaway
 
