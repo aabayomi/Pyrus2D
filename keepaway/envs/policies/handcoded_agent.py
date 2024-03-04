@@ -1,7 +1,7 @@
 """ 
-keepaway.base Implementation for handcoded policy for keepaway.
+Implementation for handcoded policy for keepaway.
 
-Handcoded policy keepaway.baseline adapted from Adaptive Behavior '05 article
+Handcoded policy keepaway adapted from Adaptive Behavior '05 article
 * Stone, Sutton, and Kuhlmann.
 
 """

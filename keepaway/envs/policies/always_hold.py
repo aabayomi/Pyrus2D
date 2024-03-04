@@ -1,7 +1,7 @@
 """ 
-keepaway.base Implementation.
+Implementation for always-hold policy for keepaway.
 
-Always Hold policy keepaway.baseline adapted from Adaptive Behavior '05 article
+Always Hold policy keepaway adapted from Adaptive Behavior '05 article
 * Stone, Sutton, and Kuhlmann.
 
 """

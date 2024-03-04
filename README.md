@@ -4,7 +4,7 @@
 
 
 This implementation is based on [CYRUS](https://arxiv.org/abs/2211.08585) soccer simulation 2D team PYRUS2D fork.
-Keepaway an originally designed in UT Austin by [Gregory Kuhlmann and Peter Stone](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html).
+Keepaway a multi-agent domain originally designed in UT Austin by [Gregory Kuhlmann and Peter Stone](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html).
 
 This package contains a python implementation of the original [c++ version](https://github.com/tjpalmer/keepaway), integrated with Open AI gym suitable for 
 multi-agent deep reinforcement learning. The framework includes all low- and mid-level keepaway behaviors. However, the framework was designed to make it easy to insert your own learning code for deep reinforcement learning.
@@ -64,7 +64,7 @@ git checkout keepaway-release
 
 #### Baseline Policy
 
-To run and test one three baseline polices by [Gregory Kuhlmann and Peter Stone](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html). Follow the command below. 
+To run and test one of the three baseline polices by [Gregory Kuhlmann and Peter Stone](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html). Follow the command below. 
 
 All three polices can be found in the directory
 

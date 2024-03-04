@@ -1,5 +1,5 @@
 """ 
-keepaway.base Implementation for hand-coded policy for keepaway.
+Implementation for random policy for keepaway.
 
 Random policy keepaway.baseline adapted from Adaptive Behavior '05 article
 * Stone, Sutton, and Kuhlmann.
