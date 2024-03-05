@@ -9,7 +9,7 @@ from keepaway.lib.debug.sw_logger import SoccerWindow_Logger
 from keepaway.lib.rcsc.game_time import GameTime
 import os
 
-up_one_dir = os.path.dirname(os.getcwd())
+up_one_dir = os.getcwd()
 logs_dir  = os.path.join(up_one_dir, "logs")
 
 class DebugLogger:

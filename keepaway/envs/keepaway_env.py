@@ -19,7 +19,7 @@ import atexit
 from keepaway.envs.multiagentenv import MultiAgentEnv
 import os
 
-config_dir = os.path.dirname(os.getcwd()) + "/config"
+config_dir = os.getcwd() + "/config"
 
 class KeepawayEnv(MultiAgentEnv):
     """Keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0."""
