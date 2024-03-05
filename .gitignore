@@ -16,12 +16,9 @@ todos.py
 *.c
 build/
 binary/
-
 test.py
-
 player-*.txt
 player-*.err
-log
 .gitignore
 test-log
 main_tmp.py
