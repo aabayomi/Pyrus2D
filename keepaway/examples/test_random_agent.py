@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 import time
 from absl import logging
 from keepaway.envs.keepaway_env import KeepawayEnv
