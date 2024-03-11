@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import time
 from absl import logging
 from keepaway.envs.keepaway_env import KeepawayEnv
-from envs.policies.random_agent import RandomPolicy
+from keepaway.envs.policies.random_agent import RandomPolicy
 
 logging.set_verbosity(logging.DEBUG)
 
