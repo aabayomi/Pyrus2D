@@ -6,3 +6,5 @@ scipy==1.10.1
 pyYAML
 absl-py
 gym
+pettingzoo
+gymnasium 
