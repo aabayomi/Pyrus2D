@@ -13,8 +13,10 @@ def main():
     print("launching game")
     env._launch_game()
     agents = env.num_keepers
-    policy = RandomPolicy()
 
+    print("agents ", env._agents())
+    policy = RandomPolicy()
+    env.render()
     for e in range(episodes):
         print(f"Episode {e}")
         env.reset()
@@ -24,6 +26,12 @@ def main():
 
         while not terminated:
             obs = env.get_obs()
+            print("obs ", len(obs))
+            # print("obs ", obs)
+            if (obs[1]  is not None ):
+                print("obs ", obs[1]["state_vars"].shape)
+                # print("obs ", obs[1].shape)
+
             actions, agent_infos = policy.get_actions(obs, agents, greedy=False)
             # print(actions)
             reward, terminated, info = env.step(actions)

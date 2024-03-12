@@ -1,12 +1,5 @@
-from keepaway.envs import keepaway_env
+from keepaway.envs.multiagentenv import MultiAgentEnv
+from keepaway.envs.keepaway_env import KeepawayEnv
 
-import gym
-from gym.envs.registration import register
-import logging
+__all__ = ["MultiAgentEnv", "KeepawayEnv"]
 
-logger = logging.getLogger(__name__)
-
-register(
-    id='keepaway-v0',
-    entry_point='keepaway.envs:keepaway_env.KeepawayEnv',
-)

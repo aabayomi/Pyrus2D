@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import atexit
 from warnings import warn
 from operator import attrgetter
@@ -76,6 +72,9 @@ class KeepawayEnv(MultiAgentEnv):
         self._episode_reward = []
         self._proximity_threshold = 2
 
+        self.renderer = None
+
+
         self._keepers = [
             multiprocessing.Process(
                 target=kp.main,
@@ -133,13 +132,18 @@ class KeepawayEnv(MultiAgentEnv):
         # coach = mp.Process(target=main_c.main)
         # coach.start()
 
+        self._server = []
         self._render = []
         self._sleep = time
+
+    def _agents(self):
+        """ Utility to return all agents in the environment. """
+        return self._keepers + self._takers
+
 
     def _launch_monitor(self) -> int:
         """Launches the monitor."""
         logging.debug("Built the command to connect to the server")
-
         monitor_cmd = f"soccerwindow2 &"
         # monitor_cmd = f"rcssmonitor --server-port={6000}"
         popen = Popen(monitor_cmd, shell=True)
@@ -220,10 +224,9 @@ class KeepawayEnv(MultiAgentEnv):
         """Launch a keepaway game instance."""
         # print("launching game")
         options = self._parse_options()
-        self._render.append(self._launch_server(options))
-        self._render.append(self._launch_monitor())
+        self._server.append(self._launch_server(options))
 
-    def reset(self):
+    def reset(self,):
         """Reset the environment. Required after each full episode."""
 
         # print("resetting")
@@ -231,9 +234,11 @@ class KeepawayEnv(MultiAgentEnv):
         self._total_steps = 0
         self.last_action = None
         self._episode_reward = []
+        self.info = {}
         if self._world._terminated.get_lock():
             self._world._terminated.value = False
-        return self._obs
+        
+        return self._obs ,
 
     def reward(self):
         """
@@ -278,24 +283,64 @@ class KeepawayEnv(MultiAgentEnv):
 
         for p in self._keepers:
             p.terminate()
-        for r in self._render:
-            r.terminate()
+
+        for s in self._server:
+            s.terminate()
+        
         for t in self._takers:
             t.terminate()
 
+    
+        for r in self._render:
+            r.terminate()
+            self.renderer = None
         # self._coach[0].terminate()
+    
+    def render(self, mode= "human"):
+        """Render the environment using the monitor."""
+        self._render.append(self._launch_monitor())
+        self.renderer = mode
 
+        
     def get_avail_agent_actions(self, agent_id):
         """Returns the available actions for agent_id."""
-        return self._shared_values[agent_id]
+        l = [3] * self.num_agents
+        # return self._shared_values[agent_id]
+        return l
 
     def get_obs(self):
         # obs = np.frombuffer(self._obs, dtype=np.float64)
         return self._obs
-
+    
+    def get_obs_agent(self, agent_id):
+        """Returns the observation for agent_id."""
+        return self._obs[agent_id]
+    
+    def get_total_actions(self):
+        """Returns the total number of actions an agent could ever take."""
+        return self.actions
+    
+    def get_obs_size(self):
+        """Returns the shape of the observation."""
+        return 13
+    def get_state_size(self):
+        """Returns the shape of the state."""
+        return self.get_obs_size() * self.num_agents
+    
     def get_proximity_adj_mat(self):
         adjacent_matrix = np.frombuffer(self._proximity_adj_mat, dtype=np.float64)
         return adjacent_matrix 
+    
+    def get_state(self):
+        """Returns the global state."""
+
+        ## TODO: verify state variables to be for all agents or just one
+        ## check for dec execution/
+        ## partial observation or state variables 
+
+        obs = self.get_obs().values()["state_vars"]
+        obs_concat = np.concatenate(obs, axis=0)
+        return obs_concat
 
     def step(self, actions):
         """A single environment step. Returns reward, terminated, info.
