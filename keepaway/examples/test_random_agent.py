@@ -8,13 +8,15 @@ logging.set_verbosity(logging.DEBUG)
 
 def main():
     env = KeepawayEnv()
-    episodes = 10
+    episodes = 100000
     print("Training episodes")
     print("launching game")
     env._launch_game()
     agents = env.num_keepers
-    policy = RandomPolicy()
 
+    print("agents ", env._agents())
+    policy = RandomPolicy()
+    env.render()
     for e in range(episodes):
         print(f"Episode {e}")
         env.reset()
@@ -24,12 +26,14 @@ def main():
 
         while not terminated:
             obs = env.get_obs()
+            print("obs ", len(obs))
+            if (obs[1]  is not None ):
+                print("obs ", obs[1]["state_vars"].shape)
+                # print("obs ", obs[1].shape)
+
             actions, agent_infos = policy.get_actions(obs, agents, greedy=False)
             # print(actions)
             reward, terminated, info = env.step(actions)
-            # print("reward ", reward, "terminated ", terminated, "info ", info)
-            # print("reward ", reward, "terminated ", terminated, "info ", info)
-            # print("matrix jfjfj ", env.get_proximity_adj_mat())
             time.sleep(0.15)
             episode_reward += reward
 
