@@ -1,5 +1,6 @@
 import time
 import yaml
+import argparse
 import os
 from absl import logging
 from keepaway.envs.keepaway_env import KeepawayEnv
@@ -16,18 +17,6 @@ FLAGS = flags.FLAGS
 agent_config_path = os.getcwd() + "/config/sample_agent_config.yml"
 
 
-# Environment
-flags.DEFINE_string('config', '3v2', 'Configuration to use, defines the number of keepers e.g., "3v2" , "4v3" or 5v4')
-flags.DEFINE_integer('num_timesteps', int(2e6),
-                     'Number of timesteps to run for.')
-flags.DEFINE_integer('nepisode', 10, 'Number of episodes ')
-flags.DEFINE_integer('nsteps', 128, 'Number of environment steps per epoch; '
-                     'batch size is nsteps * nenv')
-
-# Algorithm
-flags.DEFINE_string('policy', 'handcoded', 'Policy to use, e.g., "handcoded", "always-hold", "random"')
-
-
 def load_agent_config(file_path):
     with open(file_path) as f:
         return yaml.safe_load(f)
@@ -35,7 +24,7 @@ def load_agent_config(file_path):
 
 def setup_environment(config):
     # print(f"Environment setup with configuration: {config}")
-    config = config
+    config = get_config()[config]
     return config
 
 def setup_agent(policy):
@@ -44,7 +33,7 @@ def setup_agent(policy):
     return agent_config
 
 
-def train_agent(env_config, agent_config):
+def train_agent(env_config, agent_config, nepisode, nsteps):
 
     if agent_config.get('policy') == 'random':
         policy = RandomPolicy()
@@ -58,7 +47,7 @@ def train_agent(env_config, agent_config):
     env = KeepawayEnv(env_config)
     env._launch_game()
 
-    for e in range(FLAGS.nepisode):
+    for e in range(nepisode):
         env.reset()
         terminated = False
         episode_reward = 0
@@ -69,34 +58,42 @@ def train_agent(env_config, agent_config):
             reward, terminated, info = env.step(actions)
             episode_reward += reward
     print("closing game")
-    env.close()
+    # env.close()
 
-    
-def main(argv):
-    del argv  # Unused
 
-    # Load configurations
-    # print(get_config())
+def main():
+    # Setup argparse
+    parser = argparse.ArgumentParser(description='Train an agent with specific configurations.')
+    parser.add_argument('--game_config', type=str, default='3v2',
+                        help='Configuration to use, defines the number of keepers e.g., "3v2", "4v3", or "5v4"')
+    parser.add_argument('--num_timesteps', type=int, default=int(2e6),
+                        help='Number of timesteps to run for.')
+    parser.add_argument('--nepisode', type=int, default=10,
+                        help='Number of episodes')
+    parser.add_argument('--nsteps', type=int, default=128,
+                        help='Number of environment steps per epoch; batch size is nsteps * nenv')
+    parser.add_argument('--policy', type=str, default='handcoded',
+                        help='Policy to use, e.g., "handcoded", "always-hold", "random"')
 
-    env_configs = get_config()
-    agent_configs = load_agent_config(agent_config_path)
+    args = parser.parse_args()
 
-    # Select specific configurations based on flags
-    env_config = env_configs.get(FLAGS.config)
-    agent_config = agent_configs.get(FLAGS.policy, {})
-    
+    agent_configs = load_agent_config(agent_config_path)  
+
+    env_config = args.game_config
+    agent_config = agent_configs.get(args.policy, {})
 
     if not env_config:
-        raise ValueError(f"Unknown environment configuration: {FLAGS.env_config}")
+        raise ValueError(f"Unknown environment configuration: {args.game_config}")
     if not agent_config:
-        raise ValueError(f"Unknown agent configuration: {FLAGS.agent_config}")
+        raise ValueError(f"Unknown agent configuration: {args.policy}")
 
     # Setup environment and agent using the selected configurations
     environment = setup_environment(env_config)
+    print(f"Environment configuration: {environment}")
     agent = setup_agent(agent_config)
 
     # Train the agent
-    train_agent(environment, agent)
+    train_agent(environment, agent, args.nepisode, args.nsteps)
 
 if __name__ == '__main__':
-    app.run(main)
+    main()
