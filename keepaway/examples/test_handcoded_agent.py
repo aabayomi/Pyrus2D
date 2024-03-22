@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function
-
 import time
 from absl import logging
 logging.set_verbosity(logging.DEBUG)
@@ -13,7 +11,7 @@ def main():
     env._launch_game()
     agents = env.num_keepers
     policy = HandcodedPolicy()
-
+    env.render()
     for e in range(episodes):
         print(f"Episode {e}")
         env.reset()

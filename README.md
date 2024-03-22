@@ -48,7 +48,7 @@ Create a Virtual Environment [virtual environment](https://docs.python.org/3/tut
 
 ```shell
 python3 -m venv keepaway-env
-source keepaway-env-env/bin/activate
+source keepaway-env/bin/activate
 ```
 
 Clone and checkout the release branch
@@ -82,8 +82,8 @@ keepaway/
 For example running the Handcoded policy 
 
 ```
-cd keepaway/examples
-python3 test_handcoded_agent.py
+cd keepaway
+python3 examples/test_handcoded_agent.py
 ```
 
 #### Train Custom Policy

@@ -8,17 +8,13 @@ logging.set_verbosity(logging.DEBUG)
 
 def main():
     env = KeepawayEnv()
-    episodes = 100000
+    episodes = 100
     print("Training episodes")
     print("launching game")
-    env._launch_game()
     agents = env.num_keepers
-
-    print("agents ", env._agents())
     policy = RandomPolicy()
     env.render()
     for e in range(episodes):
-        print(f"Episode {e}")
         env.reset()
         terminated = False
         episode_reward = 0

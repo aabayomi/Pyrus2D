@@ -23,3 +23,5 @@ player-*.err
 test-log
 main_tmp.py
 .DS_Store
+keepaway.egg-info/
+logs/

@@ -1,19 +1,6 @@
 # # Using local gym
-import sys
-import os
-
-# current_file_path = os.path.dirname(os.path.abspath(__file__))
-# sys.path.append(current_file_path + "/../../")
-
-import dowel
-from dowel import logger, tabular
-from garage.misc.prog_bar_counter import ProgBarCounter
-import time
-from absl import logging
 from keepaway.envs import KeepawayEnv
 import gym
-# from gym.utils import seeding
-# from envs.ma_gym.envs.utils.observation_space import MultiAgentObservationSpace
 import numpy as np
 
 
