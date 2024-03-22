@@ -20,7 +20,7 @@ config_dir = os.getcwd() + "/config"
 class KeepawayEnv(MultiAgentEnv):
     """Keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0."""
 
-    def __init__(self, pitch_size=20, sparse_reward=False):
+    def __init__(self,config):
         """
         Initialize a keepaway environment.
         ---------------------------------
@@ -28,10 +28,10 @@ class KeepawayEnv(MultiAgentEnv):
 
         """
 
-        self.num_keepers = 3
-        self.num_takers = 2
-        self.pitch_size = pitch_size
-        self.sparse_reward = sparse_reward
+        self.num_keepers = config["num_keepers"]
+        self.num_takers = config["num_takers"]
+        self.pitch_size = config["pitch_size"]
+        self.sparse_reward = config["sparse_reward"]
         self.actions = self.num_keepers  # 0: hold, 1: pass
         self._episode_count = 0
         self._episode_steps = 0

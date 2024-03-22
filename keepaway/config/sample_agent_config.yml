@@ -1,0 +1,15 @@
+always-hold:
+  policy: always-hold
+  strategy: greedy
+  learning_rate: 0.01
+
+handcoded:
+  policy: handcoded
+  strategy: fixed
+  actions:
+    - action1
+    - action2
+
+random:
+  policy: random
+  strategy: random
