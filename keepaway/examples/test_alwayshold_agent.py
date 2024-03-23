@@ -8,11 +8,11 @@ from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.always_hold import AlwaysHoldPolicy
 
 from keepaway.config.game_config import get_config
-config = get_config()["3v2"]
+config = get_config()["4v3"]
 
 def main():
     env = KeepawayEnv(config)
-    episodes = 20
+    episodes = 1000000
     env._launch_game()
     agents = env.num_keepers
     policy = AlwaysHoldPolicy(config)
