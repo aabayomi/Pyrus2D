@@ -16,7 +16,7 @@ def main():
     env._launch_game()
     agents = env.num_keepers
     policy = AlwaysHoldPolicy(config)
-
+    env.render()
     for e in range(episodes):
         print(f"Episode {e}")
         env.reset()
