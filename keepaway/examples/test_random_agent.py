@@ -5,7 +5,7 @@ from keepaway.envs.policies.random_agent import RandomPolicy
 from keepaway.config.game_config import get_config
 logging.set_verbosity(logging.DEBUG)
 
-config = get_config()["3v2"]
+config = get_config()["4v3"]
 
 def main():
     env = KeepawayEnv(config)
