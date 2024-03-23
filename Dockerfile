@@ -93,5 +93,5 @@ WORKDIR $TEAM_DIR/Pyrus2D/keepaway
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-CMD ["conda", "run", "-n", "keepaway", "python3", "examples/test_random_agent.py"]
+CMD ["conda", "run", "-n", "keepaway", "python3", "examples/training_agent.py --gc=3v2 --policy=handcoded --num_episodes=1000000"]
 

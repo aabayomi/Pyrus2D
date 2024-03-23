@@ -4,7 +4,8 @@ from keepaway.lib.network.udp_socket import IPAddress, UDPSocket
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from keepaway.lib.player.soccer_agent import SoccerAgent
+    # from keepaway.lib.player.soccer_agent import SoccerAgent
+    from keepaway.utils.soccer_agent import SoccerAgent
 
 
 class BasicClient:

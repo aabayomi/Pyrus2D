@@ -36,31 +36,29 @@ def setup_agent(policy):
 def train_agent(env_configs, agent_config, nepisode, nsteps):
 
     if agent_config.get('policy') == 'random':
-        policy = RandomPolicy()
+        policy = RandomPolicy(env_configs)
     elif agent_config.get('policy') == 'always-hold':
-        policy = AlwaysHoldPolicy()
+        policy = AlwaysHoldPolicy(env_configs)
     elif agent_config.get('policy') == 'handcoded':
-        policy = HandcodedPolicy()
+        policy = HandcodedPolicy(env_configs)
     else:
         raise ValueError(f"Unknown policy: {agent_config.get('policy')}")
 
-    print(f"Training agent with policy: {env_configs}")
     env = KeepawayEnv(env_configs)
-    env.start()
-
-    # for e in range(nepisode):
-    #     env.reset()
-    #     terminated = False
-    #     episode_reward = 0
-    #     env.start()
-    #     while not terminated:
-    #         obs = env.get_obs()
-    #         actions, agent_infos = policy.get_actions(obs, greedy=True)
-    #         reward, terminated, info = env.step(actions)
-    #         episode_reward += reward
-    # print("closing game")
-    # env.close()
-    pass
+    env._launch_game()
+    env.render()
+    time.sleep(1)
+    for e in range(nepisode):
+        env.reset()
+        terminated = False
+        episode_reward = 0
+        env.start()
+        while not terminated:
+            obs = env.get_obs()
+            actions, agent_infos = policy.get_actions(obs)
+            reward, terminated, info = env.step(actions)
+            episode_reward += reward
+    env.close()
     
 def run(args):
     agent_configs = load_agent_config(agent_config_path) 

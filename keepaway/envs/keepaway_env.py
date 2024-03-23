@@ -14,6 +14,7 @@ import keepaway.utils.main_keepaway_player as kp
 import atexit
 from keepaway.envs.multiagentenv import MultiAgentEnv
 import os
+import signal
 
 config_dir = os.getcwd() + "/config"
 
@@ -31,6 +32,7 @@ class KeepawayEnv(MultiAgentEnv):
         self.num_keepers = config["num_keepers"]
         self.num_takers = config["num_takers"]
         self.pitch_size = config["pitch_size"]
+        print("pitch size: ", self.pitch_size)
         self.sparse_reward = config["sparse_reward"]
         self.actions = self.num_keepers  # 0: hold, 1: pass
         self._episode_count = 0
@@ -48,7 +50,7 @@ class KeepawayEnv(MultiAgentEnv):
         
         self._lock = self._world
         self._event = multiprocessing.Event()
-        self._barrier = multiprocessing.Barrier(3)
+        self._barrier = multiprocessing.Barrier(self.num_keepers)
 
         ### Event implementation
         self._event_from_subprocess = multiprocessing.Event()
@@ -135,6 +137,7 @@ class KeepawayEnv(MultiAgentEnv):
         self._server = []
         self._render = []
         self._sleep = time
+       
 
     def _agents(self):
         """ Utility to return all agents in the environment. """
@@ -148,6 +151,10 @@ class KeepawayEnv(MultiAgentEnv):
         # monitor_cmd = f"rcssmonitor --server-port={6000}"
         popen = Popen(monitor_cmd, shell=True)
         return popen
+    
+    def load_agent_config(self,file_path):
+        with open(file_path) as f:
+            return yaml.safe_load(f)
 
     def _parse_options(self, args=None, **defaults):
         """
@@ -159,8 +166,13 @@ class KeepawayEnv(MultiAgentEnv):
         with open(f"{config_dir}/server-config.yml", "r") as ymlfile:
             config = yaml.safe_load(ymlfile)
 
-        parser = OptionParser()
-        options, _ = parser.parse_args(args)
+        class ConfigOptions:
+            pass
+
+        options = ConfigOptions()
+        # options, _ = parser.parse_args(args)
+
+
         # Merging command-line options with YAML defaults
         for key, value in config.items():
             if not getattr(options, key, None):
@@ -213,7 +225,7 @@ class KeepawayEnv(MultiAgentEnv):
         ]
 
         # Build rcssserver command, and fork it off.
-        # print(server_options)
+        print(server_options)
 
         command = ["rcssserver"] + server_options
         popen = Popen(command)
@@ -224,6 +236,8 @@ class KeepawayEnv(MultiAgentEnv):
         """Launch a keepaway game instance."""
         # print("launching game")
         options = self._parse_options()
+        # print(options.)
+        # args, other_args = parser.parse_known_args()
         self._server.append(self._launch_server(options))
 
     def reset(self,):
@@ -276,11 +290,12 @@ class KeepawayEnv(MultiAgentEnv):
             atexit.register(self.close)
             self._episode_count += 1
         else:
-            print("already started")
+            pass
+            # print("already started")
 
     def close(self):
         """Close the environment. No other method calls possible afterwards."""
-
+    
         for p in self._keepers:
             p.terminate()
 
@@ -300,7 +315,8 @@ class KeepawayEnv(MultiAgentEnv):
         """Render the environment using the monitor."""
         self._render.append(self._launch_monitor())
         self.renderer = mode
-
+    
+    
         
     def get_avail_agent_actions(self, agent_id):
         """Returns the available actions for agent_id."""

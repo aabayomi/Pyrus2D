@@ -8,7 +8,7 @@ Always Hold policy keepaway adapted from Adaptive Behavior '05 article
 
 
 class AlwaysHoldPolicy(object):
-    def __init__(self):
+    def __init__(self, config=None):
         pass
 
     def get_actions(self, obs, greedy=False):

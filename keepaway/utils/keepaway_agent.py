@@ -15,7 +15,8 @@ from keepaway.lib.player.sensor.body_sensor import SenseBodyParser
 from keepaway.lib.player.sensor.see_state import SeeState
 from keepaway.lib.player.sensor.visual_sensor import SeeParser
 from keepaway.lib.player.soccer_action import ViewAction, NeckAction, FocusPointAction
-from keepaway.lib.player.soccer_agent import SoccerAgent
+# from keepaway.lib.player.soccer_agent import SoccerAgent
+from keepaway.utils.soccer_agent import SoccerAgent
 from keepaway.lib.player.world_model import WorldModel
 from keepaway.base.tools import Tools
 
@@ -265,7 +266,7 @@ class PlayerAgent(SoccerAgent):
                 )
 
         time.sleep(1)
-        self._barrier.wait(5)
+        self._barrier.wait()
 
         # self._terminated.value = True
 

@@ -7,13 +7,15 @@ logging.set_verbosity(logging.DEBUG)
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.always_hold import AlwaysHoldPolicy
 
+from keepaway.config.game_config import get_config
+config = get_config()["3v2"]
 
 def main():
-    env = KeepawayEnv()
+    env = KeepawayEnv(config)
     episodes = 20
     env._launch_game()
     agents = env.num_keepers
-    policy = AlwaysHoldPolicy()
+    policy = AlwaysHoldPolicy(config)
 
     for e in range(episodes):
         print(f"Episode {e}")
@@ -24,7 +26,7 @@ def main():
 
         while not terminated:
             obs = env.get_obs()
-            actions, agent_infos = policy.get_actions(obs, greedy=True)
+            actions, agent_infos = policy.get_actions(obs)
             # print("actions ", actions)
 
             reward, terminated, info = env.step(actions)

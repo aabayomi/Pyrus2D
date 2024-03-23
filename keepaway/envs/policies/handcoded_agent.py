@@ -8,12 +8,18 @@ Handcoded policy keepaway adapted from Adaptive Behavior '05 article
 
 import numpy as np
 
-class HandcodedPolicy(object):
-    def __init__(self):
+class HandcodedPolicy():
+    def __init__(self, config=None):
         """Initializes the policy."""
+        if config is not None:
+            self.num_keepers = config["num_keepers"]
+            self.num_takers = config["num_takers"]
+        else:
+            self.num_keepers = 3
+            self.num_takers = 2
 
-        self.num_keepers = 3
-        self.num_takers = 2
+        # self.num_keepers = 3
+        # self.num_takers = 2
 
         ## this is same as beta in the paper stone et al. 2005
         self.hold_distance = 90.0
@@ -46,8 +52,10 @@ class HandcodedPolicy(object):
         scores[agent_id - 1] = -1000000.0
 
         my_distance_to_taker = obs["state_vars"][7 : 7 + self.num_takers]
-        if my_distance_to_taker[0] > self.distance_threshold:
-            return 0
+        
+        if len(my_distance_to_taker) > 0:
+            if my_distance_to_taker[0] > self.distance_threshold:
+                return 0
 
         for i in range(self.num_keepers):
             if i == agent_id - 1:
@@ -64,7 +72,7 @@ class HandcodedPolicy(object):
         else:
             return 0
 
-    def get_actions(self, obs, greedy=False):
+    def get_actions(self, obs):
         """Returns the actions for the agents in the keepaway domain."""
 
         agent_ids = obs.keys() 

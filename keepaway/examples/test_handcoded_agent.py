@@ -5,12 +5,17 @@ from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.handcoded_agent import HandcodedPolicy
 
 
+from keepaway.config.game_config import get_config
+
+config = get_config()["3v2"]
+
+
 def main():
-    env = KeepawayEnv()
+    env = KeepawayEnv(config)
     episodes = 20
     env._launch_game()
     agents = env.num_keepers
-    policy = HandcodedPolicy()
+    policy = HandcodedPolicy(config)
     env.render()
     for e in range(episodes):
         print(f"Episode {e}")
@@ -21,8 +26,7 @@ def main():
 
         while not terminated:
             obs = env.get_obs()
-            actions, agent_infos = policy.get_actions(obs,greedy=True)
-            # print("actions ", actions)
+            actions, agent_infos = policy.get_actions(obs)
 
             reward, terminated, info = env.step(actions)
             # print("reward ", reward, "terminated ", terminated, "info ", info)
