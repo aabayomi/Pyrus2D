@@ -58,7 +58,7 @@ class KeepawayEnv(MultiAgentEnv):
             multiprocessing.Event()
         )  # To be set by main process to wake up all subprocesses
 
-        self._actions = [0] * 3
+        self._actions = [0] * self.num_keepers
         self._shared_values = multiprocessing.Array("i", self._actions)
 
         self._obs = self._world._obs

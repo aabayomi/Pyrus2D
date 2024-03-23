@@ -11,7 +11,7 @@ from keepaway.utils.keepaway_actions import (
 from keepaway.lib.action.intercept import Intercept
 from pyrusgeom.soccer_math import *
 from typing import TYPE_CHECKING
-from keepaway.utils.keeepawy_utils import Takers, Keepers
+from keepaway.utils.keepaway_utils import Takers, Keepers
 import math as Math
 
 if TYPE_CHECKING:
