@@ -23,7 +23,7 @@ class KeepawayEnv(MultiAgentEnv):
 
     def __init__(self,config):
         """
-        Initialize a keepaway environment.
+        Initialize a keep-away environment.
         ---------------------------------
         Parameters:
 
