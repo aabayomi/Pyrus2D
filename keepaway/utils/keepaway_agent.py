@@ -216,6 +216,7 @@ class PlayerAgent(SoccerAgent):
             self.hear_referee_parser(message)
             # pass
         elif sender == "coach":
+            pass
             # print("coach message", message)
 
     def init_dlog(self, message):
