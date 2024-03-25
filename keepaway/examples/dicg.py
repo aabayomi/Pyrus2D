@@ -140,14 +140,15 @@ def run_sequential(args, logger):
     
     runner.t_env = 0
     t_max = 3
-    while runner.t_env <= t_max:
+    runner.game_abstraction()
+    # while runner.t_env <= t_max:
         # print("runner t_env ", runner.t_env)
         # print("t_max ", t_max)
     
         # Run for a whole episode at a time
-        runner.game_abstraction()
-        runner.t_env += 1
-        print("runner t_env ", runner.t_env)
+        # runner.game_abstraction()
+        # runner.t_env += 1
+        # print("runner t_env ", runner.t_env)
         # episode_batch = runner.run(test_mode=False)
         # buffer.insert_episode_batch(episode_batch)
 
