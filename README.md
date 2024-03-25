@@ -1,15 +1,21 @@
-# Keepaway Python Implementation
+# RoboCup Soccer Keepaway Python Implementation
 
-## RoboCup Soccer Simulation 2D Python Base Code
+This package contains a python based RL environment of the RoboCup Keepaway suitable for research purpose. Designed at UT Austin.
+
+Useful Links
+
+* [Keepaway c++](https://github.com/tjpalmer/keepaway) - Run the alternate c++ version of keepaway.
+* [Gregory Kuhlmann and Peter Stone](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html) - Keepaway Paper
+* [CYRUS](https://arxiv.org/abs/2211.08585) Python based RoboCup 2D soccer simulator.
+* [RoboCup ](https://www.robocup.org/)
+[Soccer Simulation 2D League](https://rcsoccersim.github.io/) 2D simulation League
+* [Server documentation](https://rcsoccersim.readthedocs.io/) RCSSServer Documentation
 
 
-This implementation is based on [CYRUS](https://arxiv.org/abs/2211.08585) soccer simulation 2D team PYRUS2D fork.
-Keepaway a multi-agent domain originally designed in UT Austin by [Gregory Kuhlmann and Peter Stone](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html).
+The framework includes all low and mid-level keepaway behaviors. However, the framework was designed to make it easy to insert your own learning code for deep reinforcement learning.
 
-This package contains a python implementation of the original [c++ version](https://github.com/tjpalmer/keepaway), integrated with Open AI gym suitable for 
-multi-agent deep reinforcement learning. The framework includes all low- and mid-level keepaway behaviors. However, the framework was designed to make it easy to insert your own learning code for deep reinforcement learning.
 
-The main implementation of keepaway is in ``` utils/ ```
+``` utils/ ```
 
 ```shell
 keepaway/
@@ -19,7 +25,7 @@ keepaway/
 ---
 ## Quick Start 
 
-### On Linux
+### Run in On Linux Computer
 
 #### 1. Install required simulator dependencies 
 
@@ -33,10 +39,7 @@ Install rcssserver and rcssmonitor (soccer window for debugging proposes)
 
 #### 2. Install Python requirements
 
-- Python v3.11
-- coloredlogs==15.0.1
-- pyrusgeom==0.1.2
-- scipy==1.10.1
+- Python version 3.11
 
 ```
 pip install -r requirements.txt
@@ -117,7 +120,7 @@ keepaway/
     logs/
 ```
 
-## Training with Docker 
+## Using Docker 
 
 Build the image and run the shell script. Pass the directory to the Dockerfile as an argument
 
@@ -130,12 +133,3 @@ Run the docker image.
 ```
 docker run -v /tmp/.X11-unix:/tmp/.X11-unix:rw -it keepaway
 ```
-
-
-
-## Useful links
-
-- CYRUS team: [https://cyrus2d.com/](https://cyrus2d.com/)
-- RoboCup: [https://www.robocup.org/](https://www.robocup.org/)
-- Soccer Simulation 2D League: [https://rcsoccersim.github.io/](https://rcsoccersim.github.io/)
-- Server documentation: [https://rcsoccersim.readthedocs.io/](https://rcsoccersim.readthedocs.io/)
