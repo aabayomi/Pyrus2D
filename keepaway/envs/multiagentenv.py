@@ -1,5 +1,9 @@
 
 class MultiAgentEnv(object):
+    def __init__(self, **kwargs):
+        # Initialize your multi-agent environment here
+        pass
+
     def step(self, actions):
         """Returns reward, terminated, info."""
         raise NotImplementedError

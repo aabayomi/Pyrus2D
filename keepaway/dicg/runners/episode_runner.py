@@ -1,4 +1,4 @@
-# from envs import REGISTRY as env_REGISTRY
+from keepaway.envs import REGISTRY as env_REGISTRY
 
 from functools import partial
 from keepaway.dicg.components.episode_buffer import EpisodeBatch
@@ -14,13 +14,18 @@ class EpisodeRunner:
         self.batch_size = self.args.batch_size_run
         assert self.batch_size == 1
 
+        print("args ", self.args.env)        
+
         # self.env = env_REGISTRY[self.args.env](**self.args.env_args)
         # print("args ", type(args))
-        env_config = vars(args) ## should do some optimzations.
-        self.env = KeepawayEnv(env_config)
-        self.episode_limit = self.env.episode_limit
+        self.env_config = vars(args) ## should do some optimzations.
+        # self.env = env_REGISTRY[self.args.env](**self.env_config)
+        self.env = env_REGISTRY[self.args.env](num_keepers=3, num_takers=2, pitch_size=20)
+        # self.env = KeepawayEnv(self.env_config)
+        # self.env = env_REGISTRY[self.args.name](self.env_config)
+        # self.episode_limit = self.env.episode_limit
+        self.episode_limit = 100
         self.t = 0
-
         self.t_env = 0
 
         self.train_returns = []
@@ -51,11 +56,12 @@ class EpisodeRunner:
         self.t = 0
     
     def game_abstraction(self):
+        from keepaway.envs.policies.random_agent import RandomPolicy
         episodes = 1
         print("Training episodes")
         print("launching game")
         self.env._launch_game()
-        # policy = RandomPolicy(config)
+        policy = RandomPolicy(self.env_config)
         self.env.render()
         for e in range(episodes):
             self.env.reset()
@@ -65,8 +71,8 @@ class EpisodeRunner:
 
             while not terminated:
                 obs = self.env.get_obs()
-                # actions, agent_infos = policy.get_actions(obs)
-                actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+                actions, agent_infos = policy.get_actions(obs)
+                # actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
                 # print(actions)
                 reward, terminated, info = self.env.step(actions)
                 # time.sleep(0.15)

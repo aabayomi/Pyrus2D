@@ -21,19 +21,34 @@ config_dir = os.getcwd() + "/config"
 class KeepawayEnv(MultiAgentEnv):
     """Keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0."""
 
-    def __init__(self,config):
+    def __init__(self,**kwargs):
         """
         Initialize a keep-away environment.
         ---------------------------------
-        Parameters:
+    
+        Parameters obtained from kwargs:
+        - num_keepers: Number of keepers in the environment.
+        - num_takers: Number of takers in the environment.
+        - pitch_size: Size of the pitch (field).
 
         """
+        super().__init__()
 
-        self.num_keepers = config["num_keepers"]
-        self.num_takers = config["num_takers"]
-        self.pitch_size = config["pitch_size"]
+        default_num_keepers = 3
+        default_num_takers = 2
+        default_pitch_size = 20  # Example default value, adjust as needed
+
+        # Use kwargs.get('key', default_value) to get the configuration values
+        self.num_keepers =kwargs.get('num_keepers', default_num_keepers)
+        self.num_takers = kwargs.get('num_takers', default_num_takers)
+        self.pitch_size = kwargs.get('pitch_size', default_pitch_size)
+
+        # self.num_keepers = config["num_keepers"]
+        # self.num_takers = config["num_takers"]
+        # self.pitch_size = config["pitch_size"]
         print("pitch size: ", self.pitch_size)
-        self.sparse_reward = config["sparse_reward"]
+        # self.sparse_reward = config["sparse_reward"]   
+        self.sparse_reward  = kwargs.get('sparse_reward', default_pitch_size)
         self.actions = self.num_keepers  # 0: hold, 1: pass
         self._episode_count = 0
         self._episode_steps = 0

@@ -146,6 +146,8 @@ def run_sequential(args, logger):
     
         # Run for a whole episode at a time
         runner.game_abstraction()
+        runner.t_env += 1
+        print("runner t_env ", runner.t_env)
         # episode_batch = runner.run(test_mode=False)
         # buffer.insert_episode_batch(episode_batch)
 
@@ -264,7 +266,8 @@ def run(_config,_log):
         tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(unique_token)
         logger.setup_tb(tb_exp_direc)
 
-    print("args run sequential ")
+    # print("args run sequential ")
+    print(args.env)     
     run_sequential(args=args, logger=logger)
 
 
@@ -303,14 +306,14 @@ if __name__ == "__main__":
     device = th.device("cuda" if th.cuda.is_available() else "cpu")
     # Set the unique token
     unique_token = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    # Set the local results path
+    # # Set the local results path
     local_results_path = os.path.join(dirname(abspath(__file__)), "results")
-    # Set the global results path
+    # # Set the global results path
     global_results_path = os.path.join(dirname(abspath(__file__)), "..", "results")
-    # Set the checkpoint path
+    # # Set the checkpoint path
     checkpoint_path = os.path.join(local_results_path, "models", unique_token)
-    # print(checkpoint_path)
-    os.makedirs(checkpoint_path, exist_ok=True)
+    # # print(checkpoint_path)
+    # os.makedirs(checkpoint_path, exist_ok=True)
     # Set the load step
     load_step = 0
     # Set the evaluate flag
@@ -324,17 +327,21 @@ if __name__ == "__main__":
     # Set the logger
     # logger = Logger(config["log_level"])
     # Set the environment
-    env = KeepawayEnv(config)
-    # Get the environment information
+    env = KeepawayEnv(**config)
+    # # Get the environment information
     env_info = {
         "state_shape": env.get_state_size(),
         "obs_shape": env.get_obs_size(),
         "n_actions": env.get_total_actions(),
         "episode_limit": env.episode_limit
     }
+    
     # Set the arguments
     # print(config)
-  
+    # print(config["name"])
+    
+    # print("config ",args)
+
     # args = SN({
     #     "test_interval": test_interval,
     #     "log_interval": log_interval,
