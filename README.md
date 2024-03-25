@@ -57,8 +57,8 @@ source keepaway-env/bin/activate
 Clone and checkout the release branch
 
 ```shell
-git clone https://github.com/aabayomi/Pyrus2D.git
-cd Pyrus2D
+git clone https://github.com/aabayomi/keepaway-python.git
+cd keepaway-python
 git checkout keepaway-release
 ```
 
