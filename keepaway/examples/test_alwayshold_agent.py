@@ -1,17 +1,13 @@
-from __future__ import absolute_import, division, print_function
-
 import time
 from absl import logging
-
 logging.set_verbosity(logging.DEBUG)
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.always_hold import AlwaysHoldPolicy
-
 from keepaway.config.game_config import get_config
-config = get_config()["4v3"]
+config = get_config()["5v4"]
 
 def main():
-    env = KeepawayEnv(config)
+    env = KeepawayEnv(**config)
     episodes = 1000000
     env._launch_game()
     agents = env.num_keepers

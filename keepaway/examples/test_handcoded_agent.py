@@ -11,7 +11,7 @@ config = get_config()["3v2"]
 
 
 def main():
-    env = KeepawayEnv(config)
+    env = KeepawayEnv(**config)
     episodes = 20
     env._launch_game()
     agents = env.num_keepers
