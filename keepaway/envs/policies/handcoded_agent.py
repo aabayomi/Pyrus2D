@@ -26,7 +26,7 @@ class HandcodedPolicy():
         ## this is same as alpha in the paper stone et al. 2005.
         self.dist_weight = 4.0
 
-        self.distance_threshold = 5.0
+        self.distance_threshold = 8.0
 
     def is_full_observation(self, obs):
         """Returns True if the observation is complete.

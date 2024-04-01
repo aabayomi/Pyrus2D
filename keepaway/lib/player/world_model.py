@@ -2107,8 +2107,25 @@ class WorldModel:
                         min_angle = temp
             state_vars.append(min_angle)
             min_angle = 10000
-
+        
+        ### Due to the simulator observation, need to pad the unavailable state variables ##
+        state_vars = self._pad(state_vars, min_length=13, pad_value=0)
         self._result["state_vars"] = np.array(state_vars, dtype=np.float32)
+    
+    
+    def _pad(self,lst, min_length=13, pad_value=0):
+        """
+        Pad the list with zeros to the minimum length of state observation(13).
+        sutton , stone and kulhman 2005.
+        Args:
+            lst: List of values.
+            min_length: Minimum length of the list.
+            pad_value: Value to pad the list with.
+        """
+
+        padding_needed = max(min_length - len(lst), 0)
+        lst.extend([pad_value] * padding_needed)
+        return lst
 
     def _get_ball_time_info(self):
         return self._messenger_memory.ball_time()
