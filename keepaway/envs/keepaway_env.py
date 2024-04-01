@@ -91,6 +91,7 @@ class KeepawayEnv(MultiAgentEnv):
         self._proximity_threshold = 2
 
         self.renderer = None
+        self._run_flag = False
 
 
         self._keepers = [

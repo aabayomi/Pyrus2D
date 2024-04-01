@@ -252,7 +252,7 @@ class PlayerAgent(SoccerAgent):
         mode = message.split(" ")[-1].strip(")")
         keepaway_mode = message.split(" ")[-2:]
         if keepaway_mode[-1].strip(")\x00") == "play_on":
-            print("mode is ", keepaway_mode[-1].strip(")"))
+            # print("mode is ", keepaway_mode[-1].strip(")"))
             pass
         else:
             ## Set new episode
@@ -707,7 +707,7 @@ class PlayerAgent(SoccerAgent):
     #     return soc2
 
     def accel_ball_vel(self, vel: Vector2D):
-        print("accel ball vel is called")
+        # print("accel ball vel is called")
 
         SP = ServerParam.i()
         ang = self.world().self().body()
@@ -739,7 +739,7 @@ class PlayerAgent(SoccerAgent):
         return
 
     def freeze_ball(self):
-        print("freeze ball is called")
+        # print("freeze ball is called")
         SP = ServerParam.i()
         maximal_kick_dist = (
             self.world().self().player_type().kickable_margin()
@@ -783,7 +783,7 @@ class PlayerAgent(SoccerAgent):
         return self.accel_ball_vel(vel_des)
 
     def kick_ball_close_to_body(self, angle, dKickRatio):
-        print("kick_ball_close_to_body - ")
+        # print("kick_ball_close_to_body - ")
         SP = ServerParam.i()
         ang = self.world().self().body()
         pred_pos = Tools.predict_pos_after_n_cycles(self.world().self(), 1, 0)
@@ -832,7 +832,7 @@ class PlayerAgent(SoccerAgent):
                 if (self.world().ball().pos().th()).normalize_angle() > 25:
                     # Log.log(102, "dead ball situation, turn to ball");
                     # turnBodyToObject(OBJECT_BALL)
-                    print("print game type code ")
+                    # print("print game type code ")
                     return
                 else:
                     d_power = 100
@@ -1027,7 +1027,7 @@ class PlayerAgent(SoccerAgent):
                     )
                     # self.debug_list.append((self.index, receive_point, False))
                 continue
-            print("ball speed is ", first_ball_speed)
+            # print("ball speed is ", first_ball_speed)
             self.accel_ball_vel(
                 Vector2D.polar2vector(first_ball_speed * 0.5, ball_move_angle)
             )
@@ -1168,14 +1168,14 @@ class PlayerAgent(SoccerAgent):
 
         SP = ServerParam.i()
         tar_pos = teammate.pos()
-        print("kick position ", tar_pos)
+        # print("kick position ", tar_pos)
         debug_pass = True
-        print("do kick to is called", tar_pos, speed)
+        # print("do kick to is called", tar_pos, speed)
 
         ptype = teammate.player_type()
         receive_point = ptype.inertiaFinalPoint(teammate.pos(), teammate.vel())
         tar_pos = receive_point
-        print("receive point is ", receive_point)
+        # print("receive point is ", receive_point)
 
         ball_pos = self.world().ball().pos()
         ball_vel = self.world().ball().vel()
@@ -1285,7 +1285,7 @@ class PlayerAgent(SoccerAgent):
                 # // shoot nevertheless
                 # accelerateBallToVelocity(vel_des)
 
-                print("saying pass message")
+                # print("saying pass message")
                 self.add_say_message(
                     PassMessenger(
                         teammate.unum_,
@@ -1321,7 +1321,7 @@ class PlayerAgent(SoccerAgent):
                         )
                     )
 
-                print("kick_ball_close_to_body 1")
+                # print("kick_ball_close_to_body 1")
                 self.add_say_message(
                     PassMessenger(
                         teammate.unum(),
@@ -1334,8 +1334,8 @@ class PlayerAgent(SoccerAgent):
                 return self.kick_ball_close_to_body(0, 0.16)
         # // can reach point
         else:
-            print("can reach point")
-            print("is pass accurate ?? ", tar_pos)
+            # print("can reach point")
+            # print("is pass accurate ?? ", tar_pos)
             # not not target position here
             accBallDes = vel_des - ball_vel
             dPower = self.world().get_kick_power_speed(accBallDes.r())

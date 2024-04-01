@@ -53,9 +53,7 @@ def evaluate_sequential(args, runner):
 def run_sequential(args, logger):
     
     # print("checkpoint path ", checkpoint_path)
-
     runner = EpisodeRunner(args, logger)
-
     # print( "state shape ",env_info["state_shape"])
     
     scheme = {
@@ -138,17 +136,14 @@ def run_sequential(args, logger):
     last_time = start_time
 
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
-    print("runner t_env ", runner.t_env)
-    # print("t_max ", t_max)
     
-    runner.t_env = 0
-    t_max = 2050000
+    # runner.t_env = 0
+    t_max = 20500000
     # runner.game_abstraction()
     # runner.run(test_mode=False)
     while runner.t_env <= t_max:
         print("runner t_env ", runner.t_env)
         print("t_max ", t_max)
-    
         # Run for a whole episode at a time
         # runner.run(test_mode=False)
         # runner.t_env += 1
@@ -168,8 +163,6 @@ def run_sequential(args, logger):
 
             print("episode sample ", episode_sample)
             learner.train(episode_sample, runner.t_env, episode)
-
-
             n_test_runs = max(1, test_nepisode // runner.batch_size)
             if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
 
@@ -193,6 +186,7 @@ def run_sequential(args, logger):
                 learner.save_models(save_path)
 
             episode += batch_size_run
+            print("episode count ", episode)
 
             if (runner.t_env - last_log_T) >= log_interval:
                 logger.log_stat("episode", episode, runner.t_env)
@@ -201,7 +195,7 @@ def run_sequential(args, logger):
 
         print("runner t_env ", runner.t_env)
         print("closing env")
-        # runner.close_env()
+    runner.close_env()
         
 def args_sanity_check(config, _log):
     # set CUDA flags
@@ -300,7 +294,7 @@ if __name__ == "__main__":
     config_dict = recursive_dict_update(config_dict, alg_config)
     
     # print(config_dict)
-    config = get_config()["3v2"]
+    config = get_config()["4v3"]
     config = config | config_dict
     config["log_level"] = "INFO"
     config["name"] = "keepaway"

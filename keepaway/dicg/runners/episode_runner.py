@@ -33,6 +33,8 @@ class EpisodeRunner:
         self.train_stats = {}
         self.test_stats = {}
 
+        
+
         # Log the first run
         self.log_train_stats_t = -1000000
 
@@ -81,35 +83,18 @@ class EpisodeRunner:
                 episode_reward += reward
         self.env.close()
 
-    # def help(self, test_mode=False):
-    #     pre_transition_data = {
-    #             "state": [self.env.get_state()],
-    #             "avail_actions": [self.env.get_avail_actions()],
-    #             "obs": [self.env.get_obs()]
-    #         }
-
-    #     self.batch.update(pre_transition_data, ts=self.t)
-
-    #         # Pass the entire batch of experiences up till now to the agents
-    #         # Receive the actions for each agent at this time step in a batch of size 1
-    #     actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-    #     reward, terminated, env_info = self.env.step(actions[0])
-    #     episode_return += reward
-    #     post_transition_data = {
-    #             "actions": actions,
-    #             "reward": [(reward,)],
-    #             "terminated": [(terminated != env_info.get("episode_limit", False),)],
-    #         }
-    #     self.batch.update(post_transition_data, ts=self.t)
-    #     self.t += 1
 
 
     def run(self, test_mode=False):
-        self.env._launch_game()
-        self.env.render()
-        self.reset()
-        terminated = False
+        ## set the environment flag
 
+        if self.env._run_flag == False:
+            self.env._launch_game()
+            self.env.render()
+            self.reset()
+            self.env._run_flag = True
+        
+        terminated = False
         episode_return = 0
         self.mac.init_hidden(batch_size=self.batch_size)
 
@@ -132,8 +117,6 @@ class EpisodeRunner:
             # Receive the actions for each agent at this time step in a batch of size 1
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
             
-            # print("actions ", actions[0])
-
             reward, terminated, env_info = self.env.step(actions[0])
             episode_return += reward
 
@@ -147,9 +130,8 @@ class EpisodeRunner:
             self.batch.update(post_transition_data, ts=self.t)
 
             self.t += 1
-            # print("t ", self.t)
-
-        # print("episode_return ", episode_return)
+        self.env._episode_count += 1
+        print("episode_return ", episode_return, " episode_count ", self.env._episode_count)
         last_data = {
             "state": [self.env.get_state()],
             "avail_actions": [self.env.get_avail_actions()],
@@ -188,6 +170,7 @@ class EpisodeRunner:
     def convert_to_numpy(self,proxy):
         regular_dict = dict(proxy)
         values = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in regular_dict.values()] 
+        # print("values ", values)
         numpy_array = np.stack(values, axis=0)
         return numpy_array
 
