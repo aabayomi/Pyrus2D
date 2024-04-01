@@ -41,7 +41,6 @@ batch_size_run = 32
 
 
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
-# print(results_path)
 
 def evaluate_sequential(args, runner):
     for _ in range(args.test_nepisode):
@@ -56,6 +55,8 @@ def run_sequential(args, logger):
     # print("checkpoint path ", checkpoint_path)
 
     runner = EpisodeRunner(args, logger)
+
+    # print( "state shape ",env_info["state_shape"])
     
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
@@ -72,6 +73,8 @@ def run_sequential(args, logger):
     preprocess = {
         "actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])
     }
+
+    print(args.buffer_size, env_info["episode_limit"] + 1)
 
     buffer = ReplayBuffer(scheme, groups, args.buffer_size, env_info["episode_limit"] + 1,
                           preprocess=preprocess,
@@ -99,7 +102,7 @@ def run_sequential(args, logger):
         timestep_to_load = 0
 
         if not os.path.isdir(args.checkpoint_path):
-            logger.console_logger.info("Checkpoint directiory {} doesn't exist".format(args.checkpoint_path))
+            logger.console_logger.info("Checkpoint directory {} doesn't exist".format(args.checkpoint_path))
             return
         
         for name in os.listdir(args.checkpoint_path):
@@ -139,62 +142,66 @@ def run_sequential(args, logger):
     # print("t_max ", t_max)
     
     runner.t_env = 0
-    t_max = 3
-    runner.game_abstraction()
-    # while runner.t_env <= t_max:
-        # print("runner t_env ", runner.t_env)
-        # print("t_max ", t_max)
+    t_max = 2050000
+    # runner.game_abstraction()
+    # runner.run(test_mode=False)
+    while runner.t_env <= t_max:
+        print("runner t_env ", runner.t_env)
+        print("t_max ", t_max)
     
         # Run for a whole episode at a time
-        # runner.game_abstraction()
+        # runner.run(test_mode=False)
         # runner.t_env += 1
         # print("runner t_env ", runner.t_env)
-        # episode_batch = runner.run(test_mode=False)
-        # buffer.insert_episode_batch(episode_batch)
+        episode_batch = runner.run(test_mode=False)
+        print("episode batch ", episode_batch)
+        buffer.insert_episode_batch(episode_batch)
 
-            # if buffer.can_sample(batch_size):
-            #     episode_sample = buffer.sample(batch_size)
+        if buffer.can_sample(batch_size):
+            episode_sample = buffer.sample(batch_size)
+            # Truncate batch to only filled timesteps
+            max_ep_t = episode_sample.max_t_filled()
+            episode_sample = episode_sample[:, :max_ep_t]
 
-            #     # Truncate batch to only filled timesteps
-            #     max_ep_t = episode_sample.max_t_filled()
-            #     episode_sample = episode_sample[:, :max_ep_t]
+            if episode_sample.device != args.device:
+                episode_sample.to(args.device)
 
-            #     if episode_sample.device != args.device:
-            #         episode_sample.to(args.device)
-
-            #     learner.train(episode_sample, runner.t_env, episode)
+            print("episode sample ", episode_sample)
+            learner.train(episode_sample, runner.t_env, episode)
 
 
-            #     n_test_runs = max(1, test_nepisode // runner.batch_size)
-            #     if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
+            n_test_runs = max(1, test_nepisode // runner.batch_size)
+            if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
 
-            #         logger.console_logger.info("t_env: {} / {}".format(runner.t_env, args.t_max))
-            #         logger.console_logger.info("Estimated time left: {}. Time passed: {}".format( time_left(last_time, last_test_T, runner.t_env, args.t_max), time_str(time.time() - start_time)))
-            #         last_time = time.time()
-            #         last_test_T = runner.t_env
+                logger.console_logger.info("t_env: {} / {}".format(runner.t_env, args.t_max))
+                logger.console_logger.info("Estimated time left: {}. Time passed: {}".format( time_left(last_time, last_test_T, runner.t_env, args.t_max), time_str(time.time() - start_time)))
+                last_time = time.time()
+                last_test_T = runner.t_env
 
-            #         for _ in range(n_test_runs):
-            #             runner.run(test_mode=True)
-                
-            #     if save_model and (runner.t_env - model_save_time >= save_model_interval or model_save_time == 0):
-            #         model_save_time = runner.t_env
-            #         save_path = os.path.join(args.local_results_path, "models", args.unique_token, str(runner.t_env))
-            #         #"results/models/{}".format(unique_token)
-            #         os.makedirs(save_path, exist_ok=True)
-            #         logger.console_logger.info("Saving models to {}".format(save_path))
+                for _ in range(n_test_runs):
+                    runner.run(test_mode=True)
+            
+            if save_model and (runner.t_env - model_save_time >= save_model_interval or model_save_time == 0):
+                model_save_time = runner.t_env
+                save_path = os.path.join(args.local_results_path, "models", args.unique_token, str(runner.t_env))
+                #"results/models/{}".format(unique_token)
+                os.makedirs(save_path, exist_ok=True)
+                logger.console_logger.info("Saving models to {}".format(save_path))
 
-            #         # learner should handle saving/loading -- delegate actor save/load to mac,
-            #         # use appropriate filenames to do critics, optimizer states
-            #         learner.save_models(save_path)
+                # learner should handle saving/loading -- delegate actor save/load to mac,
+                # use appropriate filenames to do critics, optimizer states
+                learner.save_models(save_path)
 
-            #     episode += batch_size_run
+            episode += batch_size_run
 
-            #     if (runner.t_env - last_log_T) >= log_interval:
-            #         logger.log_stat("episode", episode, runner.t_env)
-            #         logger.print_recent_stats()
-            #         last_log_T = runner.t_env
+            if (runner.t_env - last_log_T) >= log_interval:
+                logger.log_stat("episode", episode, runner.t_env)
+                logger.print_recent_stats()
+                last_log_T = runner.t_env
 
-            # runner.close_env()
+        print("runner t_env ", runner.t_env)
+        print("closing env")
+        # runner.close_env()
         
 def args_sanity_check(config, _log):
     # set CUDA flags
@@ -293,11 +300,12 @@ if __name__ == "__main__":
     config_dict = recursive_dict_update(config_dict, alg_config)
     
     # print(config_dict)
-    config = get_config()["4v3"]
+    config = get_config()["3v2"]
     config = config | config_dict
     config["log_level"] = "INFO"
     config["name"] = "keepaway"
-    config["n_agents"] = config["num_keepers"] + config["num_takers"]
+    config["n_agents"] = config["num_keepers"]
+    # config["n_agents"] = config["num_keepers"] + config["num_takers"]
     config["n_actions"] = config["num_keepers"] 
 
     # Set the random seed
@@ -336,6 +344,8 @@ if __name__ == "__main__":
         "n_actions": env.get_total_actions(),
         "episode_limit": env.episode_limit
     }
+    # print(config)
+    # print( "state shape ",env_info["state_shape"])
     
     # Set the arguments
     # print(config)

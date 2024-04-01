@@ -15,6 +15,7 @@ import atexit
 from keepaway.envs.multiagentenv import MultiAgentEnv
 import os
 import signal
+import torch
 
 config_dir = os.getcwd() + "/config"
 
@@ -46,7 +47,7 @@ class KeepawayEnv(MultiAgentEnv):
         # self.num_keepers = config["num_keepers"]
         # self.num_takers = config["num_takers"]
         # self.pitch_size = config["pitch_size"]
-        print("pitch size: ", self.pitch_size)
+        # print("pitch size: ", self.pitch_size)
         # self.sparse_reward = config["sparse_reward"]   
         self.sparse_reward  = kwargs.get('sparse_reward', default_pitch_size)
         self.actions = self.num_keepers  # 0: hold, 1: pass
@@ -54,7 +55,7 @@ class KeepawayEnv(MultiAgentEnv):
         self._episode_steps = 0
         self._total_steps = 0
         self.force_restarts = 0
-        self.episode_limit = 1000
+        self.episode_limit = 10000
         self.timeouts = 0
         self.continuing_episode = False
         self.num_agents = self.num_keepers + self.num_takers
@@ -240,8 +241,7 @@ class KeepawayEnv(MultiAgentEnv):
         ]
 
         # Build rcssserver command, and fork it off.
-        print(server_options)
-
+        # print(server_options)
         command = ["rcssserver"] + server_options
         popen = Popen(command)
 
@@ -335,10 +335,22 @@ class KeepawayEnv(MultiAgentEnv):
         
     def get_avail_agent_actions(self, agent_id):
         """Returns the available actions for agent_id."""
-        l = [3] * self.num_agents
+        l = [3] * self.num_keepers
         # return self._shared_values[agent_id]
         return l
 
+    def get_avail_actions(self):
+        """Returns the available actions for agent_id."""
+        l = [None] * self.num_keepers
+        # return self._shared_values[agent_id]
+        for i in range(self.num_keepers):
+            l[i] = self.get_avail_agent_actions(i)
+        # print("l ", l)
+        return l
+    
+    def get_total_actions(self):
+        pass
+    
     def get_obs(self):
         # obs = np.frombuffer(self._obs, dtype=np.float64)
         return self._obs
@@ -353,10 +365,13 @@ class KeepawayEnv(MultiAgentEnv):
     
     def get_obs_size(self):
         """Returns the shape of the observation."""
-        return 13
+        # print("length ", len(self._obs.values()[0]))
+        return len(self._obs.values()[0])
     def get_state_size(self):
-        """Returns the shape of the state."""
-        return self.get_obs_size() * self.num_agents
+        """ Returns the shape of the state. """
+        # print("obs size us ", self.get_obs_size() * self.num_agents)
+        # print("numbr of keepers ", self.num_keepers)
+        return self.get_obs_size() * self.num_keepers
     
     def get_proximity_adj_mat(self):
         adjacent_matrix = np.frombuffer(self._proximity_adj_mat, dtype=np.float64)
@@ -368,9 +383,12 @@ class KeepawayEnv(MultiAgentEnv):
         ## TODO: verify state variables to be for all agents or just one
         ## check for dec execution/
         ## partial observation or state variables 
-
-        obs = self.get_obs().values()["state_vars"]
-        obs_concat = np.concatenate(obs, axis=0)
+        # print("obs ," ,self.get_obs())
+        obs = self.get_obs().values()
+        obs = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in obs]
+        # print("obs ", obs, "len ", len(obs))
+        obs_concat = np.concatenate(obs , axis=0)
+        # print("obs_concat ", obs_concat, "len ", len(obs_concat))
         return obs_concat
 
     def step(self, actions):
@@ -386,6 +404,8 @@ class KeepawayEnv(MultiAgentEnv):
         applies all actions to the
         send an action signal and return observation.
         """
+        if isinstance(actions, torch.Tensor):
+            actions = actions.cpu().tolist()
 
         if not actions:
             self.agents = []

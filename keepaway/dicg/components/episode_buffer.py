@@ -19,6 +19,7 @@ class EpisodeBatch:
         self.preprocess = {} if preprocess is None else preprocess
         self.device = device
 
+
         if data is not None:
             self.data = data
         else:
@@ -36,7 +37,7 @@ class EpisodeBatch:
 
                 vshape = self.scheme[k]["vshape"]
                 dtype = self.scheme[k]["dtype"]
-                for transform in transforms:
+                for transform in transforms:        
                     vshape, dtype = transform.infer_output_info(vshape, dtype)
 
                 self.scheme[new_k] = {
@@ -54,6 +55,9 @@ class EpisodeBatch:
         })
 
         for field_key, field_info in scheme.items():
+            # print("field_key", field_key)
+            # print("field_info", field_info)
+
             assert "vshape" in field_info, "Scheme must define vshape for {}".format(field_key)
             vshape = field_info["vshape"]
             episode_const = field_info.get("episode_const", False)
@@ -85,10 +89,20 @@ class EpisodeBatch:
         self.device = device
 
     def update(self, data, bs=slice(None), ts=slice(None), mark_filled=True):
+        # print("data", data.keys())
+        # for key, value in data.items():
+        #     print(f"The shape of '{key}' is {len(value[0])}")
+
         slices = self._parse_slices((bs, ts))
+        # print("slices", slices)
+
         for k, v in data.items():
             if k in self.data.transition_data:
+                # print("k in self.data.transition_data", self.data.transition_data)
                 target = self.data.transition_data
+                # if k == "avail_actions":
+                #     print("available actions ", target["avail_actions"].shape)
+
                 if mark_filled:
                     target["filled"][slices] = 1
                     mark_filled = False
@@ -99,9 +113,28 @@ class EpisodeBatch:
             else:
                 raise KeyError("{} not found in transition or episode data".format(k))
 
+            
             dtype = self.scheme[k].get("dtype", th.float32)
+            
+            # print(k,v)
+            
             v = th.tensor(v, dtype=dtype, device=self.device)
-            self._check_safe_view(v, target[k][_slices])
+            # print("v", v.shape)
+            # print("slices , ",_slices)
+            # print("target[k] ", target[k][_slices])
+            # print("target", k ,target[k][_slices].shape)
+
+            ## state .
+            if k == "state":
+                # print("state ", target["state"].shape)
+                # print("slices ", _slices)
+                # pass
+                # print("state ", target["state"][_slices].shape)
+                # x = target[k][_slices].clone().unsqueeze(1) ## temporarily fixed. 
+                # print("x", x.shape)
+                self._check_safe_view(v,target[k][_slices])
+            else:
+                self._check_safe_view(v, target[k][_slices])
             target[k][_slices] = v.view_as(target[k][_slices])
 
             if k in self.preprocess:
@@ -114,6 +147,7 @@ class EpisodeBatch:
     def _check_safe_view(self, v, dest):
         idx = len(v.shape) - 1
         for s in dest.shape[::-1]:
+
             if v.shape[idx] != s:
                 if s != 1:
                     raise ValueError("Unsafe reshape of {} to {}".format(v.shape, dest.shape))
@@ -212,6 +246,9 @@ class ReplayBuffer(EpisodeBatch):
         self.episodes_in_buffer = 0
 
     def insert_episode_batch(self, ep_batch):
+        # print("ep_batch", ep_batch)
+        # print("buffer size ",self.buffer_size)
+
         if self.buffer_index + ep_batch.batch_size <= self.buffer_size:
             self.update(ep_batch.data.transition_data,
                         slice(self.buffer_index, self.buffer_index + ep_batch.batch_size),
