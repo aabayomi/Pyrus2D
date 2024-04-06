@@ -57,7 +57,6 @@ def get_decision_keepaway(
                 # wm._available_actions[wm.self().unum()] = 2
                 with count_list.get_lock():
                     pass
-                
                 Keepers.keeper_with_ball(wm, agent, count_list, last_action_time)
         else:
             fastest = wm.intercept_table().fastest_teammate()
@@ -67,22 +66,21 @@ def get_decision_keepaway(
 
        
     if wm.our_team_name() == "takers":
-        pass
-        # if wm.get_confidence("ball") < 0.90:
-        #     ScanField().execute(agent)
+        if wm.get_confidence("ball") < 0.90:
+            ScanField().execute(agent)
 
-        # GoToPoint(wm.ball().pos(), 0.2, 100).execute(agent)
+        GoToPoint(wm.ball().pos(), 0.2, 100).execute(agent)
 
-        # # Maintain possession if you have the ball.
-        # if wm.self().is_kickable() and (len(wm.teammates_from_ball()) == 0):
-        #     return HoldBall().execute(agent)
+        # Maintain possession if you have the ball.
+        if wm.self().is_kickable() and (len(wm.teammates_from_ball()) == 0):
+            return HoldBall().execute(agent)
 
-        # closest_taker_from_ball = wm.teammates_from_ball()
-        # if wm.self() not in closest_taker_from_ball:
-        #     Takers.mark_most_open_opponent(wm, agent)
-        #     return NeckTurnToBall().execute(agent)
+        closest_taker_from_ball = wm.teammates_from_ball()
+        if wm.self() not in closest_taker_from_ball:
+            Takers.mark_most_open_opponent(wm, agent)
+            return NeckTurnToBall().execute(agent)
 
-        # d = closest_taker_from_ball.dist_to_ball()
-        # if d < 0.3:
-        #     return NeckTurnToBall().execute(agent)
-        # return Intercept().execute(agent)
+        d = closest_taker_from_ball.dist_to_ball()
+        if d < 0.3:
+            return NeckTurnToBall().execute(agent)
+        return Intercept().execute(agent)

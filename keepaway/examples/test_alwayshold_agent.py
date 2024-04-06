@@ -8,9 +8,8 @@ config = get_config()["5v4"]
 
 def main():
     env = KeepawayEnv(**config)
-    episodes = 1000000
+    episodes = 10
     env._launch_game()
-    agents = env.num_keepers
     policy = AlwaysHoldPolicy(config)
     env.render()
     for e in range(episodes):
@@ -23,11 +22,7 @@ def main():
         while not terminated:
             obs = env.get_obs()
             actions, agent_infos = policy.get_actions(obs)
-            # print("actions ", actions)
-
             reward, terminated, info = env.step(actions)
-            # print("reward ", reward, "terminated ", terminated, "info ", info)
-            # print("matrix jfjfj ", env.get_proximity_adj_mat())
             time.sleep(0.15)
             episode_reward += reward
 

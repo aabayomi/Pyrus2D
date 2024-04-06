@@ -39,15 +39,10 @@ class KeepawayEnv(MultiAgentEnv):
         default_num_takers = 2
         default_pitch_size = 20  # Example default value, adjust as needed
 
-        # Use kwargs.get('key', default_value) to get the configuration values
         self.num_keepers = kwargs.get('num_keepers', default_num_keepers)
         self.num_takers = kwargs.get('num_takers', default_num_takers)
         self.pitch_size = kwargs.get('pitch_size', default_pitch_size)
 
-        # self.num_keepers = config["num_keepers"]
-        # self.num_takers = config["num_takers"]
-        # self.pitch_size = config["pitch_size"]
-        # print("pitch size: ", self.pitch_size)
         # self.sparse_reward = config["sparse_reward"]   
         self.sparse_reward  = kwargs.get('sparse_reward', default_pitch_size)
         self.actions = self.num_keepers  # 0: hold, 1: pass
@@ -56,14 +51,11 @@ class KeepawayEnv(MultiAgentEnv):
         self._total_steps = 0
         self.force_restarts = 0
         self.episode_limit = 10000
-        self.timeouts = 0
-        self.continuing_episode = False
         self.num_agents = self.num_keepers + self.num_takers
 
-        self._last_action = None
+    
         manager = multiprocessing.Manager()
         self._world = WorldModel("real",self.num_keepers ,manager)  # for all agents
-        
         self._lock = self._world
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(self.num_keepers)
@@ -188,8 +180,6 @@ class KeepawayEnv(MultiAgentEnv):
 
         options = ConfigOptions()
         # options, _ = parser.parse_args(args)
-
-
         # Merging command-line options with YAML defaults
         for key, value in config.items():
             if not getattr(options, key, None):
@@ -274,7 +264,6 @@ class KeepawayEnv(MultiAgentEnv):
         """
         returns the reward for the current state
         """
-
         r = self._world.time().cycle() - self._terminal_time.cycle()
         return r
         
@@ -423,7 +412,6 @@ class KeepawayEnv(MultiAgentEnv):
         total_reward = 0
         info = {}
         terminated = False
-
         self._actions = copy.deepcopy(actions_int)
         self._shared_values = multiprocessing.Array("i", self._actions)
         self._observation = self._world._obs

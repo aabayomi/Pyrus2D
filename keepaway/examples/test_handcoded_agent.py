@@ -2,10 +2,8 @@ import time
 from absl import logging
 logging.set_verbosity(logging.DEBUG)
 from keepaway.envs.keepaway_env import KeepawayEnv
-from keepaway.envs.policies.handcoded_agent import HandcodedPolicy
-
-
 from keepaway.config.game_config import get_config
+from keepaway.envs.policies.handcoded_agent import HandcodedPolicy
 
 config = get_config()["3v2"]
 
@@ -14,7 +12,6 @@ def main():
     env = KeepawayEnv(**config)
     episodes = 20
     env._launch_game()
-    agents = env.num_keepers
     policy = HandcodedPolicy(config)
     env.render()
     for e in range(episodes):
@@ -28,8 +25,6 @@ def main():
             obs = env.get_obs()
             actions, agent_infos = policy.get_actions(obs)
             reward, terminated, info = env.step(actions)
-            # print("reward ", reward, "terminated ", terminated, "info ", info)
-            # print("matrix jfjfj ", env.get_proximity_adj_mat())
             time.sleep(0.15)
             episode_reward += reward
 
