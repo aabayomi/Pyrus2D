@@ -50,11 +50,14 @@ def get_decision_keepaway(
                 GoToPoint(wm.ball().pos(), 0.2, 100).execute(agent)
 
         if wm.self().pos().dist(wm.ball().pos()) < 5.0:
-            obs[wm.self().unum()] = wm._retrieve_observation()
+            with count_list.get_lock():
+                obs[wm.self().unum()] = wm._retrieve_observation()
+                
             if wm.self().is_kickable():
                 # wm._available_actions[wm.self().unum()] = 2
                 with count_list.get_lock():
                     pass
+                
                 Keepers.keeper_with_ball(wm, agent, count_list, last_action_time)
         else:
             fastest = wm.intercept_table().fastest_teammate()
@@ -81,4 +84,5 @@ def get_decision_keepaway(
         d = closest_taker_from_ball.dist_to_ball()
         if d < 0.3:
             return NeckTurnToBall().execute(agent)
+        
         return Intercept().execute(agent)

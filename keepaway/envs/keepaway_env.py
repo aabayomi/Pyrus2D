@@ -32,7 +32,6 @@ class KeepawayEnv(MultiAgentEnv):
         self.num_keepers = config["num_keepers"]
         self.num_takers = config["num_takers"]
         self.pitch_size = config["pitch_size"]
-        print("pitch size: ", self.pitch_size)
         self.sparse_reward = config["sparse_reward"]
         self.actions = self.num_keepers  # 0: hold, 1: pass
         self._episode_count = 0
@@ -46,7 +45,7 @@ class KeepawayEnv(MultiAgentEnv):
 
         self._last_action = None
         manager = multiprocessing.Manager()
-        self._world = WorldModel("real", manager)  # for all agents
+        self._world = WorldModel("real",self.num_keepers,manager)  # for all agents
         
         self._lock = self._world
         self._event = multiprocessing.Event()
@@ -129,6 +128,7 @@ class KeepawayEnv(MultiAgentEnv):
             for i in range(self.num_takers)
         ]
 
+        # print("keepers: ", self._keepers)
         ## uncomment to include some coaching
         # self._coach = [multiprocessing.Process(target=main_c.main)]
         # coach = mp.Process(target=main_c.main)
@@ -225,8 +225,6 @@ class KeepawayEnv(MultiAgentEnv):
         ]
 
         # Build rcssserver command, and fork it off.
-        print(server_options)
-
         command = ["rcssserver"] + server_options
         popen = Popen(command)
 
@@ -269,8 +267,11 @@ class KeepawayEnv(MultiAgentEnv):
     def full_restart(self):
         """Restart the environment. Required after each full episode."""
         # TODO process management utility
-        
-        self._launch_game()
+        # self._launch_game()
+        # close all agent processes
+        self.close()
+        # self._launch_game()
+        self.start()
         self.force_restarts += 1
 
     def start(self):
@@ -357,7 +358,13 @@ class KeepawayEnv(MultiAgentEnv):
         obs = self.get_obs().values()["state_vars"]
         obs_concat = np.concatenate(obs, axis=0)
         return obs_concat
-
+    def _check_process(self):
+        """Check if the process is still running."""
+        for p in self._keepers + self._takers:
+            if not p.is_alive():
+                return False
+        return True
+    
     def step(self, actions):
         """A single environment step. Returns reward, terminated, info.
 
@@ -398,4 +405,10 @@ class KeepawayEnv(MultiAgentEnv):
             self._terminal_time = self._world.time()
         if terminated:
             self._episode_count += 1
+
+            ## check if processes are still running
+            if not self._check_process():
+                self._restart()
+
+
         return total_reward, terminated, info

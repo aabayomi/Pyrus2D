@@ -9,7 +9,7 @@ config = get_config()["5v4"]
 
 def main():
     env = KeepawayEnv(config)
-    episodes = 1000000
+    episodes = 10
     print("Training episodes")
     print("launching game")
     env._launch_game()

@@ -63,7 +63,7 @@ class WorldModel:
     DIR_CONF_DIVS = 72
     DIR_STEP = 360.0 / DIR_CONF_DIVS
 
-    def __init__(self, name, manager=None):
+    def __init__(self, name,num_keepers, manager=None):
         self._name = name
         self._is_full_state = True if name == "full" else False
         self._player_types = [PlayerType() for _ in range(18)]
@@ -156,7 +156,8 @@ class WorldModel:
         self._available_actions = [None] * 4
 
         self._info = {}
-        self._agents = [1, 2, 3]  # hardcoded for now
+        # self._agents = [1, 2, 3]  # hardcoded for now
+        self._agents = [i for i in range(1, num_keepers + 1)]
         self.observations = {agent: None for agent in self._agents}
         self.last_action_time = 0  # hand-coded for now change later
 
