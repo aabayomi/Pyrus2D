@@ -6,7 +6,7 @@ import itertools
 import torch_scatter
 from math import factorial
 from random import randrange
-from keepaway.dicg.controller.basic_controller import BasicMAC
+from keepaway.dcg.controller.basic_controller import BasicMAC
 
 
 class DeepCoordinationGraphMAC(BasicMAC):

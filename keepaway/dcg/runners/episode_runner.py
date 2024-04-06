@@ -1,7 +1,7 @@
 from keepaway.envs import REGISTRY as env_REGISTRY
 
 from functools import partial
-from keepaway.dicg.components.episode_buffer import EpisodeBatch
+from keepaway.dcg.components.episode_buffer import EpisodeBatch
 import numpy as np
 
 from keepaway.envs.keepaway_env import KeepawayEnv
@@ -14,13 +14,13 @@ class EpisodeRunner:
         self.batch_size = self.args.batch_size_run
         assert self.batch_size == 1
 
-        print("args ", self.args.env)        
+        # print("args ", self.args.env)        
 
         # self.env = env_REGISTRY[self.args.env](**self.args.env_args)
         # print("args ", type(args))
         self.env_config = vars(args) ## should do some optimzations.
         # self.env = env_REGISTRY[self.args.env](**self.env_config)
-        self.env = env_REGISTRY[self.args.env](num_keepers=3, num_takers=2, pitch_size=20)
+        self.env = env_REGISTRY[self.args.env](num_keepers=self.args.num_keepers, num_takers=self.args.num_takers, pitch_size=self.args.pitch_size)
         # self.env = KeepawayEnv(self.env_config)
         # self.env = env_REGISTRY[self.args.name](self.env_config)
         # self.episode_limit = self.env.episode_limit
@@ -107,9 +107,9 @@ class EpisodeRunner:
                 "obs": [self.convert_to_numpy(self.env.get_obs())]
             }
 
-            # print("pre_transition_data", pre_transition_data["state"][0])
-            # print("pre_transition_data", pre_transition_data["avail_actions"][0])
-            # print("pre_transition_data", pre_transition_data["obs"][0])
+            # print("pre_transition_data", len(pre_transition_data["state"][0]))
+            # print("pre_transition_data", len(pre_transition_data["avail_actions"][0]))
+            # print("pre_transition_data", len(pre_transition_data["obs"][0]))
 
             self.batch.update(pre_transition_data, ts=self.t)
 
@@ -170,7 +170,7 @@ class EpisodeRunner:
     def convert_to_numpy(self,proxy):
         regular_dict = dict(proxy)
         values = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in regular_dict.values()] 
-        # print("values ", values)
+        # print("values ", values[0], "length ", len(values[0]))
         numpy_array = np.stack(values, axis=0)
         return numpy_array
 

@@ -44,26 +44,43 @@ class HandcodedPolicy():
         return True
 
     def select_agent_action(self, obs, agent_id):
-        """Returns the action for the agent in the keepaway domain."""
+        """Returns the action for the agent in the keep-away domain."""
+
+        # print("obs ", obs)
 
         scores = [None] * self.num_keepers
 
         # set current agent index to a very small value
-        scores[agent_id - 1] = -1000000.0
-
-        my_distance_to_taker = obs["state_vars"][7 : 7 + self.num_takers]
         
-        if len(my_distance_to_taker) > 0:
-            if my_distance_to_taker[0] > self.distance_threshold:
+        if isinstance(obs, dict):
+            obs = obs["state_vars"]
+        else:
+            obs = obs
+
+
+        if self.num_keepers == 3:
+            start_idx = 7
+        elif self.num_keepers == 4:
+            start_idx = 10
+        elif self.num_keepers == 5:
+            start_idx = 13
+
+        last_index = (len(obs) - 1) - self.num_takers 
+
+        nearest_opp_k_dist = obs[start_idx : start_idx + self.num_takers]
+        nearest_opp_k_angle = obs[last_index + 1 : ]
+        
+        if len(nearest_opp_k_dist) > 0:
+            if nearest_opp_k_dist[0] > self.distance_threshold:
                 return 0
 
         for i in range(self.num_keepers):
             if i == agent_id - 1:
-                pass
+                scores[i] = -1000000.0
             else:
                 scores[i] = (
-                    self.dist_weight * obs["state_vars"][7 + i]
-                    + obs["state_vars"][9 + i]
+                    self.dist_weight * obs[start_idx + i]
+                    + obs[last_index + i]
                 )  
 
         best = np.argmax(scores)

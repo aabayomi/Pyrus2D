@@ -27,7 +27,6 @@ def main():
         while not terminated:
             obs = env.get_obs()
             actions, agent_infos = policy.get_actions(obs)
-
             reward, terminated, info = env.step(actions)
             # print("reward ", reward, "terminated ", terminated, "info ", info)
             # print("matrix jfjfj ", env.get_proximity_adj_mat())

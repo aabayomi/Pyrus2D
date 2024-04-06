@@ -63,7 +63,7 @@ class WorldModel:
     DIR_CONF_DIVS = 72
     DIR_STEP = 360.0 / DIR_CONF_DIVS
 
-    def __init__(self, name, manager=None):
+    def __init__(self, name, num_keepers , manager=None):
         self._name = name
         self._is_full_state = True if name == "full" else False
         self._player_types = [PlayerType() for _ in range(18)]
@@ -145,20 +145,27 @@ class WorldModel:
         ## keep-away Defined variables ##
 
         self._episode_start = timeit.default_timer()
-        self._cumulative_reward = 0
-        self._step_count = 0
         self._observation = None
         self._result = {}
 
         self._last_action = None
         self._is_new_episode = False
-        self._time_list = [0, 0, 0, 0]
         self._available_actions = [None] * 4
 
         self._info = {}
-        self._agents = [1, 2, 3]  # hardcoded for now
+        # self._agents = [1, 2, 3]  # hardcoded for now
+        self._agents = [i for i in range(1, num_keepers + 1)]
         # self.observations = {agent: None for agent in self._agents}
-        self.observations = {agent: np.zeros(13) for agent in self._agents}
+        # self.observations = {agent: np.zeros(13) for agent in self._agents}
+        self.observations = {
+            agent: np.zeros(13, dtype=np.float32) if len(self._agents) == 3 else
+                np.zeros(20, dtype=np.float32) if len(self._agents) == 4 else
+                np.zeros(26, dtype=np.float32) if len(self._agents) == 5 else
+                np.zeros(0, dtype=np.float32)  # Default case, adjust as necessary
+            for agent in self._agents
+        }
+        
+        
         self.last_action_time = 0  # hand-coded for now change later
 
         self._all_teammates_from_ball: list[PlayerObject] = []  # .
@@ -1488,7 +1495,7 @@ class WorldModel:
                 f"s={self.their_side()} u={self._their_goalie_unum} "
                 f"p={heard_pos} b={heard_body}"
             )
-            return
+            # return
 
         goalie_speed_max = SP.default_player_speed_max()
         min_dist = 1000.0
@@ -2002,7 +2009,7 @@ class WorldModel:
                 return True
         return False
 
-    ################################################  Keep-away Utils ##########################################
+    ########################################  Keep-away Utils #######################################
 
     def check_ball(self):
         """Check if the ball is in the field."""
@@ -2016,8 +2023,6 @@ class WorldModel:
         self._available_actions[agent_idx] = l
         return self._available_actions
 
-    def is_new_episode(self):
-        return self._is_new_episode
 
     def set_new_episode(self):
         self._is_new_episode = True
@@ -2025,16 +2030,16 @@ class WorldModel:
     def start_new_episode(self):
         self._is_new_episode = False
 
-    def is_terminal(self):
-        return self._terminated
 
     def _retrieve_observation(self):
         """
         Retrieve observation from the environment.
         this implementations the 13 state variables from the paper Peter Stone 2005.
         """
+        import copy
         self._convert_players_observation()
-        self._observation = self._result
+
+        self._observation =  copy.deepcopy(self._result)
         return self._observation
 
     def get_observation(self, agent_id: int):
@@ -2055,12 +2060,23 @@ class WorldModel:
         return AngleDeg.normalize_angle(
             AngleDeg.acos_deg(dot_product / (x.r() * y.r()))
         )
+    
+    def safe_assign(self, lst, index, value):
+        """Safely assigns value to a list at the specified index."""
+        if 0 <= index < len(lst):
+            lst[index] = value
+        else:
+            # Optionally, log a warning message if the index is out of bounds
+            # print(f"Warning: Attempt to assign to index {index} which is out of bounds.")
+            pass
+
 
     def _convert_players_observation(self):
         """
         Convert players observation from list to dictionary.
-        13 state variables from the paper Peter Stone 2005.
+        13,19,25 state variables from the paper Peter Stone 2005.
         """
+        import copy
 
         keepaway_field_center = Vector2D(0, 0)  # assumed to at (0,0)
         self._set_players_from_ball_and_self()
@@ -2068,25 +2084,61 @@ class WorldModel:
         closest_keeper_ball = self.teammates_from_ball()
         all_keeper_closest_to_ball = self.all_teammates_from_ball()
 
-        state_vars = []
-        for p in self._all_players:
+
+        if len(self._agents) == 3:
+            state_vars = [0.0] * 14 # 13
+        elif len(self._agents) == 4:
+            state_vars = [0.0] * 20 # 19
+        elif len(self._agents) == 5:
+            state_vars = [0.0] * 26 # 25
+
+
+        # print("state_vars", len(state_vars))
+
+        # state_vars = []
+        index = 0
+        
+        ## distance to the center of the field ##
+        ## all players ##
+
+        for p in self._all_players: 
             if p.pos_valid():
                 dist = (p.pos() - keepaway_field_center).r()
-                state_vars.append(dist)
+                # state_vars.append(dist)
+                state_vars[index] = dist
+                index += 1
 
-        for p in self._teammates_from_self:
+        # print("index after dist", index)
+        
+        # print("teammates_from_ball", self._teammates_from_self)
+
+        for p in self._teammates_from_self: # 3
             if p.pos_valid():
                 dist = p.dist_from_self()
-                state_vars.append(dist)
+                # state_vars.append(dist)
+                # state_vars[index] = dist
+                self.safe_assign(state_vars, index, dist)
+                index += 1
 
-        opp_dist = []
-        for p in self._opponents_from_self:
+        # print("index after dist teammates ", index)
+
+        # opp_dist = []
+        # print("opponents_from_ball", self._opponents_from_self)
+
+        for p in self._opponents_from_self: # 3
             if p.pos_valid():
                 dist = p.dist_from_self()
-                state_vars.append(dist)
-                opp_dist.append(dist)
+                # state_vars.append(dist)
+                # state_vars[index] = dist
+                self.safe_assign(state_vars, index, dist)
+                # opp_dist.append(dist)
+                index += 1
 
-        for k in self._teammates:
+    
+        # print("index after dist opponents ", index)
+        # print("state varibales ", state_vars)
+
+        for k in self._teammates: # 3
             min_dist = 10000
             for t in self._opponents:
                 if t.pos_valid() and k.pos_valid():
@@ -2094,24 +2146,46 @@ class WorldModel:
                     if dist < min_dist:
                         min_dist = dist
             # print("min_dist", min_dist)
-            state_vars.append(min_dist)
+            # print("index ", index)
+            # state_vars[index] = min_dist
+            self.safe_assign(state_vars, index, dist)
+            # state_vars.append(min_dist)
             min_dist = 10000
+            index += 1
+        
+        # print("index after min_dist ", index)
 
 
         closest_keeper = all_keeper_closest_to_ball[0]
-
-        for k in self._teammates:
+        
+        for k in self._teammates: 
             min_angle = 10000
             for t in self._opponents:
                 if closest_keeper != None:
                     temp = self.find_angle(closest_keeper.pos(), k.pos(), t.pos())
                     if temp < min_angle:
                         min_angle = temp
-            state_vars.append(min_angle)
-            min_angle = 10000
+            # state_vars.append(min_angle)
+            self.safe_assign(state_vars, index, dist)
+            index += 1
+            # print("index ", index)
+            # if index > len(state_vars):
+            #     pass
+            # else:
+            #     state_vars[index] = min_angle
+            #     index += 1
+            #     print("min_angle", index)
+            #     min_angle = 10000
+        
+        # print("index after min_angle ", index)
 
         ### Due to the simulator observation, need to pad the unavailable state variables ##
-        state_vars = self._pad(state_vars, min_length=13, pad_value=0)
+        # print("before padding state_vars", len(state_vars))
+        # state_vars = self._pad(state_vars, min_length=13, pad_value=0)
+        # print("after padding state_vars", len(state_vars))
+            
+        # print("state_vars", len(state_vars))
+
         self._result["state_vars"] = np.array(state_vars, dtype=np.float32)
 
     
@@ -2191,67 +2265,7 @@ class WorldModel:
                         matrix[i, j] = 1
                         matrix[j, i] = 1
         return matrix
-
-    def _least_congested_point_for_pass_in_rectangle(
-        self, agent, rect: Rect2D, pos_from
-    ):
-        """Returns the least congested point for a pass in the given rectangle."""
-
-        x_granularity = 5  # 5 samples by 5 samples
-        y_granularity = 5
-
-        x_buffer = 0.15  # 15% border on each side
-        y_buffer = 0.15
-
-        x_mesh = rect.size().length() * (1 - 2 * x_buffer) / (x_granularity - 1)
-        y_mesh = rect.size().width() * (1 - 2 * y_buffer) / (y_granularity - 1)
-
-        start_x = rect.bottom_right().x() + x_buffer * rect.size().length()
-        start_y = rect.top_left().y() + y_buffer * rect.size().width()
-
-        x = start_x
-        y = start_y
-
-        best_congestion = 1000
-        # best_point,
-        point = Vector2D(x, y)
-        tmp = None
-
-        for i in range(x_granularity):
-            for j in range(y_granularity):
-                tmp = self._congestion(agent, point, True)
-                if (
-                    tmp < best_congestion
-                    and self._get_in_set_in_cone(0.3, pos_from, point) == 0
-                ):
-                    best_congestion = tmp
-                    best_point = point
-                y += y_mesh
-            x += x_mesh
-            y = start_y
-
-        if best_congestion == 1000:
-            c = (rect.bottom_right() + rect.top_right()) * 0.5
-            best_point = c
-        return best_point
-
-    def _congestion(self, agent, pos, consider_me):
-        ## Keepaway congestion method
-
-        """Returns the congestion at the given position."""
-        congest = 0
-        if consider_me and pos != agent.self().pos():
-            congest += 1 / agent.self().pos().dist(pos)
-
-        for p in self._teammates:
-            if p.pos_valid() and p.pos() != pos:
-                congest += 1 / p.pos().dist(pos)
-
-        for p in self._opponents:
-            if p.pos_valid() and p.pos() != pos:
-                congest += 1 / p.pos().dist(pos)
-
-        return congest
+   
 
     def get_in_set_in_cone(self, radius, pos_from, pos_to):
         """Returns the number of players in the given set in the cone from posFrom to posTo with the given radius."""

@@ -40,7 +40,7 @@ class KeepawayEnv(MultiAgentEnv):
         default_pitch_size = 20  # Example default value, adjust as needed
 
         # Use kwargs.get('key', default_value) to get the configuration values
-        self.num_keepers =kwargs.get('num_keepers', default_num_keepers)
+        self.num_keepers = kwargs.get('num_keepers', default_num_keepers)
         self.num_takers = kwargs.get('num_takers', default_num_takers)
         self.pitch_size = kwargs.get('pitch_size', default_pitch_size)
 
@@ -62,20 +62,20 @@ class KeepawayEnv(MultiAgentEnv):
 
         self._last_action = None
         manager = multiprocessing.Manager()
-        self._world = WorldModel("real", manager)  # for all agents
+        self._world = WorldModel("real",self.num_keepers ,manager)  # for all agents
         
         self._lock = self._world
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(self.num_keepers)
 
-        ### Event implementation
+        ### Event implementation .
         self._event_from_subprocess = multiprocessing.Event()
         self._main_process_event = (
             multiprocessing.Event()
         )  # To be set by main process to wake up all subprocesses
 
         self._actions = [0] * self.num_keepers
-        self._shared_values = multiprocessing.Array("i", self._actions)
+        self._shared_actions = multiprocessing.Array("i", self._actions)
 
         self._obs = self._world._obs
         # Use a joint value instead
@@ -101,7 +101,7 @@ class KeepawayEnv(MultiAgentEnv):
                     "keepers",
                     i,
                     False,
-                    self._shared_values,
+                    self._shared_actions,
                     self._barrier,
                     self._lock,
                     self._event,
@@ -127,7 +127,7 @@ class KeepawayEnv(MultiAgentEnv):
                     "takers",
                     i,
                     False,
-                    self._shared_values,
+                    self._shared_actions,
                     self._barrier,
                     self._lock,
                     self._event,
@@ -354,6 +354,7 @@ class KeepawayEnv(MultiAgentEnv):
     
     def get_obs(self):
         # obs = np.frombuffer(self._obs, dtype=np.float64)
+        # print("obs ", self._obs) .
         return self._obs
     
     def get_obs_agent(self, agent_id):
@@ -387,6 +388,10 @@ class KeepawayEnv(MultiAgentEnv):
         # print("obs ," ,self.get_obs())
         obs = self.get_obs().values()
         obs = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in obs]
+
+        # for i, array in enumerate(obs, start=1):
+        #     print(f"Length of array {i}: {array.shape[0]}")
+
         # print("obs ", obs, "len ", len(obs))
         obs_concat = np.concatenate(obs , axis=0)
         # print("obs_concat ", obs_concat, "len ", len(obs_concat))

@@ -20,6 +20,8 @@ class EpisodeBatch:
         self.device = device
 
 
+        # print("scheme", scheme)
+
         if data is not None:
             self.data = data
         else:
@@ -116,7 +118,7 @@ class EpisodeBatch:
             
             dtype = self.scheme[k].get("dtype", th.float32)
             
-            # print(k,v)
+            # print(k,len(v))
             
             v = th.tensor(v, dtype=dtype, device=self.device)
             # print("v", v.shape)
@@ -132,6 +134,7 @@ class EpisodeBatch:
                 # print("state ", target["state"][_slices].shape)
                 # x = target[k][_slices].clone().unsqueeze(1) ## temporarily fixed. 
                 # print("x", x.shape)
+                # print("v", v.shape)
                 self._check_safe_view(v,target[k][_slices])
             else:
                 self._check_safe_view(v, target[k][_slices])

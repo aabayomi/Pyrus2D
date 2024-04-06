@@ -1,5 +1,5 @@
-from keepaway.dicg.learner.q_learner import QLearner
-from keepaway.dicg.components.episode_buffer import EpisodeBatch
+from keepaway.dcg.learner.q_learner import QLearner
+from keepaway.dcg.components.episode_buffer import EpisodeBatch
 import torch as th
 
 

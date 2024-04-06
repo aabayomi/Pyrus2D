@@ -102,21 +102,28 @@ class Keepers:
     def keeper_with_ball(
         wm: "WorldModel", agent: "PlayerAgent", actions, last_action_time
     ):
+        # print("keeper_with_ball: actions = ", actions)
         action = actions[wm.self().unum() - 1]
+        print(f"keeper_with_ball: action { action }  and i am {wm.self().unum()}",)
+        # print(f"keeper_with_ball: action={ action }")
         Keepers.interpret_keeper_action(wm, agent, action)
 
     @staticmethod
     def interpret_keeper_action(wm: "WorldModel", agent, action):
         if action == 0:
-            return HoldBall().execute(agent)
+            # print(f"keeper_with_ball: holding the ball ={ action }")
+            HoldBall().execute(agent)
+            # return
+            # return HoldBall().execute(agent)
         else:
             k = wm.teammates_from_ball()
             if len(k) > 0:
                 for tm in k:
                     if tm.unum() == action:
                         temp_pos = tm.pos()
-                        return agent.do_kick_to(tm, 1.5)
-        return
+                        print(f"keeper_with_ball: kick to ={ action }")
+                        agent.do_kick_to(tm, 1.5)
+        # return
 
     ## should be removed ** i dont know just yet
     @staticmethod

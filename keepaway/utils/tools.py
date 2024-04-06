@@ -284,7 +284,10 @@ class Tools:
 
         for p in wm._opponents:
             if p.pos_valid():
-                congest += 1 / p.pos().dist(point)
+                if p.pos().dist(point) == 0:
+                    congest += 0
+                else:
+                    congest += 1 / p.pos().dist(point)
         return congest
 
     @staticmethod
@@ -303,10 +306,8 @@ class Tools:
 
         start_x = rect.bottom_left().x() + x_buffer * length
         start_y = rect.top_left().y() + y_buffer * width
-
         x = start_x
         y = start_y
-
         best_congestion = 1000
         point = Vector2D(x, y)
         tmp = None

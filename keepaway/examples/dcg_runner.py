@@ -1,29 +1,27 @@
 
-import datetime
 import os
+import datetime
 import pprint
 import time
 import threading
 import torch as th
 import numpy as np
 import yaml 
-import collections
 from types import SimpleNamespace as SN
-from keepaway.dicg.utils.logging import Logger
-from keepaway.dicg.utils.timehelper import time_left, time_str
+from keepaway.dcg.utils.logging import Logger
+from keepaway.dcg.utils.timehelper import time_left, time_str
 from os.path import dirname, abspath
-from keepaway.dicg.components.episode_buffer import ReplayBuffer
-from keepaway.dicg.components.transforms import OneHot
-import os
+from keepaway.dcg.components.episode_buffer import ReplayBuffer
+from keepaway.dcg.components.transforms import OneHot
 from collections.abc import Mapping
-from keepaway.dicg.learner.q_learner import QLearner
-from keepaway.dicg.learner.dcg_learner import DCGLearner
-from keepaway.dicg.runners.episode_runner import EpisodeRunner 
+from keepaway.dcg.learner.q_learner import QLearner
+from keepaway.dcg.learner.dcg_learner import DCGLearner
+from keepaway.dcg.runners.episode_runner import EpisodeRunner 
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.config.game_config import get_config
-from keepaway.dicg.controller.dcg_controller import DeepCoordinationGraphMAC
+from keepaway.dcg.controller.dcg_controller import DeepCoordinationGraphMAC
 
-from keepaway.dicg.utils.logging import get_logger
+from keepaway.dcg.utils.logging import get_logger
 
 logger = get_logger()
 
@@ -45,9 +43,9 @@ results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 def evaluate_sequential(args, runner):
     for _ in range(args.test_nepisode):
         runner.run(test_mode=True)
-    if args.save_replay:
-        runner.save_replay()
-    runner.close_env()
+    # if args.save_replay:
+    #     runner.save_replay()
+    # runner.close_env()
 
 
 def run_sequential(args, logger):
@@ -72,7 +70,7 @@ def run_sequential(args, logger):
         "actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])
     }
 
-    print(args.buffer_size, env_info["episode_limit"] + 1)
+    # print(args.buffer_size, env_info["episode_limit"] + 1)
 
     buffer = ReplayBuffer(scheme, groups, args.buffer_size, env_info["episode_limit"] + 1,
                           preprocess=preprocess,
@@ -338,6 +336,8 @@ if __name__ == "__main__":
         "n_actions": env.get_total_actions(),
         "episode_limit": env.episode_limit
     }
+    print(env_info)
+    
     # print(config)
     # print( "state shape ",env_info["state_shape"])
     

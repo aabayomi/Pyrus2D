@@ -1,7 +1,7 @@
 import copy
-from keepaway.dicg.components.episode_buffer import EpisodeBatch
-from keepaway.dicg.modules.mixers.vdn import VDNMixer
-from keepaway.dicg.modules.mixers.qmix import QMixer
+from keepaway.dcg.components.episode_buffer import EpisodeBatch
+from keepaway.dcg.modules.mixers.vdn import VDNMixer
+from keepaway.dcg.modules.mixers.qmix import QMixer
 import torch as th
 from torch.optim import RMSprop
 

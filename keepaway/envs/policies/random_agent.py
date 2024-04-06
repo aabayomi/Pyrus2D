@@ -28,8 +28,9 @@ class RandomPolicy():
             if a != idx:
                 actions.append(a)
             else:
-                l = [num for num in range(0, self.num_keepers + 1) if num != idx]
+                l = [num for num in range(1, self.num_keepers + 1) if num != idx]
+                # print("l: ", l)
                 actions.append(random.choice(l))
 
-        # print("randoms actions: ", actions)
+        print("randoms actions: ", actions)
         return actions, {}

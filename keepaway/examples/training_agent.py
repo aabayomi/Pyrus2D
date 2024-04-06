@@ -12,7 +12,6 @@ from keepaway.config.game_config import get_config
 from absl import flags, app
 
 
-
 # Edit the configuration path if needed(this is the default path)
 agent_config_path = os.getcwd() + "/config/sample_agent_config.yml"
 
@@ -44,7 +43,9 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
     else:
         raise ValueError(f"Unknown policy: {agent_config.get('policy')}")
 
-    env = KeepawayEnv(env_configs)
+    # print(f"Training agent with configuration: {agent_config}")
+
+    env = KeepawayEnv(**env_configs)
     env._launch_game()
     env.render()
     time.sleep(1)
@@ -55,6 +56,7 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
         env.start()
         while not terminated:
             obs = env.get_obs()
+            # print(obs)
             actions, agent_infos = policy.get_actions(obs)
             reward, terminated, info = env.step(actions)
             episode_reward += reward
@@ -84,7 +86,7 @@ if __name__ == '__main__':
                         help='Configuration to use, defines the number of keepers e.g., "3v2", "4v3", or "5v4"')
     parser.add_argument('--num_timesteps', type=int, default=int(2e6),
                         help='Number of timesteps to run for.')
-    parser.add_argument('--nepisode', type=int, default=10,
+    parser.add_argument('--nepisode', type=int, default=100,
                         help='Number of episodes')
     parser.add_argument('--nsteps', type=int, default=128,
                         help='Number of environment steps per epoch; batch size is nsteps * nenv')
