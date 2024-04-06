@@ -170,6 +170,8 @@ class EpisodeRunner:
     def convert_to_numpy(self,proxy):
         regular_dict = dict(proxy)
         values = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in regular_dict.values()] 
+        # for i in range(len(values)):
+        #     print("values ", values[i], "length ", len(values[i]))
         # print("values ", values[0], "length ", len(values[0]))
         numpy_array = np.stack(values, axis=0)
         return numpy_array

@@ -2086,7 +2086,7 @@ class WorldModel:
 
 
         if len(self._agents) == 3:
-            state_vars = [0.0] * 14 # 13
+            state_vars = [0.0] * 13 # 13
         elif len(self._agents) == 4:
             state_vars = [0.0] * 20 # 19
         elif len(self._agents) == 5:

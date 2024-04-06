@@ -267,6 +267,17 @@ class KeepawayEnv(MultiAgentEnv):
         r = self._world.time().cycle() - self._terminal_time.cycle()
         return r
         
+    def _check_agents(self):
+        """Check if all agents process are running."""
+        for p in self._keepers:
+            if not p.is_alive():
+                return False
+        for p in self._takers:
+            if not p.is_alive():
+                return False
+        return True
+
+
 
     def _restart(self):
         self.full_restart()
@@ -274,7 +285,6 @@ class KeepawayEnv(MultiAgentEnv):
     def full_restart(self):
         """Restart the environment. Required after each full episode."""
         # TODO process management utility
-        
         self._launch_game()
         self.force_restarts += 1
 
@@ -427,4 +437,13 @@ class KeepawayEnv(MultiAgentEnv):
             self._terminal_time = self._world.time()
         if terminated:
             self._episode_count += 1
+
+            ## check if all agents are running
+            if not self._check_agents():
+                print("restarting")
+                # self.close()
+                self._restart()
+                self.start()
+
+
         return total_reward, terminated, info
