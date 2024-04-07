@@ -96,7 +96,7 @@ class EpisodeBatch:
         #     print(f"The shape of '{key}' is {len(value[0])}")
 
         slices = self._parse_slices((bs, ts))
-        # print("slices", slices)
+        # print("slices first ", slices)
 
         for k, v in data.items():
             if k in self.data.transition_data:
@@ -129,15 +129,19 @@ class EpisodeBatch:
             ## state .
             if k == "state":
                 # print("state ", target["state"].shape)
-                # print("slices ", _slices)
+                
                 # pass
                 # print("state ", target["state"][_slices].shape)
                 # x = target[k][_slices].clone().unsqueeze(1) ## temporarily fixed. 
-                # print("x", x.shape)
+                # print("x", x.shape) 
                 # print("v", v.shape)
+                # print("slices ", _slices)
+                # print("target  ", target[k].shape)
+                # print("target[k][_slices]", target[k][_slices].shape)
                 self._check_safe_view(v,target[k][_slices])
             else:
                 self._check_safe_view(v, target[k][_slices])
+            
             target[k][_slices] = v.view_as(target[k][_slices])
 
             if k in self.preprocess:

@@ -52,8 +52,7 @@ class KeepawayEnv(MultiAgentEnv):
         self.force_restarts = 0
         self.episode_limit = 10000
         self.num_agents = self.num_keepers + self.num_takers
-
-    
+        
         manager = multiprocessing.Manager()
         self._world = WorldModel("real",self.num_keepers ,manager)  # for all agents
         self._lock = self._world
@@ -84,6 +83,7 @@ class KeepawayEnv(MultiAgentEnv):
 
         self.renderer = None
         self._run_flag = False
+
 
 
         self._keepers = [
@@ -146,7 +146,15 @@ class KeepawayEnv(MultiAgentEnv):
         self._server = []
         self._render = []
         self._sleep = time
+    
        
+
+    def _is_game_started(self):
+        """Check if the game has started."""
+        if self._world.game_mode().type() == "play_on":
+            return True
+        return False
+    
 
     def _agents(self):
         """ Utility to return all agents in the environment. """
@@ -439,11 +447,9 @@ class KeepawayEnv(MultiAgentEnv):
             self._episode_count += 1
 
             ## check if all agents are running
-            if not self._check_agents():
-                print("restarting")
-                # self.close()
-                self._restart()
-                self.start()
-
-
+            # if not self._check_agents():
+            #     print("restarting")
+            #     # self.close()
+            #     self._restart()
+            #     self.start()
         return total_reward, terminated, info

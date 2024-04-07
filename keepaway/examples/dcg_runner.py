@@ -26,12 +26,11 @@ from keepaway.dcg.utils.logging import get_logger
 logger = get_logger()
 
 
-test_interval = 10000
-log_interval = 1000
-save_model_interval = 10000
-learner_log_interval = 1000
-t_max = 1000000
-test_interval = 10000
+test_interval = 10
+log_interval = 10
+save_model_interval = 10
+learner_log_interval = 10
+t_max = 100
 batch_size = 32
 save_model = True
 test_nepisode = 32
@@ -49,11 +48,7 @@ def evaluate_sequential(args, runner):
 
 
 def run_sequential(args, logger):
-    
-    # print("checkpoint path ", checkpoint_path)
     runner = EpisodeRunner(args, logger)
-    # print( "state shape ",env_info["state_shape"])
-    
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
@@ -103,7 +98,7 @@ def run_sequential(args, logger):
         
         for name in os.listdir(args.checkpoint_path):
             full_name = os.path.join(args.checkpoint_path, name)
-            print("full name ", full_name)
+            # print("full name ", full_name)
             # Check if they are dirs the names of which are numbers
             if os.path.isdir(full_name) and name.isdigit():
                 timesteps.append(int(name))
@@ -136,16 +131,16 @@ def run_sequential(args, logger):
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
     
     # runner.t_env = 0
-    t_max = 20500000
+    t_max = 10000
     while runner.t_env <= t_max:
-        print("runner t_env ", runner.t_env)
-        print("t_max ", t_max)
+        # print("runner t_env ", runner.t_env)
+        # print("t_max ", t_max)
         # Run for a whole episode at a time
         # runner.run(test_mode=False)
         # runner.t_env += 1
         # print("runner t_env ", runner.t_env)
         episode_batch = runner.run(test_mode=False)
-        print("episode batch ", episode_batch)
+        # print("episode batch ", episode_batch)
         buffer.insert_episode_batch(episode_batch)
 
         if buffer.can_sample(batch_size):
@@ -171,6 +166,7 @@ def run_sequential(args, logger):
                     runner.run(test_mode=True)
             
             if save_model and (runner.t_env - model_save_time >= save_model_interval or model_save_time == 0):
+                print("saving model")
                 model_save_time = runner.t_env
                 save_path = os.path.join(args.local_results_path, "models", args.unique_token, str(runner.t_env))
                 #"results/models/{}".format(unique_token)
@@ -182,16 +178,16 @@ def run_sequential(args, logger):
                 learner.save_models(save_path)
 
             episode += batch_size_run
-            print("episode count ", episode)
+            # print("episode count ", episode)
 
             if (runner.t_env - last_log_T) >= log_interval:
                 logger.log_stat("episode", episode, runner.t_env)
                 logger.print_recent_stats()
                 last_log_T = runner.t_env
 
-        print("runner t_env ", runner.t_env)
-        print("closing env")
-    runner.close_env()
+    print("runner t_env ", runner.t_env)
+        # print("closing env")
+        # runner.close_env()
         
 def args_sanity_check(config, _log):
     # set CUDA flags

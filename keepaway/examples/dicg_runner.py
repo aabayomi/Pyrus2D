@@ -1,6 +1,31 @@
+import os
+import time
+import torch
+from tqdm import tqdm
+import numpy as np
+import random
+from json import dumps
+from tensorboardX import SummaryWriter
+import dowel
+from dowel import logger, tabular
+# from keepaway.garage.envs import GarageEnv
+
+from keepaway.dicg.torch.algos import CentralizedMAPPO
+from keepaway.dicg.torch.baselines import CentValueFunction
+from keepaway.dicg.sampler import CentralizedMAOnPolicySampler
+
+# from policy_maker import make_mlp_policy
+# from env_maker import make_env
+# from envs.utils import record_gym_video
+import keepaway.dicg.util
+
+# from args import args
+
+import os
 import collections
 import numpy as np
 import argparse
+import yaml 
 import joblib
 import time
 from types import SimpleNamespace
@@ -8,18 +33,21 @@ import torch
 from torch.nn import functional as F
 
 import akro
-import garage
-from garage import wrap_experiment
-from garage.envs import GarageEnv
-from garage.experiment.deterministic import set_seed
+# import garage
+# from garage import wrap_experiment
+# from garage.envs import GarageEnv
+from os.path import dirname, abspath
+# from garage.experiment.deterministic import set_seed
 
-from envs import SMACWrapper
 from keepaway.envs.keepaway_env import KeepawayEnv
-from dicg.torch.baselines import GaussianMLPBaseline
-from dicg.torch.algos import CentralizedMAPPO
-from dicg.torch.policies import DICGCECategoricalLSTMPolicy
-from dicg.experiment.local_runner_wrapper import LocalRunnerWrapper
-from dicg.sampler import CentralizedMAOnPolicyVectorizedSampler
+from keepaway.dicg.torch.baselines import GaussianMLPBaseline
+from keepaway.dicg.torch.algos import CentralizedMAPPO
+from keepaway.dicg.torch.policies import DICGCECategoricalLSTMPolicy
+# from dicg.experiment.local_runner_wrapper import LocalRunnerWrapper
+from keepaway.dicg.sampler import CentralizedMAOnPolicyVectorizedSampler
+
+
+results_path = os.path.join(dirname(dirname(abspath(__file__))), "dicg-results")
 
 def run(args):
 
@@ -158,72 +186,20 @@ def run(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # Meta
-    parser.add_argument('--mode', '-m', type=str, default='train')
-    parser.add_argument('--loc', type=str, default='local')
-    parser.add_argument('--exp_name', type=str, default=None)
-    parser.add_argument('--comment', type=str, default='')
-    # Train
-    parser.add_argument('--seed', '-s', type=int, default=1)
-    parser.add_argument('--n_epochs', type=int, default=1000)
-    parser.add_argument('--bs', type=int, default=20000)
-    parser.add_argument('--n_envs', type=int, default=1)
-    # Eval
-    parser.add_argument('--run_id', type=int, default=0) # sequential naming
-    parser.add_argument('--n_eval_episodes', type=int, default=50)
-    parser.add_argument('--render', type=int, default=1)
-    parser.add_argument('--save_replay', type=int, default=0)
-    parser.add_argument('--inspect_steps', type=int, default=0)
-    parser.add_argument('--eval_during_training', type=int, default=1)
-    parser.add_argument('--eval_greedy', type=int, default=1)
-    parser.add_argument('--eval_epoch_freq', type=int, default=20)
-    # Env
-    parser.add_argument('--map', type=str, default='8m')
-    parser.add_argument('--difficulty', type=str, default='7')
-    # Algo
-    # parser.add_argument('--max_algo_path_length', type=int, default=n_steps)
-    parser.add_argument('--hidden_nonlinearity', type=str, default='tanh')
-    parser.add_argument('--discount', type=float, default=0.99)
-    parser.add_argument('--center_adv', type=int, default=1)
-    parser.add_argument('--positive_adv', type=int, default=0)
-    parser.add_argument('--gae_lambda', type=float, default=0.97)
-    parser.add_argument('--ent', type=float, default=0.02) # 0.01 is too small
-    parser.add_argument('--entropy_method', type=str, default='regularized')
-    parser.add_argument('--clip_grad_norm', type=float, default=7)
-    parser.add_argument('--opt_n_minibatches', type=int, default=1,
-        help='The number of splits of a batch of trajectories for optimization.')
-    parser.add_argument('--opt_mini_epochs', type=int, default=1,
-        help='The number of epochs the optimizer runs for each batch of trajectories.')
-    # Policy
-    # Example: --encoder_hidden_sizes 12 123 1234 
-    parser.add_argument('--encoder_hidden_sizes', nargs='+', type=int)
-    parser.add_argument('--embedding_dim', type=int, default=128)
-    parser.add_argument('--attention_type', type=str, default='general')
-    parser.add_argument('--n_gcn_layers', type=int, default=2)
-    parser.add_argument('--gcn_bias', type=int, default=1)
-    parser.add_argument('--lstm_hidden_size', type=int, default=128)
-    parser.add_argument('--residual', type=int, default=1)
-    parser.add_argument('--state_include_actions', type=int, default=1)
+    params = ["--config=dicg"]
+    parent_dir = os.getcwd()
+    config_file_path = os.path.join(parent_dir, "config", "dicg.yaml")
+    with open(config_file_path, "r") as f:
+        try:
+            config_dict = yaml.safe_load(f)
+        except yaml.YAMLError as exc:
+            assert False, "default.yaml error: {}".format(exc)
+    
+    print("config_dict: ", config_dict)
 
-    args = parser.parse_args()
-
-    # single agent action_space = Discrete(14)
-    # single agent observation_space = Box(80, )
-
-    if args.encoder_hidden_sizes is None:
-        args.encoder_hidden_sizes = [128, ] # Default hidden sizes
-
-    if args.map == '8m_vs_9m':
-        args.ent = 0.025
-        args.bs = 80000
-    elif args.map == '3s_vs_5z':
-        args.ent = 0.1
-        args.bs = 60000
-    elif args.map == '6h_vs_8z':
-        args.ent = 0.025
-        args.bs = 60000
-
-    run(args)
+    
+    
+   
+    # run(args)
 
 
