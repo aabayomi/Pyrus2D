@@ -42,7 +42,7 @@ from os.path import dirname, abspath
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.dicg.torch.baselines import GaussianMLPBaseline
 from keepaway.dicg.torch.algos import CentralizedMAPPO
-from keepaway.dicg.torch.policies import DICGCECategoricalLSTMPolicy
+from keepaway.dicg.torch.policies.dicg_ce_categorical_lstm_policy import DICGCECategoricalLSTMPolicy
 # from dicg.experiment.local_runner_wrapper import LocalRunnerWrapper
 from keepaway.dicg.sampler import CentralizedMAOnPolicyVectorizedSampler
 
@@ -77,7 +77,7 @@ def run(args):
         exp_name = args.exp_name
 
 
-    prefix = 'smac'
+    prefix = 'keepaway'
     id_suffix = ('_' + str(args.run_id)) if args.run_id != 0 else ''
     exp_dir = './data/' + args.loc +'/' + exp_name + id_suffix
 
@@ -196,10 +196,6 @@ if __name__ == '__main__':
             assert False, "default.yaml error: {}".format(exc)
     
     print("config_dict: ", config_dict)
-
-    
-    
-   
     # run(args)
 
 

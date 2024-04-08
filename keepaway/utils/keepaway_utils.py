@@ -104,7 +104,7 @@ class Keepers:
     ):
         # print("keeper_with_ball: actions = ", actions)
         action = actions[wm.self().unum() - 1]
-        print(f"keeper_with_ball: action { action }  and i am {wm.self().unum()}",)
+        # print(f"keeper_with_ball: action { action }  and i am {wm.self().unum()}",)
         # print(f"keeper_with_ball: action={ action }")
         Keepers.interpret_keeper_action(wm, agent, action)
 

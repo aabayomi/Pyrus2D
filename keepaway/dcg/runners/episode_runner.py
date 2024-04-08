@@ -1,9 +1,8 @@
+import time
+import numpy as np
 from keepaway.envs import REGISTRY as env_REGISTRY
-
 from functools import partial
 from keepaway.dcg.components.episode_buffer import EpisodeBatch
-import numpy as np
-
 from keepaway.envs.keepaway_env import KeepawayEnv
 
 class EpisodeRunner:
@@ -13,14 +12,8 @@ class EpisodeRunner:
         self.logger = logger
         self.batch_size = self.args.batch_size_run
         assert self.batch_size == 1
-        # self.env = env_REGISTRY[self.args.env](**self.args.env_args)
-        # print("args ", type(args))
         self.env_config = vars(args) ## should do some optimzations.
-        # self.env = env_REGISTRY[self.args.env](**self.env_config)
         self.env = env_REGISTRY[self.args.env](num_keepers=self.args.num_keepers, num_takers=self.args.num_takers, pitch_size=self.args.pitch_size)
-        # self.env = KeepawayEnv(self.env_config)
-        # self.env = env_REGISTRY[self.args.name](self.env_config)
-        # self.episode_limit = self.env.episode_limit
         self.episode_limit = 1000
         self.t = 0
         self.t_env = 0
@@ -33,7 +26,6 @@ class EpisodeRunner:
         self.log_train_stats_t = -1000000
 
     def setup(self, scheme, groups, preprocess, mac):
-        print("batch_size ", self.batch_size)
         self.new_batch = partial(EpisodeBatch, scheme, groups, self.batch_size, self.episode_limit + 1,
                                  preprocess=preprocess, device=self.args.device)
         self.mac = mac
@@ -115,17 +107,16 @@ class EpisodeRunner:
         # time.sleep(10)
 
         while not terminated:
+
+            if not self.env._is_game_started():
+                time.sleep(1)
+                continue
+
             pre_transition_data = {
                 "state": [self.env.get_state()],
                 "avail_actions": [self.env.get_avail_actions()],
                 "obs": [self.convert_to_numpy(self.env.get_obs())]
             }
-
-            print("pre_transition_data", len(pre_transition_data["state"][0]))
-            # print("pre_transition_data", len(pre_transition_data["avail_actions"][0]))
-            # print("pre_transition_data", len(pre_transition_data["obs"][0]))
-
-            # print("pre_transition_data ", pre_transition_data)
 
             self.batch.update(pre_transition_data, ts=self.t)
 
@@ -133,7 +124,7 @@ class EpisodeRunner:
             # Receive the actions for each agent at this time step in a batch of size 1
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
             
-            print("actions ", actions)
+            # print("actions ", actions)
             reward, terminated, env_info = self.env.step(actions[0])
             episode_return += reward
 
@@ -142,11 +133,11 @@ class EpisodeRunner:
                 "reward": [(reward,)],
                 "terminated": [(terminated != env_info.get("episode_limit", False),)],
             }
-            print("post_transition_data ", post_transition_data)
+            # print("post_transition_data ", post_transition_data)
             self.batch.update(post_transition_data, ts=self.t)
             self.t += 1
 
-        print("episode_return ", episode_return)
+        # print("episode_return ", episode_return)
         self.env._episode_count += 1
 
         # print("episode_return ", episode_return, " episode_count ", self.env._episode_count)

@@ -255,6 +255,7 @@ class KeepawayEnv(MultiAgentEnv):
         self._server.append(self._launch_server(options))
 
     def reset(self,):
+        
         """Reset the environment. Required after each full episode."""
 
         # print("resetting")

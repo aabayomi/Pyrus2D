@@ -25,18 +25,6 @@ from keepaway.dcg.utils.logging import get_logger
 
 logger = get_logger()
 
-
-test_interval = 10
-log_interval = 10
-save_model_interval = 10
-learner_log_interval = 10
-t_max = 100
-batch_size = 32
-save_model = True
-test_nepisode = 32
-batch_size_run = 32
-
-
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
 
 def evaluate_sequential(args, runner):
@@ -98,7 +86,6 @@ def run_sequential(args, logger):
         
         for name in os.listdir(args.checkpoint_path):
             full_name = os.path.join(args.checkpoint_path, name)
-            # print("full name ", full_name)
             # Check if they are dirs the names of which are numbers
             if os.path.isdir(full_name) and name.isdigit():
                 timesteps.append(int(name))
@@ -121,7 +108,7 @@ def run_sequential(args, logger):
             return
         
     episode = 0
-    last_test_T = -test_interval - 1
+    last_test_T = -args.test_interval - 1
     last_log_T = 0
     model_save_time = 0
 
@@ -130,17 +117,8 @@ def run_sequential(args, logger):
 
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
     
-    # runner.t_env = 0
-    t_max = 10000
-    while runner.t_env <= t_max:
-        # print("runner t_env ", runner.t_env)
-        # print("t_max ", t_max)
-        # Run for a whole episode at a time
-        # runner.run(test_mode=False)
-        # runner.t_env += 1
-        # print("runner t_env ", runner.t_env)
+    while runner.t_env <= args.t_max:
         episode_batch = runner.run(test_mode=False)
-        # print("episode batch ", episode_batch)
         buffer.insert_episode_batch(episode_batch)
 
         if buffer.can_sample(batch_size):
@@ -186,9 +164,10 @@ def run_sequential(args, logger):
                 last_log_T = runner.t_env
 
     print("runner t_env ", runner.t_env)
-        # print("closing env")
-        # runner.close_env()
-        
+ 
+
+
+
 def args_sanity_check(config, _log):
     # set CUDA flags
     # config["use_cuda"] = True # Use cuda whenever possible!
@@ -205,7 +184,6 @@ def args_sanity_check(config, _log):
 
     return config
                 
-
 
 def _get_config(params, arg_name, subfolder):
     config_name = None
@@ -265,6 +243,7 @@ def run(_config,_log):
     run_sequential(args=args, logger=logger)
 
 
+        
 if __name__ == "__main__":
     # Load the configuration
     params = ["--config=dcg"]

@@ -5,7 +5,8 @@ import numpy as np
 import copy
 
 from torch.distributions import Categorical
-from dicg.torch.modules import CategoricalLSTMModule, DICGBase
+from keepaway.dicg.torch.modules.categorical_lstm_module import CategoricalLSTMModule 
+from keepaway.dicg.torch.modules.dicg_base import DICGBase
 
 class DICGCECategoricalLSTMPolicy(DICGBase):
     def __init__(self,
