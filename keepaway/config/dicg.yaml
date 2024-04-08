@@ -53,7 +53,7 @@
 name: "dicg"
 
 Meta:
-  name: null  # Update this as needed, null means no default value specified
+  exp_name: null  # Update this as needed, null means no default value specified
   gpu_id: 0
   save_dir: './save/'
   enforce_cpu: false
@@ -79,19 +79,19 @@ Train:
   eval_epochs: 10
   continuing_checkpoint: null
 
-Env:
-  env: 'traffic'
-  n_agents: 8
-  proximity_threshold: 1.5
-  self_connected_adj: true
-  inverse_D: true
-  max_episode_steps: 100
-  difficulty: 'hard'
-  penalty: 0
-  n_entities: 8
-  n_grids: 10
-  agent_visible: true
-  render_adj: false
+# Env:
+#   env: 'traffic'
+#   n_agents: 
+#   proximity_threshold: 1.5
+#   self_connected_adj: true
+#   inverse_D: true
+#   max_episode_steps: 100
+#   difficulty: 'hard'
+#   penalty: 0
+#   n_entities: 8
+#   n_grids: 10
+#   agent_visible: true
+#   render_adj: false
 
 Sampler:
   batch_size: 60000

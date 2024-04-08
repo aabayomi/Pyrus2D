@@ -13,7 +13,7 @@ from dowel import logger, tabular
 from keepaway.dicg.torch.algos import CentralizedMAPPO
 from keepaway.dicg.torch.baselines import CentValueFunction
 from keepaway.dicg.sampler import CentralizedMAOnPolicySampler
-
+from keepaway.config.game_config import get_config
 # from policy_maker import make_mlp_policy
 # from env_maker import make_env
 # from envs.utils import record_gym_video
@@ -28,7 +28,8 @@ import argparse
 import yaml 
 import joblib
 import time
-from types import SimpleNamespace
+# from types import SimpleNamespace
+from types import SimpleNamespace as SN
 import torch
 from torch.nn import functional as F
 
@@ -50,6 +51,7 @@ from keepaway.dicg.sampler import CentralizedMAOnPolicyVectorizedSampler
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "dicg-results")
 
 def run(args):
+
 
     if args.exp_name is None:
         exp_layout = collections.OrderedDict([
@@ -94,14 +96,16 @@ def run(args):
                          snapshot_gap=1)
         
         def train_smac(ctxt=None, args_dict=vars(args)):
-            args = SimpleNamespace(**args_dict)
+            args = SN(**args_dict)
             
-            env = SMACWrapper(
-                centralized=True,
-                map_name=args.map,
-                difficulty=args.difficulty,
-                # seed=args.seed
-            )
+            # env = SMACWrapper(
+            #     centralized=True,
+            #     map_name=args.map,
+            #     difficulty=args.difficulty,
+            #     # seed=args.seed
+            # )
+            env = KeepawayEnv(**args)
+            
             env = GarageEnv(env)
 
             runner = LocalRunnerWrapper(
@@ -195,7 +199,18 @@ if __name__ == '__main__':
         except yaml.YAMLError as exc:
             assert False, "default.yaml error: {}".format(exc)
     
-    print("config_dict: ", config_dict)
-    # run(args)
+    # print("config_dict: ", config_dict)
+    config = get_config()["3v2"]
+    config = config | config_dict
+    config["log_level"] = "INFO"
+    config["name"] = "keepaway"
+    config["exp_name"] = ""
+    config["n_agents"] = config["num_keepers"]
+    # config["n_agents"] = config["num_keepers"] + config["num_takers"]
+    config["n_actions"] = config["num_keepers"] 
+
+
+    args = SN(**config)
+    run(args)
 
 

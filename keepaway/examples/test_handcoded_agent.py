@@ -5,7 +5,7 @@ from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.config.game_config import get_config
 from keepaway.envs.policies.handcoded_agent import HandcodedPolicy
 
-config = get_config()["3v2"]
+config = get_config()["4v3"]
 
 
 def main():
