@@ -164,6 +164,8 @@ def run_sequential(args, logger):
                 last_log_T = runner.t_env
 
     print("runner t_env ", runner.t_env)
+    runner.close_env()
+    logger.console_logger.info("Finished Training")
  
 
 
