@@ -267,7 +267,7 @@ class KeepawayEnv(MultiAgentEnv):
         if self._world._terminated.get_lock():
             self._world._terminated.value = False
         
-        return self._obs ,
+        return self._obs,
 
     def reward(self):
         """
@@ -348,14 +348,22 @@ class KeepawayEnv(MultiAgentEnv):
         # return self._shared_values[agent_id]
         return l
 
-    def get_avail_actions(self):
-        """Returns the available actions for agent_id."""
-        l = [None] * self.num_keepers
-        # return self._shared_values[agent_id]
-        for i in range(self.num_keepers):
-            l[i] = self.get_avail_agent_actions(i)
-        # print("l ", l)
-        return l
+    # def get_avail_actions(self):
+    #     """Returns the available actions for agent_id."""
+    #     l = [None] * self.num_keepers
+    #     # return self._shared_values[agent_id]
+    #     for i in range(self.num_keepers):
+    #         l[i] = self.get_avail_agent_actions(i)
+    #     # print("l ", l)
+    #     return l
+
+    # def get_avail_actions(self):
+    #     """Returns the available actions for agent_id."""
+    #     avail_actions = [[1] * self.action_space.n for _ in range(self.num_keepers)]
+    #     if not self.centralized:
+    #         return avail_actions
+    #     else:
+    #         return np.concatenate(avail_actions)
     
     def get_total_actions(self):
         pass
@@ -418,12 +426,14 @@ class KeepawayEnv(MultiAgentEnv):
         applies all actions to the
         send an action signal and return observation.
         """
+
+
         if isinstance(actions, torch.Tensor):
             actions = actions.cpu().tolist()
 
-        if not actions:
+        if actions is None or len(actions) != self.num_keepers:
             self.agents = []
-            return {}, {}, {}, {}, {}
+            return {}, {}, {}, {}
 
         actions_int = actions
         self._total_steps += 1

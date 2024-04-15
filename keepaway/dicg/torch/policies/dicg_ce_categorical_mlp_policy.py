@@ -4,11 +4,12 @@ from torch import nn
 import numpy as np
 
 from torch.distributions import Categorical
-from dicg.torch.modules import CategoricalMLPModule, DICGBase
+from keepaway.dicg.torch.modules import CategoricalMLPModule, DICGBase2
 
-class DICGCECategoricalMLPPolicy(DICGBase):
+class DICGCECategoricalMLPPolicy(DICGBase2):
     def __init__(self,
-                 env_spec,
+                #  env_spec,
+                env_spec,
                  n_agents,
                  encoder_hidden_sizes=(128, ),
                  embedding_dim=64,
@@ -18,6 +19,8 @@ class DICGCECategoricalMLPPolicy(DICGBase):
                  gcn_bias=True,
                  categorical_mlp_hidden_sizes=(128, 64, 32),
                  name='dicg_ce_categorical_mlp_policy'):
+
+        ## TODO: this is hardcoded for Discrete action space
 
         assert isinstance(env_spec.action_space, akro.Discrete), (
             'Categorical policy only works with akro.Discrete action space.')

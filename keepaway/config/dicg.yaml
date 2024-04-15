@@ -1,121 +1,71 @@
 # # --- Deep Implicit Coordination Graph parameters ---
-# name: "dicg"
+name: "dicg"
+env: "keepaway"
 
 # Meta:
-#   mode: train
-#   loc: local
-#   exp_name: null  # Use `null` for None
-#   comment: ''
+exp_name: null  # Update this as needed, null means no default value specified
+gpu_id: 0
+save_dir: './save/'
+enforce_cpu: false
+load_path: null  # null indicates no default value
+debug: false
+record: false
+video_save_path: './save/video_recording/'
 
 # Train:
-#   seed: 1
-#   n_epochs: 1000
-#   bs: 20000
-#   n_envs: 1
+n_epochs: 1000
+policy_lr: 0.0003
+baseline_lr: 0.0003
+n_episodes_per_epoch: 50
+n_eval_episodes: 100
+eval_greedy: true
+weight_decay: 0.01
+max_checkpoints: 5
+max_grad_norm: 5.0
+seed: 1
+visualize: false
+eval: false
+eval_steps: 20000
+eval_epochs: 10
+continuing_checkpoint: null
 
-# Eval:
-#   run_id: 0
-#   n_eval_episodes: 50
-#   render: 1
-#   save_replay: 0
-#   inspect_steps: 0
-#   eval_during_training: 1
-#   eval_greedy: 1
-#   eval_epoch_freq: 20
 
 # Env:
-#   map: '8m'
-#   difficulty: '7'
+  # env: 'traffic'
+  # n_agents: 
+proximity_threshold: 1.5
+self_connected_adj: true
+inverse_D: true
+max_episode_steps: 100
+difficulty: 'hard'
+penalty: 0
+n_entities: 8
+n_grids: 10
+agent_visible: true
+render_adj: false
+
+# Sampler:
+batch_size: 60000
+n_trajs_limit: 400
+limit_by_traj: false
 
 # Algo:
-#   # max_algo_path_length: n_steps  # Commented out as it depends on `n_steps` variable
-#   hidden_nonlinearity: tanh
-#   discount: 0.99
-#   center_adv: 1
-#   positive_adv: 0
-#   gae_lambda: 0.97
-#   ent: 0.02
-#   entropy_method: regularized
-#   clip_grad_norm: 7
-#   opt_n_minibatches: 1
-#   opt_mini_epochs: 1
+discount: 0.99
+gae_lambda: 0.97
+ent: 0.05
+lr_clip_range: 0.2
+optimization_n_minibatches: 4
+optimization_mini_epochs: 10
 
-# Policy:
-#   encoder_hidden_sizes: [128,]  # Specify sizes like [12, 123, 1234] if needed
-#   embedding_dim: 128
-#   attention_type: general
-#   n_gcn_layers: 2
-#   gcn_bias: 1
-#   lstm_hidden_size: 128
-#   residual: 1
-#   state_include_actions: 1
+# Policy_Model:
+policy: 'proximal_cg'
+n_gcn_layers: 2
 
-name: "dicg"
-
-Meta:
-  exp_name: null  # Update this as needed, null means no default value specified
-  gpu_id: 0
-  save_dir: './save/'
-  enforce_cpu: false
-  load_path: null  # null indicates no default value
-  debug: false
-  record: false
-  video_save_path: './save/video_recording/'
-
-Train:
-  n_epochs: 1000
-  policy_lr: 0.0003
-  baseline_lr: 0.0003
-  n_episodes_per_epoch: 50
-  n_eval_episodes: 100
-  eval_greedy: true
-  weight_decay: 0.01
-  max_checkpoints: 5
-  max_grad_norm: 5.0
-  seed: 1
-  visualize: false
-  eval: false
-  eval_steps: 20000
-  eval_epochs: 10
-  continuing_checkpoint: null
-
-# Env:
-#   env: 'traffic'
-#   n_agents: 
-#   proximity_threshold: 1.5
-#   self_connected_adj: true
-#   inverse_D: true
-#   max_episode_steps: 100
-#   difficulty: 'hard'
-#   penalty: 0
-#   n_entities: 8
-#   n_grids: 10
-#   agent_visible: true
-#   render_adj: false
-
-Sampler:
-  batch_size: 60000
-  n_trajs_limit: 400
-  limit_by_traj: false
-
-Algo:
-  discount: 0.99
-  gae_lambda: 0.97
-  ent: 0.05
-  lr_clip_range: 0.2
-  optimization_n_minibatches: 4
-  optimization_mini_epochs: 10
-
-Policy_Model:
-  policy: 'proximal_cg'
-  n_gcn_layers: 2
-
-Edge_Predictor:
-  edge_predictor_pred_method: 'gumbel'
-  edge_predictor_input_method: 'diff'
-  edge_predictor_checkpoint_path: './save/meet/edge_pred_data/meet_14_input=diff_threshold=2.0_nagents=10_npos=3e+06_neg2pos=2.0_sc=False_weighdacay=0.00_tau=0.25-01/best.pth.tar'
-  tau: 0.25
-  max_n_positive_samples: 3000000
-  neg2pos: 2.0
-
-# Note: Fields set to 'null' indicate options that typically require user input or are optional.
+# Edge_Predictor:
+edge_predictor_pred_method: 'gumbel'
+edge_predictor_input_method: 'diff'
+edge_predictor_checkpoint_path: './save/meet/edge_pred_data/meet_14_input=diff_threshold=2.0_nagents=10_npos=3e+06_neg2pos=2.0_sc=False_weighdacay=0.00_tau=0.25-01/best.pth.tar'
+tau: 0.25
+max_n_positive_samples: 3000000
+neg2pos: 2.0
+maximize_metric: True
