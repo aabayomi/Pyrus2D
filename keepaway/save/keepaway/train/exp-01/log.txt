@@ -1,5 +1,5 @@
-[04.15.24 09:28:12] Device: cpu
-[04.15.24 09:28:12] Args: {
+[04.15.24 15:16:28] Device: cpu
+[04.15.24 15:16:28] Args: {
     "agent_visible": true,
     "baseline_lr": 0.0003,
     "batch_size": 60000,
@@ -27,7 +27,7 @@
     "log_level": "INFO",
     "lr_clip_range": 0.2,
     "max_checkpoints": 5,
-    "max_episode_steps": 10000,
+    "max_episode_steps": 100000,
     "max_grad_norm": 5.0,
     "max_n_positive_samples": 3000000,
     "maximize_metric": true,
@@ -62,5 +62,7 @@
     "visualize": false,
     "weight_decay": 0.01
 }
-[04.15.24 09:28:12] Using random seed 1...
-[04.15.24 09:28:12] Building model...
+[04.15.24 15:16:28] Using random seed 1...
+[04.15.24 15:16:28] Building model...
+[04.15.24 15:16:29] Saver will maximize EvalAverageReturn...
+[04.15.24 15:16:29] Training...

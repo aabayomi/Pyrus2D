@@ -341,22 +341,6 @@ class KeepawayEnv(MultiAgentEnv):
         self.renderer = mode
     
     
-        
-    def get_avail_agent_actions(self, agent_id):
-        """Returns the available actions for agent_id."""
-        l = [3] * self.num_keepers
-        # return self._shared_values[agent_id]
-        return l
-
-    # def get_avail_actions(self):
-    #     """Returns the available actions for agent_id."""
-    #     l = [None] * self.num_keepers
-    #     # return self._shared_values[agent_id]
-    #     for i in range(self.num_keepers):
-    #         l[i] = self.get_avail_agent_actions(i)
-    #     # print("l ", l)
-    #     return l
-
     # def get_avail_actions(self):
     #     """Returns the available actions for agent_id."""
     #     avail_actions = [[1] * self.action_space.n for _ in range(self.num_keepers)]

@@ -285,6 +285,11 @@ class keepaway_env(KeepawayEnv):
             obs = np.asarray(obs, dtype=np.float32)
             all_obs.append({"observation": obs, "action_mask": action_mask})
         return {agent: obs for agent, obs in zip(self.agents, all_obs)}
+    
+    def step(self, actions):
+        r,t,info = self.env.step(actions)
+        # print("rewards ", r, "term ", t, "info ", info)
+        return r,t,info
 
     
     def _all_terms_truncs(self, terminated=False, truncated=False):

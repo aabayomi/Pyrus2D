@@ -16,6 +16,7 @@ def main():
     policy = RandomPolicy(config)
     env.render()
     for e in range(episodes):
+        print("Episode ", e)
         env.reset()
         terminated = False
         episode_reward = 0

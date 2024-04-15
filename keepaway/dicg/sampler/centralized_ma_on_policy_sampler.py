@@ -79,7 +79,7 @@ class CentralizedMAOnPolicySampler(BatchSampler):
         env_time = 0
         process_time = 0
 
-        policy = self.algo.policy
+        # policy = self.algo.policy
 
         if self.env._run_flag == False:
             self.env._launch_game()
@@ -87,88 +87,118 @@ class CentralizedMAOnPolicySampler(BatchSampler):
             # self.reset()
             self.env._run_flag = True
             
-        terminated = False
-        episode_return = 0
-        self.env.start()
+        # terminated = False
+        # episode_return = 0
+        # self.env.start()
 
-        while not terminated:
-            if not self.env._is_game_started():
-                time.sleep(1)
+        from keepaway.envs.policies.random_agent import RandomPolicy
+        from keepaway.config.game_config import get_config
+        config = get_config()["3v2"]
+        episodes = 2
+        policy = RandomPolicy(config)
+        for e in range(episodes):
+            print("Episode ", e)
+            self.env.reset()
+            terminated = False
+            episode_reward = 0
+            self.env.start()
+            # self.run(terminated,test_mode=False)
+
+            while not terminated:
+                obs = self.env.get_obs()
+                # print("obs ", obs)
+                actions, agent_infos = policy.get_actions(obs)
+                # actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+                # print(actions)
+                reward, terminated, info = self.env.step(actions)
+                # time.sleep(0.15)
+                episode_reward += reward
+        self.env.close()
+
+        # while not terminated:
+        #     if not self.env._is_game_started():
+        #         time.sleep(1)
             
-            t = time.time()
-            policy.reset(True)
-            avail_actions = self._env.get_avail_actions()
-            print("avail_actions ", avail_actions)
-            if self.algo.policy.proximity_adj:
-                adj = self._env.get_proximity_adj_mat() # renormalized adj
-                alive_mask = None
-            else:
-                adj = None # will be computed by policy
-                alive_mask = np.array(self._env.alive_mask) 
-                # most primitive form, (n_agents, )
+        #     t = time.time()
+        #     policy.reset(True)
+        #     avail_actions = self._env.get_avail_actions()
+        #     print("avail_actions ", avail_actions)
+        #     if self.algo.policy.proximity_adj:
+        #         adj = self._env.get_proximity_adj_mat() # renormalized adj
+        #         alive_mask = None
+        #     else:
+        #         adj = None # will be computed by policy
+        #         alive_mask = np.array(self._env.alive_mask) 
+        #         # most primitive form, (n_agents, )
             
-            # print("obses ", obses)
-            ob = obses[0]
-            # print("ob ", ob)
-            obs_ = self.convert_to_numpy(ob)
+        #     # print("obses ", obses)
+        #     ob = obses[0]
+        #     # print("ob ", ob)
+        #     obs_ = self.convert_to_numpy(ob)
 
-            # ob = obs_n_reshape2 = obs_n.reshape(1, 39)
+        #     # ob = obs_n_reshape2 = obs_n.reshape(1, 39)
 
-            actions, _ = policy.get_actions(obs_, avail_actions, 
-                adjs=adj, alive_masks=alive_mask)
+        #     actions, _ = policy.get_actions(obs_, avail_actions, 
+        #         adjs=adj, alive_masks=alive_mask)
 
-            adj = np.asarray(adj)
-            adj = np.reshape(adj, (-1,)) # flatten like obses
+        #     adj = np.asarray(adj)
+        #     adj = np.reshape(adj, (-1,)) # flatten like obses
 
-            policy_time += time.time() - t
-            t = time.time()
-            state = obs_
-            rewards, dones, env_infos = self._env.step(actions)
-            env_time += time.time() - t
-            t = time.time()
+        #     policy_time += time.time() - t
+        #     t = time.time()
+        #     state = obs_
+        #     rewards, dones, env_infos = self._env.step(actions)
+
+        #     print("rewards ", rewards,  "dones ", dones, "env_infos ", env_infos)
+        #     if dones:
+        #         break
+
+
+        #     env_time += time.time() - t
+        #     t = time.time()
             
-            if running_path is None:
-                running_path = dict(observations=[],
-                                    states=[],
-                                    actions=[],
-                                    avail_actions=[],
-                                    alive_masks=[],
-                                    rewards=[],
-                                    adjs=[],
-                                    dones=[])
-            running_path['observations'].append(obses)
-            running_path['states'].append(state)
-            running_path['actions'].append(actions)
-            running_path['avail_actions'].append(avail_actions)
-            running_path['alive_masks'].append(alive_mask)
-            running_path['rewards'].append(rewards)
-            running_path['dones'].append(dones)
-            running_path['adjs'].append(adj)
+        #     if running_path is None:
+        #         running_path = dict(observations=[],
+        #                             states=[],
+        #                             actions=[],
+        #                             avail_actions=[],
+        #                             alive_masks=[],
+        #                             rewards=[],
+        #                             adjs=[],
+        #                             dones=[])
+        #     running_path['observations'].append(obses)
+        #     running_path['states'].append(state)
+        #     running_path['actions'].append(actions)
+        #     running_path['avail_actions'].append(avail_actions)
+        #     running_path['alive_masks'].append(alive_mask)
+        #     running_path['rewards'].append(rewards)
+        #     running_path['dones'].append(dones)
+        #     running_path['adjs'].append(adj)
 
-            # obses = next_obses
+        #     # obses = next_obses
 
-            if dones:
-                paths.append(
-                    dict(observations=np.asarray(running_path['observations']),
-                         states=np.asarray(running_path['states']),
-                         actions=np.asarray(running_path['actions']),
-                         avail_actions=np.asanyarray(running_path['avail_actions']),
-                         alive_masks=np.asanyarray(running_path['alive_masks']),
-                         rewards=np.asarray(running_path['rewards']),
-                         dones=np.asarray(running_path['dones']),
-                         adjs=np.asarray(running_path['adjs']),
-                    )
-                )
-                print("path ", paths)
-                self.n_samples += len(running_path['rewards'])
-                self.n_trajs += 1
-                self.tot_num_env_steps += len(running_path['rewards'])
-                running_path = None
-                obses = self._env.reset()
-                # if self.limit_by_traj:
-                #     pbar.inc(1)
+        #     if dones:
+        #         paths.append(
+        #             dict(observations=np.asarray(running_path['observations']),
+        #                  states=np.asarray(running_path['states']),
+        #                  actions=np.asarray(running_path['actions']),
+        #                  avail_actions=np.asanyarray(running_path['avail_actions']),
+        #                  alive_masks=np.asanyarray(running_path['alive_masks']),
+        #                  rewards=np.asarray(running_path['rewards']),
+        #                  dones=np.asarray(running_path['dones']),
+        #                  adjs=np.asarray(running_path['adjs']),
+        #             )
+        #         )
+        #         print("path ", paths)
+        #         self.n_samples += len(running_path['rewards'])
+        #         self.n_trajs += 1
+        #         self.tot_num_env_steps += len(running_path['rewards'])
+        #         running_path = None
+        #         obses = self._env.reset()
+        #         # if self.limit_by_traj:
+        #         #     pbar.inc(1)
 
-            process_time += time.time() - t
+        #     process_time += time.time() - t
             # if not self.limit_by_traj:
             #     pbar.inc(1)
             # # print(self.n_samples)
