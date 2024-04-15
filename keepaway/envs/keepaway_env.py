@@ -46,9 +46,15 @@ class KeepawayEnv(MultiAgentEnv):
         # self.sparse_reward = config["sparse_reward"]   
         self.sparse_reward  = kwargs.get('sparse_reward', default_pitch_size)
         self.actions = self.num_keepers  # 0: hold, 1: pass
-        self._episode_count = 0
-        self._episode_steps = 0
-        self._total_steps = 0
+        
+        self._episode_count_ = 0
+        self._episode_steps_ = 0
+        self._total_steps_ = 0
+
+       
+
+
+        
         self.force_restarts = 0
         self.episode_limit = 10000
         self.num_agents = self.num_keepers + self.num_takers
@@ -58,6 +64,13 @@ class KeepawayEnv(MultiAgentEnv):
         self._lock = self._world
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(self.num_keepers)
+
+
+
+        self._episode_count = self._world._episode_count
+        self._episode_steps = self._world._episode_steps
+        self._total_steps = self._world._total_steps
+
 
         ### Event implementation .
         self._event_from_subprocess = multiprocessing.Event()
@@ -78,6 +91,7 @@ class KeepawayEnv(MultiAgentEnv):
         self._reward = self._world._reward
         ## episode
         self._terminated = self._world._terminated
+
         self._episode_reward = []
         self._proximity_threshold = 2
 
@@ -106,6 +120,9 @@ class KeepawayEnv(MultiAgentEnv):
                     self._terminated,
                     self._proximity_adj_mat,
                     self._proximity_threshold,
+                    self._episode_count,
+                    self._episode_steps,
+                    self._total_steps,
                 ),
                 name="keeper",
             )
@@ -132,6 +149,9 @@ class KeepawayEnv(MultiAgentEnv):
                     self._terminated,
                     self._proximity_adj_mat,
                     self._proximity_threshold,
+                    self._episode_count,
+                    self._episode_steps,
+                    self._total_steps,
                 ),
                 name="takers",
             )
@@ -259,8 +279,16 @@ class KeepawayEnv(MultiAgentEnv):
         """Reset the environment. Required after each full episode."""
 
         # print("resetting")
-        self._episode_steps = 0
-        self._total_steps = 0
+        self._episode_steps_ = 0
+        self._total_steps_ = 0
+
+        if self._episode_steps.get_lock():
+            self._episode_steps.value = 0
+        
+        if self._total_steps.get_lock():
+            self._total_steps.value = 0
+
+
         self.last_action = None
         self._episode_reward = []
         self.info = {}
@@ -298,7 +326,7 @@ class KeepawayEnv(MultiAgentEnv):
         self.force_restarts += 1
 
     def start(self):
-        if self._episode_count == 0:
+        if self._episode_count_ == 0:
             for i in range(self.num_keepers):
                 self._keepers[i].start()
 
@@ -312,7 +340,7 @@ class KeepawayEnv(MultiAgentEnv):
             # self._coach[0].start()
 
             atexit.register(self.close)
-            self._episode_count += 1
+            self._episode_count_ += 1
         else:
             pass
             # print("already started")
@@ -396,6 +424,61 @@ class KeepawayEnv(MultiAgentEnv):
         obs_concat = np.concatenate(obs , axis=0)
         # print("obs_concat ", obs_concat, "len ", len(obs_concat))
         return obs_concat
+    
+
+    def _step(self, actions):
+        """A single environment step. Returns reward, terminated, info.
+
+        Args:
+            actions: list of actions for each agent
+
+        Returns:
+            Tuple of time-step data for each agent
+
+
+        applies all actions to the
+        send an action signal and return observation.
+        """
+
+        if isinstance(actions, torch.Tensor):
+            actions = actions.cpu().tolist()
+
+        if actions is None or len(actions) != self.num_keepers:
+            self.agents = []
+            return {}, {}, {}, {}
+
+        actions_int = actions
+
+        # if self._total_steps.get_lock():
+        #     self._total_steps.value += 1
+
+        # if self._episode_steps.get_lock():
+        #     self._episode_steps.value += 1
+
+        total_reward = 0
+        i = {}
+        # terminated = False
+        self._actions = copy.deepcopy(actions_int)
+        self._shared_values = multiprocessing.Array("i", self._actions)
+        self._observation = self._world._obs
+        
+        t = self._world._terminated.value
+        r = self._reward.value
+        
+        # if game_state == 1:
+        #     terminated = True
+        #     if not self.sparse_reward:
+        #         total_reward = self._reward.value
+        #         pass
+        #     else:
+        #         total_reward = self._reward.value
+
+        #     self._terminal_time = self._world.time()
+        
+        if t == 1:
+            self._episode_count.value += 1
+
+        return self._reward.value, self._world._terminated.value, i
 
     def step(self, actions):
         """A single environment step. Returns reward, terminated, info.
@@ -420,8 +503,8 @@ class KeepawayEnv(MultiAgentEnv):
             return {}, {}, {}, {}
 
         actions_int = actions
-        self._total_steps += 1
-        self._episode_steps += 1
+        self._total_steps_ += 1
+        self._episode_steps_ += 1
         total_reward = 0
         info = {}
         terminated = False
@@ -439,7 +522,8 @@ class KeepawayEnv(MultiAgentEnv):
 
             self._terminal_time = self._world.time()
         if terminated:
-            self._episode_count += 1
+            self._episode_count_ += 1
+            self._episode_count.value = 2
 
             ## check if all agents are running
             # if not self._check_agents():

@@ -103,15 +103,21 @@ class CentralizedMAOnPolicySampler(BatchSampler):
             episode_reward = 0
             self.env.start()
             # self.run(terminated,test_mode=False)
+            
 
             while not terminated:
+                # print("episode count ", self.env._episode_count)
+                print("episode terminated ", self.env._terminated.value)
+                print("episode_reward ", self.env._reward)
+                # print("episode_reward ", self.env._episode_count.value)
                 obs = self.env.get_obs()
                 # print("obs ", obs)
                 actions, agent_infos = policy.get_actions(obs)
                 # actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
                 # print(actions)
                 reward, terminated, info = self.env.step(actions)
-                # time.sleep(0.15)
+                print("reward ", reward, "terminated ", terminated, "info ", info)
+                time.sleep(0.15)
                 episode_reward += reward
         self.env.close()
 

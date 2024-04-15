@@ -32,6 +32,9 @@ class KeepawayPlayer(PlayerAgent):
         terminated,
         proximity_adj_mat,
         proximity_threshold,
+        episode_count,
+        episode_step,
+        total_steps,
     ):
         super().__init__(
             shared_values, manager, lock, event, world, reward, terminated, team_name
@@ -49,6 +52,10 @@ class KeepawayPlayer(PlayerAgent):
         self._terminated = terminated
         self._adj_matrix = proximity_adj_mat
         self._proximity_threshold = proximity_threshold
+        self._episode_count = episode_count
+        
+        self._episode_step = episode_step
+        self._total_steps = total_steps
 
         # TODO: check the use of full or real world.
         # self._full_world = world
@@ -56,6 +63,10 @@ class KeepawayPlayer(PlayerAgent):
 
     def action_impl(self):
         wm = self.world()
+        
+        ## Update the total steps
+        if self._total_steps.get_lock():
+            self._total_steps.value = wm.time().cycle()
 
         if self.do_preprocess():
             return

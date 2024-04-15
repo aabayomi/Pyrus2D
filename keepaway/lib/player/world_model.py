@@ -176,6 +176,12 @@ class WorldModel:
             self._reward = multiprocessing.Value("i", 0)
             self._terminated = multiprocessing.Value("b", False)
             self._last_action_time = multiprocessing.Value("i", self.last_action_time)
+            
+            ## 
+            self._episode_count = multiprocessing.Value("i", 0)
+            self._episode_steps = multiprocessing.Value("i", 0)
+            self._total_steps = multiprocessing.Value("i", 0)
+
 
     def init(self, team_name: str, side: SideID, unum: int, is_goalie: bool):
         self._our_team_name = team_name

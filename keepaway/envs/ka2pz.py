@@ -288,6 +288,7 @@ class keepaway_env(KeepawayEnv):
     
     def step(self, actions):
         r,t,info = self.env.step(actions)
+        # r,t,info = self.env._step(actions)
         # print("rewards ", r, "term ", t, "info ", info)
         return r,t,info
 
