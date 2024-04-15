@@ -110,13 +110,15 @@ class EpisodeRunner:
 
             if not self.env._is_game_started():
                 time.sleep(1)
-                continue
+                # continue
 
             pre_transition_data = {
                 "state": [self.env.get_state()],
                 "avail_actions": [self.env.get_avail_actions()],
                 "obs": [self.convert_to_numpy(self.env.get_obs())]
             }
+            
+            # print("pre_transition_data ", pre_transition_data)
 
             self.batch.update(pre_transition_data, ts=self.t)
 
@@ -124,7 +126,7 @@ class EpisodeRunner:
             # Receive the actions for each agent at this time step in a batch of size 1
             actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
             
-            # print("actions ", actions)
+            print("actions ", actions)
             reward, terminated, env_info = self.env.step(actions[0])
             episode_return += reward
 
@@ -135,7 +137,9 @@ class EpisodeRunner:
             }
             # print("post_transition_data ", post_transition_data)
             self.batch.update(post_transition_data, ts=self.t)
+            print("timestep before ", self.t)
             self.t += 1
+            print("timestep after ", self.t)
 
         # print("episode_return ", episode_return)
         self.env._episode_count += 1
