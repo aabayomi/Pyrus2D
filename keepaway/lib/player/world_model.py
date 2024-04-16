@@ -158,7 +158,15 @@ class WorldModel:
         self._info = {}
         # self._agents = [1, 2, 3]  # hardcoded for now
         self._agents = [i for i in range(1, num_keepers + 1)]
-        self.observations = {agent: None for agent in self._agents}
+        # self.observations = {agent: None for agent in self._agents}
+
+        self.observations = {
+            agent: np.zeros(13, dtype=np.float32) if len(self._agents) == 3 else
+                np.zeros(20, dtype=np.float32) if len(self._agents) == 4 else
+                np.zeros(26, dtype=np.float32) if len(self._agents) == 5 else
+                np.zeros(0, dtype=np.float32)  
+            for agent in self._agents
+        }
         self.last_action_time = 0  # hand-coded for now change later
 
         self._all_teammates_from_ball: list[PlayerObject] = []  # .
@@ -2055,11 +2063,21 @@ class WorldModel:
         return AngleDeg.normalize_angle(
             AngleDeg.acos_deg(dot_product / (x.r() * y.r()))
         )
+    
+    def safe_assign(self, lst, index, value):
+        """Safely assigns value to a list at the specified index."""
+        if 0 <= index < len(lst):
+            lst[index] = value
+        else:
+            print(f"Warning: Attempt to assign to index {index} which is out of bounds.")
+            pass
 
     def _convert_players_observation(self):
-        """Convert players observation from list to dictionary.
-        13 state variables from the paper Peter Stone 2005.
         """
+        Convert players observation from list to dictionary.
+        13,19,25 state variables from the paper Peter Stone 2005.
+        """
+        import copy
 
         keepaway_field_center = Vector2D(0, 0)  # assumed to at (0,0)
         self._set_players_from_ball_and_self()
@@ -2067,52 +2085,65 @@ class WorldModel:
         closest_keeper_ball = self.teammates_from_ball()
         all_keeper_closest_to_ball = self.all_teammates_from_ball()
 
-        state_vars = []
-        for p in self._all_players:
+
+        if len(self._agents) == 3:
+            state_vars = [0.0] * 13 # 13
+        elif len(self._agents) == 4:
+            state_vars = [0.0] * 20 # 19
+        elif len(self._agents) == 5:
+            state_vars = [0.0] * 26 # 25
+
+
+        # state_vars = []
+        index = 0
+        
+        for p in self._all_players: 
             if p.pos_valid():
                 dist = (p.pos() - keepaway_field_center).r()
-                state_vars.append(dist)
+                # state_vars.append(dist)
+                state_vars[index] = dist
+                index += 1
 
-        for p in self._teammates_from_self:
+        for p in self._teammates_from_self: # 3
             if p.pos_valid():
                 dist = p.dist_from_self()
-                state_vars.append(dist)
+                # state_vars.append(dist)
+                # state_vars[index] = dist
+                self.safe_assign(state_vars, index, dist)
+                index += 1
 
-        opp_dist = []
-        for p in self._opponents_from_self:
+        for p in self._opponents_from_self: # 3
             if p.pos_valid():
                 dist = p.dist_from_self()
-                state_vars.append(dist)
-                opp_dist.append(dist)
+                self.safe_assign(state_vars, index, dist)
+                index += 1
 
-        for k in self._teammates:
+        for k in self._teammates: # 3
             min_dist = 10000
             for t in self._opponents:
                 if t.pos_valid() and k.pos_valid():
                     dist = (k.pos() - t.pos()).r()
                     if dist < min_dist:
                         min_dist = dist
-            # print("min_dist", min_dist)
-            state_vars.append(min_dist)
+            self.safe_assign(state_vars, index, dist)
             min_dist = 10000
+            index += 1
+        
 
 
         closest_keeper = all_keeper_closest_to_ball[0]
-
-        for k in self._teammates:
+        
+        for k in self._teammates: 
             min_angle = 10000
             for t in self._opponents:
                 if closest_keeper != None:
                     temp = self.find_angle(closest_keeper.pos(), k.pos(), t.pos())
                     if temp < min_angle:
                         min_angle = temp
-            state_vars.append(min_angle)
-            min_angle = 10000
-        
-        ### Due to the simulator observation, need to pad the unavailable state variables ##
-        state_vars = self._pad(state_vars, min_length=13, pad_value=0)
+            self.safe_assign(state_vars, index, dist)
+            index += 1
         self._result["state_vars"] = np.array(state_vars, dtype=np.float32)
-    
+
     
     def _pad(self,lst, min_length=13, pad_value=0):
         """
