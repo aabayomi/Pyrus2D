@@ -85,6 +85,8 @@ class HandcodedPolicy():
         best = np.argmax(scores)
         if scores[best] < self.hold_distance:
             return best
+        else:
+            return 0
         
     def get_actions(self, obs):
         """Returns the actions for the agents in the keepaway domain.
