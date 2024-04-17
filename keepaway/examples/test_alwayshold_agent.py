@@ -25,8 +25,6 @@ def main():
             reward, terminated, info = env.step(actions)
             time.sleep(0.15)
             episode_reward += reward
-
-    print("closing game")
     env.close()
 
 

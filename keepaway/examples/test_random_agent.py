@@ -9,6 +9,7 @@ config = get_config()["3v2"]
 
 def main():
     env = KeepawayEnv(**config)
+    print(env._keepers)
     episodes = 5
     print("Training episodes")
     print("launching game")
@@ -23,12 +24,14 @@ def main():
         env.start()
 
         while not terminated:
+            # print("adjacent matrix ", env.get_proximity_adj_mat(False,False))
             obs = env.get_obs()
             # if (obs[1]  is not None ):
             #     print("obs ", obs[1]["state_vars"].shape)
             actions, agent_infos = policy.get_actions(obs)
             # print(actions)
             reward, terminated, info = env.step(actions)
+            # print("reward ", reward, "terminated ", terminated, "info ", info)
             time.sleep(0.15)
             episode_reward += reward
 

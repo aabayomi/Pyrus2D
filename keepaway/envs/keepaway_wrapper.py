@@ -1,6 +1,6 @@
 """
-Petting Zoo wrapper for keepaway environment
-similar implemention with the SMAC enviroment 
+Example Keepaway Wrapper useful for environment
+customization.  
 
 """
 
@@ -62,13 +62,13 @@ class keepaway_env(KeepawayEnv):
 
         self.action_spaces = MultiAgentActionSpace(self.action_spaces)
         self.action_space = self.action_spaces[0]
-        print("action space ", self.action_spaces)
+        # print("action space ", self.action_spaces)
 
         observation_size = env.get_obs_size()
         self._obs_low = np.array([-1] * observation_size)
         self._obs_high = np.array([1] * observation_size)
 
-        print("num agents ", self.num_agents)
+        # print("num agents ", self.num_agents)
         self.ob = MultiAgentObservationSpace([akro.Box(self._obs_low, self._obs_high) for _ in range(3)])
         # self.observation_space = self.ob[0]
 
@@ -82,12 +82,12 @@ class keepaway_env(KeepawayEnv):
             )
 
 
-        print("observation space ", self.observation_space)
+        # print("observation space ", self.observation_space)
 
-        print("agents ", self.agents)
+        # print("agents ", self.agents)
         self.possible_agents = self.agents[:]
         observation_size = env.get_obs_size()
-        print("obs size ", observation_size)
+        # print("obs size ", observation_size)
 
          ##should be abstracted into a wrapper 
         self.alive_mask = np.array([True] * self.num_agents)
@@ -122,7 +122,7 @@ class keepaway_env(KeepawayEnv):
         # print("observation space ", MultiAgentObservationSpace([spaces.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)]))
 
         state_size = env.get_state_size()
-        print("state size ", state_size)
+        # print("state size ", state_size)
         self.state_space = spaces.Box(low=-1, high=1, shape=(state_size,), dtype="float32")
         self._reward = 0
         self.episode_limit = 100000
@@ -137,7 +137,7 @@ class keepaway_env(KeepawayEnv):
        return o
 
     def observation_space(self, agent):
-        print("agent ", self.observation_spaces)
+        # print("agent ", self.observation_spaces)
         return self.observation_spaces[agent]
     
     def obs_space(self, agent):
@@ -287,7 +287,7 @@ class keepaway_env(KeepawayEnv):
         return {agent: obs for agent, obs in zip(self.agents, all_obs)}
     
     def step(self, actions):
-        r,t,info = self.env.step(actions)
+        r,t,info = super().step(actions)
         # r,t,info = self.env._step(actions)
         # print("rewards ", r, "term ", t, "info ", info)
         return r,t,info

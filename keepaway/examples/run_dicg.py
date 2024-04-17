@@ -1,29 +1,37 @@
 import os
 import time
 import torch
-import yaml
 from tqdm import tqdm
+import copy
 import numpy as np
 import random
 from json import dumps
 from tensorboardX import SummaryWriter
 import dowel
 from dowel import logger, tabular
-# from garage.envs import GarageEnv
+# from keepaway.garage.envs import GarageEnv
 
-from keepaway.dicg.torch.algos import CentralizedMAPPO
+from keepaway.dicg.torch.algos import CentralizedMAPPO2
 from keepaway.dicg.torch.baselines import CentValueFunction
 from keepaway.dicg.sampler import CentralizedMAOnPolicySampler
-
-from keepaway.dicg.make_policy import select_policy
-from keepaway.envs.keepaway_env import KeepawayEnv
-
-
-# from keepaway.dicg.env_maker import make_env
-# from envs.utils import record_gym_video
+from keepaway.config.game_config import get_config
 import keepaway.dicg.util as util
 
-# from args import args
+
+import yaml 
+import time
+from types import SimpleNamespace as SN
+import torch
+from os.path import dirname, abspath
+from keepaway.envs.keepaway_env import KeepawayEnv
+from keepaway.envs.keepaway_wrapper import keepaway_env
+from keepaway.dicg.torch.policies.dicg_ce_categorical_lstm_policy import DICGCECategoricalLSTMPolicy
+# from dicg.experiment.local_runner_wrapper import LocalRunnerWrapper
+from keepaway.dicg.sampler import CentralizedMAOnPolicyVectorizedSampler
+from keepaway.dicg.torch.policies.dicg_ce_categorical_mlp_policy2 import DICGCECategoricalMLPPolicy2
+
+
+results_path = os.path.join(dirname(dirname(abspath(__file__))), "dicg-results")
 
 def train(args):
     if not args.enforce_cpu:
@@ -32,8 +40,9 @@ def train(args):
         device = 'cpu'
 
     # Create Environment
-    # exp_name, env = make_env()
-    env = KeepawayEnv(**args)
+    env = KeepawayEnv(**vars(args))
+    env = keepaway_env(env)
+
     args.max_episode_steps = env.episode_limit
 
     # Setup logging
@@ -46,7 +55,7 @@ def train(args):
                 break
     else:
         training = not (args.eval or args.record)
-        args.save_dir = util.get_save_dir(args, training=training, name=exp_name)
+        args.save_dir = util.get_save_dir(args, training=training, name= args.exp_name)
         continuing_flag = ''
     
     log = util.get_logger(args.save_dir, args.name, continuing_flag)
@@ -68,8 +77,15 @@ def train(args):
 
     # Get model
     log.info('Building model...')
-    policy = select_policy(env,args, device)
+    # policy = make_mlp_policy(env, device)
+    policy = DICGCECategoricalMLPPolicy2(
+            env_spec=env,
+            n_agents=env.num_keepers,
+            n_gcn_layers=args.n_gcn_layers,
+            device=device)
     
+    # print("state size : ", env.observation_space.shape[0])
+
     vf = CentValueFunction(
         state_size=env.observation_space.shape[0],
         device=device)
@@ -77,7 +93,7 @@ def train(args):
     policy = policy.to(device)
     vf = vf.to(device)
     
-    algo = CentralizedMAPPO(
+    algo = CentralizedMAPPO2(
         policy=policy,
         baseline=vf,
         optimizer=torch.optim.Adam,
@@ -106,6 +122,7 @@ def train(args):
         algo = algo.to(device)
         if args.eval:
             eval_metric = env.eval(
+                env=env,
                 epoch=1,
                 policy=algo.policy, 
                 n_eval_episodes=args.n_eval_episodes, 
@@ -114,9 +131,10 @@ def train(args):
                 log=log, 
                 tbx=tbx, 
                 tabular=tabular,)
-        # elif args.record:
-        #     record_gym_video(env, args.video_save_path, 
-        #                      n_episodes=5, policy=algo.policy)
+        elif args.record:
+            pass
+            # record_gym_video(env, args.video_save_path, 
+            #                  n_episodes=5, policy=algo.policy)
         exit()
     else:
         start_epoch, start_env_steps = 0, 0
@@ -145,13 +163,15 @@ def train(args):
     # Training loop
     log.info('Training...')
     epochs_till_eval = args.eval_epochs
-
+    
     for epoch in range(start_epoch, start_epoch + args.n_epochs):
         epoch += 1
         log.info(f'[epoch] {epoch} starting...')
         tbx.add_scalar('train/n_epochs', epoch, epoch)
 
         paths = sampler.obtain_samples(epoch, tbx)
+        # print("paths: ", paths)
+
         avg_return = algo.train_once(epoch, paths, tbx)
 
         epochs_till_eval -= 1
@@ -179,12 +199,13 @@ def train(args):
         else:
             tabular.record(env.metric_name, np.nan)
         
-        log.info(exp_name)
+        log.info(args.exp_name)
         logger.log(tabular)
         logger.dump_all(epoch)
         tabular.clear()
 
 if __name__ == '__main__':
+
     params = ["--config=dicg"]
     parent_dir = os.getcwd()
     config_file_path = os.path.join(parent_dir, "config", "dicg.yaml")
@@ -194,9 +215,20 @@ if __name__ == '__main__':
         except yaml.YAMLError as exc:
             assert False, "default.yaml error: {}".format(exc)
     
-    args = config_dict
-    print("config_dict: ", config_dict)
+    # print("config_dict: ", config_dict)
+    config = get_config()["3v2"]
+    config = config | config_dict
+    config["log_level"] = "INFO"
+    config["name"] = "keepaway"
+    config["exp_name"] = ""
+    config["n_agents"] = config["num_keepers"]
+    # config["n_agents"] = config["num_keepers"] + config["num_takers"]
+    config["n_actions"] = config["num_keepers"] 
+
+    config = config | config_dict
 
 
-
-    # train(args)
+    args = SN(**config)
+    # print(args)
+    # args = config
+    train(args)

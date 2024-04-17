@@ -37,7 +37,9 @@ class CentValueFunction(nn.Module):
 
 
     def forward(self, state):
+        # print('state.shape =', state.shape)
         if not torch.is_tensor(state):
             state = torch.tensor(state).float().to(self.device) # (n_paths, max_t, state_dim)
         est_returns = self.vf(state).squeeze()
+        # print('est_returns.shape =', est_returns.shape)
         return est_returns

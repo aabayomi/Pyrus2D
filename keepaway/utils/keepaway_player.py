@@ -63,10 +63,16 @@ class KeepawayPlayer(PlayerAgent):
 
     def action_impl(self):
         wm = self.world()
+        wm.adjacency_matrix()
+        
+        # wm.get_proximity_adj_mat(False, False)
+        # print("adja matrix ", wm.adjacency_matrix())
         
         ## Update the total steps
         if self._total_steps.get_lock():
             self._total_steps.value = wm.time().cycle()
+        
+        
 
         if self.do_preprocess():
             return

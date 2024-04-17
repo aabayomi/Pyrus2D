@@ -3,7 +3,7 @@ name: "dicg"
 env: "keepaway"
 
 # Meta:
-exp_name: null  # Update this as needed, null means no default value specified
+exp_name: "3v2"
 gpu_id: 0
 save_dir: './save/'
 enforce_cpu: false
@@ -26,17 +26,13 @@ seed: 1
 visualize: false
 eval: false
 eval_steps: 20000
-eval_epochs: 10
+eval_epochs: 1
 continuing_checkpoint: null
-
-
-# Env:
-  # env: 'traffic'
-  # n_agents: 
+ 
 proximity_threshold: 1.5
 self_connected_adj: true
 inverse_D: true
-max_episode_steps: 100
+max_episode_steps: 200
 difficulty: 'hard'
 penalty: 0
 n_entities: 8
@@ -45,7 +41,7 @@ agent_visible: true
 render_adj: false
 
 # Sampler:
-batch_size: 60000
+batch_size: 6000
 n_trajs_limit: 400
 limit_by_traj: false
 
@@ -64,7 +60,7 @@ n_gcn_layers: 2
 # Edge_Predictor:
 edge_predictor_pred_method: 'gumbel'
 edge_predictor_input_method: 'diff'
-edge_predictor_checkpoint_path: './save/meet/edge_pred_data/meet_14_input=diff_threshold=2.0_nagents=10_npos=3e+06_neg2pos=2.0_sc=False_weighdacay=0.00_tau=0.25-01/best.pth.tar'
+edge_predictor_checkpoint_path: './save/meet/edge_pred_data/best.pth.tar'
 tau: 0.25
 max_n_positive_samples: 3000000
 neg2pos: 2.0

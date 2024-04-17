@@ -31,7 +31,7 @@ def get_decision_keepaway(
     event_to_set,
     event_to_wait,
     obs,
-    last_action_time,
+    action_time,
     reward,
     terminated,
     full_world,
@@ -57,7 +57,7 @@ def get_decision_keepaway(
                 # wm._available_actions[wm.self().unum()] = 2
                 with count_list.get_lock():
                     pass
-                Keepers.keeper_with_ball(wm, agent, count_list, last_action_time)
+                Keepers.keeper_with_ball(wm, agent, count_list, action_time)
         else:
             fastest = wm.intercept_table().fastest_teammate()
             if fastest is not None:

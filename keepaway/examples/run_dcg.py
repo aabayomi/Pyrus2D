@@ -4,6 +4,7 @@ import datetime
 import pprint
 import time
 import threading
+import copy
 import torch as th
 import numpy as np
 import yaml 
@@ -53,8 +54,6 @@ def run_sequential(args, logger):
         "actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])
     }
 
-    # print(args.buffer_size, env_info["episode_limit"] + 1)
-
     buffer = ReplayBuffer(scheme, groups, args.buffer_size, env_info["episode_limit"] + 1,
                           preprocess=preprocess,
                           device="cpu" if args.buffer_cpu_only else args.device)
@@ -69,7 +68,6 @@ def run_sequential(args, logger):
     runner.setup(scheme=scheme, groups=groups, preprocess=preprocess, mac=mac)
 
     # Learner
-    # learner = le_REGISTRY[args.learner](mac, buffer.scheme, logger, args)
     learner = DCGLearner(mac, buffer.scheme, logger, args)
     
     if args.use_cuda:
@@ -121,8 +119,8 @@ def run_sequential(args, logger):
         episode_batch = runner.run(test_mode=False)
         buffer.insert_episode_batch(episode_batch)
 
-        if buffer.can_sample(batch_size):
-            episode_sample = buffer.sample(batch_size)
+        if buffer.can_sample(args.batch_size):
+            episode_sample = buffer.sample(args.batch_size)
             # Truncate batch to only filled timesteps
             max_ep_t = episode_sample.max_t_filled()
             episode_sample = episode_sample[:, :max_ep_t]
@@ -132,7 +130,7 @@ def run_sequential(args, logger):
 
             print("episode sample ", episode_sample)
             learner.train(episode_sample, runner.t_env, episode)
-            n_test_runs = max(1, test_nepisode // runner.batch_size)
+            n_test_runs = max(1, args.test_nepisode // runner.batch_size)
             if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
 
                 logger.console_logger.info("t_env: {} / {}".format(runner.t_env, args.t_max))
@@ -143,11 +141,9 @@ def run_sequential(args, logger):
                 for _ in range(n_test_runs):
                     runner.run(test_mode=True)
             
-            if save_model and (runner.t_env - model_save_time >= save_model_interval or model_save_time == 0):
-                print("saving model")
+            if args.save_model and (runner.t_env - model_save_time >= args.save_model_interval or model_save_time == 0):
                 model_save_time = runner.t_env
                 save_path = os.path.join(args.local_results_path, "models", args.unique_token, str(runner.t_env))
-                #"results/models/{}".format(unique_token)
                 os.makedirs(save_path, exist_ok=True)
                 logger.console_logger.info("Saving models to {}".format(save_path))
 
@@ -155,10 +151,8 @@ def run_sequential(args, logger):
                 # use appropriate filenames to do critics, optimizer states
                 learner.save_models(save_path)
 
-            episode += batch_size_run
-            # print("episode count ", episode)
-
-            if (runner.t_env - last_log_T) >= log_interval:
+            episode += args.batch_size_run
+            if (runner.t_env - last_log_T) >= args.log_interval:
                 logger.log_stat("episode", episode, runner.t_env)
                 logger.print_recent_stats()
                 last_log_T = runner.t_env
@@ -198,7 +192,6 @@ def _get_config(params, arg_name, subfolder):
     if config_name is not None:
         current_working_dir = os.getcwd()
         config_path = os.path.join(current_working_dir, "config", "{}.yaml".format(config_name))
-        # print(config_path)
         with open(config_path, "r") as f:
             try:
                 config_dict = yaml.safe_load(f)
@@ -222,7 +215,7 @@ def config_copy(config):
     elif isinstance(config, list):
         return [config_copy(v) for v in config]
     else:
-        return deepcopy(config)
+        return copy.deepcopy(config)
 
 
 
@@ -276,8 +269,6 @@ if __name__ == "__main__":
     config["n_actions"] = config["num_keepers"] 
 
     # Set the random seed
-    # np.random.seed(config["seed"])
-    # th.manual_seed(config["seed"])
     # Set the device
     device = th.device("cuda" if th.cuda.is_available() else "cpu")
     # Set the unique token
@@ -312,36 +303,5 @@ if __name__ == "__main__":
         "episode_limit": env.episode_limit
     }
     print(env_info)
-    
-    # print(config)
-    # print( "state shape ",env_info["state_shape"])
-    
-    # Set the arguments
-    # print(config)
-    # print(config["name"])
-    
-    # print("config ",args)
-
-    # args = SN({
-    #     "test_interval": test_interval,
-    #     "log_interval": log_interval,
-    #     "save_model_interval": save_model_interval,
-    #     "learner_log_interval": learner_log_interval,
-    #     "t_max": t_max,
-    #     "test_interval": test_interval,
-    #     "batch_size": batch_size,
-    #     "save_model": save_model,
-    #     "test_nepisode": test_nepisode,
-    #     "batch_size_run": batch_size_run,
-    #     "buffer_size": 1000000,
-    #     "buffer_cpu_only": buffer_cpu_only,
-    #     "device": device,
-    #     "unique_token": unique_token,
-    #     "local_results_path": local_results_path,
-    #     "global_results_path": global_results_path,
-    #     "checkpoint_path": checkpoint_path,
-    #     "load_step": load_step,
-    #     "evaluate": evaluate,})
-    # Run the configuration
     run(config, logger)
     

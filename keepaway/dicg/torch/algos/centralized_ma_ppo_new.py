@@ -154,6 +154,7 @@ class CentralizedMAPPO2(nn.Module):
                     adjs_ids = adjs[ids] # Notice naming
                     alive_masks_ids = None
 
+
                 obs_ids = obs[ids].to(self.device)
                 avail_actions_ids = avail_actions[ids]
                 actions_ids = actions[ids].to(self.device)
@@ -259,6 +260,10 @@ class CentralizedMAPPO2(nn.Module):
         return np.mean(undiscounted_returns)
     
     def compute_advantages(self, max_path_length, baselines, rewards):
+        # print('max_path_length =', max_path_length)
+        # print('baselines.shape =', baselines.shape)
+        # print('rewards.shape =', rewards.shape)
+
         adv_filter = torch.full((1, 1, 1, max_path_length - 1),
                                 self.discount * self._gae_lambda).to(self.device)
         adv_filter = torch.cumprod(F.pad(adv_filter, (1, 0), value=1), dim=-1)

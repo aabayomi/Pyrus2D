@@ -100,10 +100,13 @@ class Keepers:
 
     @staticmethod
     def keeper_with_ball(
-        wm: "WorldModel", agent: "PlayerAgent", actions, last_action_time
+        wm: "WorldModel", agent: "PlayerAgent", actions, action_time
     ):
         # print("keeper_with_ball: actions = ", actions)
         action = actions[wm.self().unum() - 1]
+
+        ##
+        # action_time[wm.self().unum() - 1] = wm.time().cycle()
         # print(f"keeper_with_ball: action { action }  and i am {wm.self().unum()}",)
         # print(f"keeper_with_ball: action={ action }")
         Keepers.interpret_keeper_action(wm, agent, action)

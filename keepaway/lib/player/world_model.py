@@ -142,7 +142,7 @@ class WorldModel:
 
         self._dir_count: list[int] = [1000 for _ in range(WorldModel.DIR_CONF_DIVS)]
 
-        ## keep-away Defined variables ##
+        ## keep Away Defined Variables 
 
         self._episode_start = timeit.default_timer()
         self._observation = None
@@ -166,16 +166,28 @@ class WorldModel:
         }
         
         
-        self.last_action_time = 0  # hand-coded for now change later
+        # self.last_action_time = 0  # hand-coded for now change later
+
+        # self.last_action_time = 0  # hand-coded for now change later
+        self.last_action_time = [0] * len(self._agents)
+        self.action_count = [0] * len(self._agents)
+
 
         self._all_teammates_from_ball: list[PlayerObject] = []  # .
-        self.threshold = 15
+        self.threshold = 10.0
+
+        # self.adj_matrix = [0] * len(self._teammates)
 
         if manager is not None:
             self._obs = manager.dict(self.observations)
             self._reward = multiprocessing.Value("i", 0)
             self._terminated = multiprocessing.Value("b", False)
-            self._last_action_time = multiprocessing.Value("i", self.last_action_time)
+            # self._last_action_time = multiprocessing.Value("i", self.last_action_time)
+
+            self._adjacency_matrix = multiprocessing.RawArray("d", len(self._agents) * len(self._agents))
+
+            self._action_time = multiprocessing.Array("i", self.last_action_time)
+            self._action_time_counter = multiprocessing.Array("i", self.action_count)
             
             ## 
             self._episode_count = multiprocessing.Value("i", 0)
@@ -2088,6 +2100,8 @@ class WorldModel:
         self._set_players_from_ball_and_self()
 
         closest_keeper_ball = self.teammates_from_ball()
+        # print("closest_keeper_ball", closest_keeper_ball)
+
         all_keeper_closest_to_ball = self.all_teammates_from_ball()
 
 
@@ -2164,7 +2178,8 @@ class WorldModel:
 
         closest_keeper = all_keeper_closest_to_ball[0]
         
-        for k in self._teammates: 
+        for k in self._teammates:
+            # print("k", k)
             min_angle = 10000
             for t in self._opponents:
                 if closest_keeper != None:
@@ -2214,10 +2229,6 @@ class WorldModel:
     def _get_ball_time_info(self):
         return self._messenger_memory.ball_time()
 
-    def reward(self, current_cycle, last_action_time):
-        """Return the reward."""
-        return current_cycle - last_action_time
-
     def _set_last_action(self, action):
         self._last_action = action
         if action == None:
@@ -2235,23 +2246,68 @@ class WorldModel:
         """Returns the adjacency matrix for the given players."""
         import copy
 
-        n = len(self._teammates) + 1
-        ids = [p.unum() for p in self._teammates] + [self._self.unum()]
-        ids = sorted(ids)
+        if self.our_side() == SideID.RIGHT:
+            pass
+        else: 
+            n = len(self._agents)
+            ids = [p.unum() for p in self._teammates] + [self._self.unum()]
+            ids = sorted(ids)
+            matrix = np.frombuffer(self._adjacency_matrix, dtype=np.float64).reshape((n, n))
+            matrix[:] = 0  # Reset the matrix to zeros
+            # matrix = np.zeros((n, n))
+            all_players = copy.deepcopy(self._teammates) + [self._self]
+            all_players = sorted(all_players, key=lambda x: x.unum())
+            all_idx = [p.unum() for p in all_players]
+            for i in range(n - 1):
+                for j in range(i + 1, n):
+                    if i in all_idx and j in all_idx:
+                        pi, pj = all_players[i], all_players[j]
+                        dist = pi.pos().dist(pj.pos())
+                        if dist <= self.threshold:
+                            matrix[i, j] = 1
+                            matrix[j, i] = 1
+            return matrix
+    
 
-        matrix = np.frombuffer(self._adjacency_matrix, dtype=np.float64).reshape((n, n))
-        matrix[:] = 0  # Reset the matrix to zeros
-
-        all_players = copy.deepcopy(self._teammates) + [self._self]
-        all_players = sorted(all_players, key=lambda x: x.unum())
-        for i in range(n - 1):
-            for j in range(i + 1, n):
-                if all_players[i].pos_valid() and all_players[j].pos_valid():
-                    dist = all_players[i].pos().dist(all_players[j].pos())
-                    if dist <= self.threshold:
-                        matrix[i, j] = 1
-                        matrix[j, i] = 1
-        return matrix
+    def get_proximity_adj_mat(self,con_adj,inv_d, raw=False):
+        import copy
+        num_keepers = len(self._agents)
+        # print("all_keeper_closest_to_ball", all_keeper_closest_to_ball)
+        all_players = copy.deepcopy(self._all_players)
+        # print("all_players", all_players)
+        
+        # print(self.adjacency_matrix())
+        pass
+       
+        # agent_pos = [p.pos() for p in self._teammates + [self._self]]
+        # # print("agent_pos", agent_pos)
+        # adj = np.zeros((num_keepers, num_keepers))
+        # if len(agent_pos) < num_keepers:
+        #     return adj
+        # else:
+        #     for i in range(num_keepers - 1):
+        #         for j in range(i + 1, num_keepers):
+        #             pi, pj = agent_pos[i], agent_pos[j]
+        #             dist = np.sqrt((pi[0] - pj[0]) ** 2 + (pi[1] - pj[1]) ** 2)
+        #             if dist <= self.threshold:
+        #                 adj[i, j] = 1
+        #                 adj[j, i] = 1
+        #     adj_raw = copy.deepcopy(adj)
+            
+        #     print("adjacency matrix", adj_raw)
+        
+        #     if raw:
+        #         return adj
+        
+        #     if not inv_d:
+        #         adj = (adj + np.eye(num_keepers)) if con_adj else adj
+        #         sqrt_D = np.diag(np.sqrt(np.sum(adj, axis=1)))
+        #         adj_renormalized = sqrt_D @ adj @ sqrt_D
+        #     else:
+        #         adj = adj + np.eye(num_keepers)
+        #         inv_sqrt_D = np.diag(np.sum(adj, axis=1) ** (-0.5))
+        #         adj_renormalized = inv_sqrt_D @ adj @ inv_sqrt_D
+        # return adj_renormalized
 
     def acg_adjacency_matrix(self):
         """

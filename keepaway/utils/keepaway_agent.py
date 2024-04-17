@@ -249,6 +249,7 @@ class PlayerAgent(SoccerAgent):
         )
 
     def hear_referee_parser(self, message: str):
+        
         mode = message.split(" ")[-1].strip(")")
         keepaway_mode = message.split(" ")[-2:]
         if keepaway_mode[-1].strip(")\x00") == "play_on":
