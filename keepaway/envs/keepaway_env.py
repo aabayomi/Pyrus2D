@@ -587,9 +587,17 @@ class KeepawayEnv(MultiAgentEnv):
         # print("total reward ", total_reward, "terminated ", terminated, "info ", info)
         return total_reward, terminated, info
     
-
+    def convert_to_numpy(self,proxy):
+        if isinstance(proxy, dict):
+            regular_dict = dict
+        else:
+            regular_dict = dict(proxy)
+        values = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in regular_dict.values()] 
+        numpy_array = np.stack(values, axis=0)
+        return numpy_array
+    
     ## TODO: Should be a wrapper method. 
-    def eval(self, epoch, policy, n_eval_episodes=10, greedy=True, 
+    def eval(self, epoch, policy,max_episode_steps, n_eval_episodes=10, greedy=True, 
             visualize=False, log=None, tbx=None, tabular=None):
         eval_avg_return = 0
         eval_env_steps = 0
@@ -599,9 +607,12 @@ class KeepawayEnv(MultiAgentEnv):
             for i_ep in range(n_eval_episodes):
                 # Start episode
                 obses = self.env.reset() # (n_agents, obs_dim)
+                ob = obses[0]
+                # print("ob ", ob)
+                obs_ = self.convert_to_numpy(ob)
                 # env.start()
     
-                for t in range(10):
+                for t in range(max_episode_steps):
                     if policy.proximity_adj:
                         adjs = self.get_proximity_adj_mat()
                         alive_masks = None
@@ -610,16 +621,17 @@ class KeepawayEnv(MultiAgentEnv):
                         alive_masks = np.array(self.alive_mask)
                     avail_actions = self.env.get_avail_actions()
                     actions, agent_infos_n = policy.get_actions(
-                        obses, avail_actions, adjs=adjs, 
+                        obs_, avail_actions, adjs=adjs, 
                         alive_masks=alive_masks, greedy=greedy)
                     
-                    next_obses, rewards, done, info = self.env.step(actions)
+                    rewards, done, info = self.env.step(actions)
 
                     eval_avg_return += np.mean(rewards)
                     if done:
                         eval_env_steps += (t + 1)
                         break
-                    obses = next_obses
+                    # obses = next_obses
+                    # obses = self.convert_to_numpy(obses[0])
                 # end episode
                 progress_bar.set_postfix(metric='{:.2f}'.format(
                     eval_avg_return / (i_ep + 1)))
