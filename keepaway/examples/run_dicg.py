@@ -185,7 +185,7 @@ def train(args):
             eval_metric = env.eval(
                 epoch=epoch,
                 policy=algo.policy, 
-                max_episode_length=args.max_episode_steps,
+                max_episode_steps=args.max_episode_steps,
                 n_eval_episodes=args.n_eval_episodes, 
                 greedy=args.eval_greedy, 
                 visualize=args.visualize, 
