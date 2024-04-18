@@ -23,7 +23,7 @@ class CentralizedMAOnPolicySampler(BatchSampler):
                  limit_by_traj=False):
         super().__init__(algo, env)
         # self._env = env
-        self._env = env_REGISTRY["keepaway"](num_keepers=3, num_takers=2, pitch_size=20)
+        self._env = env_REGISTRY["keepaway"](num_keepers=4, num_takers=3, pitch_size=25)
         self.tot_num_env_steps = 0
         self.limit_by_traj = limit_by_traj
         self.batch_size = batch_size
@@ -102,6 +102,7 @@ class CentralizedMAOnPolicySampler(BatchSampler):
             t = time.time()
             policy.reset(True)
             avail_actions = self._env.get_avail_actions()
+            # print("avail_actions ", avail_actions)
             # print("adjacent matrix ", self._env.get_proximity_adj_mat(False,False,True))
 
             if self.algo.policy.proximity_adj:

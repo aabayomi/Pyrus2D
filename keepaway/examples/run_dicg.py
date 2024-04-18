@@ -78,9 +78,10 @@ def train(args):
     # Get model
     log.info('Building model...')
     # policy = make_mlp_policy(env, device)
+    print("number of keepers: ", env.num_keepers)
     policy = DICGCECategoricalMLPPolicy2(
             env_spec=env,
-            n_agents=env.num_keepers,
+            n_agents=env.num_agents,
             n_gcn_layers=args.n_gcn_layers,
             device=device)
     
@@ -184,6 +185,7 @@ def train(args):
             eval_metric = env.eval(
                 epoch=epoch,
                 policy=algo.policy, 
+                max_episode_length=args.max_episode_steps,
                 n_eval_episodes=args.n_eval_episodes, 
                 greedy=args.eval_greedy, 
                 visualize=args.visualize, 
@@ -216,7 +218,7 @@ if __name__ == '__main__':
             assert False, "default.yaml error: {}".format(exc)
     
     # print("config_dict: ", config_dict)
-    config = get_config()["3v2"]
+    config = get_config()["4v3"]
     config = config | config_dict
     config["log_level"] = "INFO"
     config["name"] = "keepaway"

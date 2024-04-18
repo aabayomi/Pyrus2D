@@ -41,15 +41,16 @@ class ProximalCGCECategoricalMLPPolicy(DICGBase2):
             Adjacency matrices are always obtained from env/outside algo
         '''
 
-        # print("obs_n ", obs_n.shape)
+        print("obs_n ", obs_n.shape)
 
         if not torch.is_tensor(obs_n):
             obs_n = torch.Tensor(obs_n).to(self.device)
             obs_n = obs_n.flatten()
+            print("obs_n ", obs_n.shape)
 
-        # print("obs_n ss ", obs_n.shape[:-1])
-        # print("obs_n ss2 ", (self._n_agents, -1))
-        # print("obs_n ss 3", obs_n.shape[:-1] + (self._n_agents, -1))
+        print("obs_n ss ", obs_n.shape[:-1])
+        print("obs_n ss2 ", (self._n_agents, -1))
+        print("obs_n ss 3", obs_n.shape[:-1] + (self._n_agents, -1))
         obs_n = obs_n.reshape(obs_n.shape[:-1] + (self._n_agents, -1))
         
         if self.proximity_adj:

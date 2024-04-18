@@ -57,7 +57,7 @@ class keepaway_env(KeepawayEnv):
         ## TODO: Check if this is the right way to do it
         self.agents, self.action_spaces = self._init_agents()
         self.num_agents = len(self.agents)
-        
+        # print("num agents ", self.num_agents)
         
 
         self.action_spaces = MultiAgentActionSpace(self.action_spaces)
@@ -67,9 +67,8 @@ class keepaway_env(KeepawayEnv):
         observation_size = env.get_obs_size()
         self._obs_low = np.array([-1] * observation_size)
         self._obs_high = np.array([1] * observation_size)
-
-        # print("num agents ", self.num_agents)
-        self.ob = MultiAgentObservationSpace([akro.Box(self._obs_low, self._obs_high) for _ in range(3)])
+        
+        self.ob = MultiAgentObservationSpace([akro.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)])
         # self.observation_space = self.ob[0]
 
         self._obs_low = np.array([-1] * observation_size)
@@ -77,8 +76,8 @@ class keepaway_env(KeepawayEnv):
     
         self.observation_space = gym.spaces.Box(self._obs_low, self._obs_high)
         self.observation_space = akro.Box(
-                low=np.array(list(self.observation_space.low) * 3),
-                high=np.array(list(self.observation_space.high) * 3)
+                low=np.array(list(self.observation_space.low) * self.num_agents),
+                high=np.array(list(self.observation_space.high) * self.num_agents),
             )
 
 
