@@ -288,7 +288,9 @@ class Tools:
         return congest
 
     @staticmethod
-    def least_congested_point_for_pass_in_rectangle(wm: "WorldModel", rect: Rect2D, pos_from):
+    def least_congested_point_for_pass_in_rectangle(
+        wm: "WorldModel", rect: Rect2D, pos_from
+    ):
         """Returns the least congested point for a pass in the given rectangle."""
 
         x_granularity = 5  # 5 samples by 5 samples

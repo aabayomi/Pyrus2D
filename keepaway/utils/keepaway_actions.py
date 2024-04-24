@@ -52,6 +52,7 @@ DEFAULT_SCORE = 100.0
 
 from keepaway.lib.action.view_wide import ViewWide
 
+
 def KeepPointCmp(item1, item2) -> bool:
     return item1.score_ < item2.score_
 
@@ -800,8 +801,6 @@ class GoToPoint:
 
 
 class ScanField(BodyAction):
-    
-
     def __init__(self):
         pass
 
@@ -821,7 +820,6 @@ class ScanField(BodyAction):
         return True
 
     def find_ball(self, agent: "PlayerAgent"):
-
         wm = agent.world()
         # print(wm.ball().pos())
         # print("find ball/")

@@ -1,3 +1,8 @@
+"""
+Keepaway decision making module.
+
+"""
+
 from keepaway.lib.action.neck_turn_to_ball import NeckTurnToBall
 from keepaway.lib.action.scan_field import ScanField
 from keepaway.lib.action.hold_ball import HoldBall
@@ -17,10 +22,6 @@ import math as Math
 if TYPE_CHECKING:
     from keepaway.lib.player.world_model import WorldModel
     from keepaway.lib.player.player_agent import PlayerAgent
-
-# TODO TACKLE GEN
-# TODO GOAL KICK L/R
-# TODO GOAL L/R
 DEBUG = True
 
 
@@ -52,20 +53,18 @@ def get_decision_keepaway(
         if wm.self().pos().dist(wm.ball().pos()) < 5.0:
             with count_list.get_lock():
                 obs[wm.self().unum()] = wm._retrieve_observation()
-                
+
             if wm.self().is_kickable():
                 # wm._available_actions[wm.self().unum()] = 2
                 with count_list.get_lock():
                     pass
-                
+
                 Keepers.keeper_with_ball(wm, agent, count_list, last_action_time)
         else:
             fastest = wm.intercept_table().fastest_teammate()
             if fastest is not None:
-               
                 Keepers.keeper_support(wm, fastest, agent)
 
-       
     if wm.our_team_name() == "takers":
         if wm.get_confidence("ball") < 0.90:
             ScanField().execute(agent)
@@ -84,5 +83,5 @@ def get_decision_keepaway(
         d = closest_taker_from_ball.dist_to_ball()
         if d < 0.3:
             return NeckTurnToBall().execute(agent)
-        
+
         return Intercept().execute(agent)

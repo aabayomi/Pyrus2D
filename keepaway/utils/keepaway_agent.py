@@ -3,8 +3,6 @@ import logging
 import time
 
 from keepaway.lib.action.kick_table import KickTable
-
-# from keepaway.base.decision import get_decision
 from keepaway.lib.debug.debug import log
 from keepaway.lib.debug.level import Level
 from keepaway.lib.debug.color import Color
@@ -15,6 +13,7 @@ from keepaway.lib.player.sensor.body_sensor import SenseBodyParser
 from keepaway.lib.player.sensor.see_state import SeeState
 from keepaway.lib.player.sensor.visual_sensor import SeeParser
 from keepaway.lib.player.soccer_action import ViewAction, NeckAction, FocusPointAction
+
 # from keepaway.lib.player.soccer_agent import SoccerAgent
 from keepaway.utils.soccer_agent import SoccerAgent
 from keepaway.lib.player.world_model import WorldModel
@@ -30,13 +29,9 @@ from keepaway.lib.player_command.player_command import (
     PlayerCheckBallCommand,
 )
 
-from keepaway.lib.player_command.player_command_support import (
-    PlayerDoneCommand
-)
+from keepaway.lib.player_command.player_command_support import PlayerDoneCommand
 
-from keepaway.lib.player_command.player_command_body import (
-    PlayerKickCommand
-)
+from keepaway.lib.player_command.player_command_body import PlayerKickCommand
 
 
 from keepaway.lib.player_command.player_command_sender import PlayerSendCommands
@@ -45,10 +40,13 @@ from keepaway.lib.rcsc.game_time import GameTime
 from keepaway.lib.rcsc.server_param import ServerParam
 from keepaway.lib.rcsc.types import UNUM_UNKNOWN, GameModeType, SideID, ViewWidth
 from keepaway.lib.messenger.messenger import Messenger
+
 # from keepaway.config import team_config
 from keepaway.config import team_config
 from keepaway.lib.debug.timer import ProfileTimer as pt
-from keepaway.lib.parser.parser_message_fullstate_world import FullStateWorldMessageParser
+from keepaway.lib.parser.parser_message_fullstate_world import (
+    FullStateWorldMessageParser,
+)
 
 
 DEBUG = True

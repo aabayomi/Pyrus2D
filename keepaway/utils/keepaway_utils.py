@@ -1,6 +1,5 @@
 from pyrusgeom.geom_2d import *
 from keepaway.lib.rcsc.server_param import ServerParam
-# from keepaway.lib.rcsc.types import CommandType
 from pyrusgeom.vector_2d import Vector2D
 from pyrusgeom.angle_deg import AngleDeg
 
@@ -152,7 +151,6 @@ class Keepers:
             GoToPoint(heard_pos, 1.0, ServerParam.i().max_dash_power()).execute(agent)
             return True
         else:
-
             log.sw_log().team().add_text(
                 f"(sample player do heard pass) go to point!, cycle={self_min}"
             )

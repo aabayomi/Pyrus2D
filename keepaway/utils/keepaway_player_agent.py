@@ -2,7 +2,6 @@ from typing import Union
 import logging
 import time
 from keepaway.lib.action.kick_table import KickTable
-from keepaway.base.decision import get_decision
 from keepaway.lib.debug.debug import log
 from keepaway.lib.debug.level import Level
 from keepaway.lib.debug.color import Color
@@ -12,31 +11,28 @@ from keepaway.lib.player.sensor.body_sensor import SenseBodyParser
 from keepaway.lib.player.sensor.see_state import SeeState
 from keepaway.lib.player.sensor.visual_sensor import SeeParser
 from keepaway.lib.player.soccer_action import ViewAction, NeckAction, FocusPointAction
-# from keepaway.lib.player.soccer_agent import SoccerAgent
 from keepaway.utils.soccer_agent import SoccerAgent
 from keepaway.lib.player.world_model import WorldModel
 from keepaway.lib.network.udp_socket import IPAddress
 from pyrusgeom.soccer_math import min_max
-from keepaway.lib.player_command.player_command import PlayerInitCommand, PlayerByeCommand
+from keepaway.lib.player_command.player_command import (
+    PlayerInitCommand,
+    PlayerByeCommand,
+)
 from keepaway.lib.player_command.player_command_support import (
     PlayerDoneCommand,
     PlayerTurnNeckCommand,
 )
-from keepaway.lib.action.intercept import Intercept
-from keepaway.lib.action.neck_body_to_ball import NeckBodyToBall
-from keepaway.lib.action.neck_turn_to_ball import NeckTurnToBall
-from keepaway.lib.action.hold_ball import HoldBall
-from keepaway.base.generator_pass import BhvPassGen
 from keepaway.lib.player_command.player_command_sender import PlayerSendCommands
 from keepaway.lib.rcsc.game_mode import GameMode
 from keepaway.lib.rcsc.game_time import GameTime
 from keepaway.lib.rcsc.server_param import ServerParam
 from keepaway.lib.rcsc.types import UNUM_UNKNOWN, GameModeType, SideID, ViewWidth
 from keepaway.lib.messenger.messenger import Messenger
-# from keepaway.config import team_config
-from keepaway.config from keepaway.config import team_config
 from keepaway.lib.debug.timer import ProfileTimer as pt
-from keepaway.lib.parser.parser_message_fullstate_world import FullStateWorldMessageParser
+from keepaway.lib.parser.parser_message_fullstate_world import (
+    FullStateWorldMessageParser,
+)
 from keepaway.base.sample_communication import SampleCommunication
 
 from keepaway.lib.player_command.trainer_command import (
@@ -80,7 +76,6 @@ class PlayerAgent(SoccerAgent):
         self._see_state: SeeState = SeeState()
 
         self._team_name = team_name
-        # print("team name is ", self._team_name)
         self._game_mode: GameMode = GameMode()
         self._server_cycle_stopped: bool = True
 
@@ -702,7 +697,7 @@ class PlayerAgent(SoccerAgent):
 
     else:
 
-        def world(self) -> WorldModel:
+        def world(self) -> Any:
             return self._full_world
 
         def main_world(self):
@@ -724,7 +719,7 @@ class PlayerAgent(SoccerAgent):
 
     else:
 
-        def s_world(self) -> WorldModel:
+        def s_world(self) -> Any:
             return self._full_world
 
         def secondary_world(self):
