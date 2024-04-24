@@ -6,7 +6,6 @@ import numpy as np
 from absl import logging
 from subprocess import Popen
 import yaml
-from optparse import OptionParser
 import time
 from keepaway.lib.player.world_model import WorldModel
 import multiprocessing
@@ -14,18 +13,29 @@ import keepaway.utils.main_keepaway_player as kp
 import atexit
 from keepaway.envs.multiagentenv import MultiAgentEnv
 import os
-import signal
 
 config_dir = os.getcwd() + "/config"
+
 
 class KeepawayEnv(MultiAgentEnv):
     """Keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0."""
 
-    def __init__(self,config):
+    def __init__(self, config):
         """
-        Initialize a keepaway environment.
+        Initialize a keep-away environment.
         ---------------------------------
         Parameters:
+        config: dict
+            Configuration dictionary containing the following
+            parameters:
+            num_keepers: int
+                Number of keepers in the environment.
+            num_takers: int
+                Number of takers in the environment.
+            pitch_size: int
+                Size of the pitch.
+            sparse_reward: bool
+                Whether to use a sparse reward signal.
 
         """
 
@@ -45,8 +55,8 @@ class KeepawayEnv(MultiAgentEnv):
 
         self._last_action = None
         manager = multiprocessing.Manager()
-        self._world = WorldModel("real",self.num_keepers,manager)  # for all agents
-        
+        self._world = WorldModel("real", self.num_keepers, manager)  # for all agents
+
         self._lock = self._world
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(self.num_keepers)
@@ -74,7 +84,6 @@ class KeepawayEnv(MultiAgentEnv):
         self._proximity_threshold = 2
 
         self.renderer = None
-
 
         self._keepers = [
             multiprocessing.Process(
@@ -128,8 +137,8 @@ class KeepawayEnv(MultiAgentEnv):
             for i in range(self.num_takers)
         ]
 
-        # print("keepers: ", self._keepers)
         ## uncomment to include some coaching
+        
         # self._coach = [multiprocessing.Process(target=main_c.main)]
         # coach = mp.Process(target=main_c.main)
         # coach.start()
@@ -137,50 +146,47 @@ class KeepawayEnv(MultiAgentEnv):
         self._server = []
         self._render = []
         self._sleep = time
-       
 
-    def _agents(self):
-        """ Utility to return all agents in the environment. """
+    def _agents(self) -> list:
+        """Utility to return all agents in the environment."""
         return self._keepers + self._takers
-
 
     def _launch_monitor(self) -> int:
         """Launches the monitor."""
+        
         logging.debug("Built the command to connect to the server")
+        
         monitor_cmd = f"soccerwindow2 &"
-        # monitor_cmd = f"rcssmonitor --server-port={6000}"
         popen = Popen(monitor_cmd, shell=True)
         return popen
-    
-    def load_agent_config(self,file_path):
+
+    def load_agent_config(self, file_path):
         with open(file_path) as f:
             return yaml.safe_load(f)
 
-    def _parse_options(self, args=None, **defaults):
+    def _parse_options(self) -> object:
         """
         Parses the given list of args, defaulting to sys.argv[1:].
         Retrieve other options from the YAML config file.
         """
 
-        # Load the default values from YAML file
-        with open(f"{config_dir}/server-config.yml", "r") as ymlfile:
-            config = yaml.safe_load(ymlfile)
+        with open(f"{config_dir}/server-config.yml", "r") as yml:
+            config = yaml.safe_load(yml)
 
         class ConfigOptions:
             pass
 
         options = ConfigOptions()
-        # options, _ = parser.parse_args(args)
-
-
-        # Merging command-line options with YAML defaults
         for key, value in config.items():
             if not getattr(options, key, None):
                 setattr(options, key, value)
         return options
 
-    def _launch_server(self, options):
+    def _launch_server(self, options) -> int:
         """Launch the RCSS Server and Monitor"""
+
+        options.field_length = self.pitch_size
+        options.field_width = self.pitch_size
 
         log_name = f"{time.strftime('%Y%m%d%H%M%S')}"
 
@@ -224,24 +230,23 @@ class KeepawayEnv(MultiAgentEnv):
             if val is not None
         ]
 
-        # Build rcssserver command, and fork it off.
+      
+        ##
         command = ["rcssserver"] + server_options
         popen = Popen(command)
 
         return popen
 
-    def _launch_game(self):
+    def _launch_game(self)-> None:
         """Launch a keepaway game instance."""
-        # print("launching game")
         options = self._parse_options()
-        # print(options.)
-        # args, other_args = parser.parse_known_args()
         self._server.append(self._launch_server(options))
 
-    def reset(self,):
+    def reset(
+        self,
+    )-> tuple:
         """Reset the environment. Required after each full episode."""
 
-        # print("resetting")
         self._episode_steps = 0
         self._total_steps = 0
         self.last_action = None
@@ -249,32 +254,30 @@ class KeepawayEnv(MultiAgentEnv):
         self.info = {}
         if self._world._terminated.get_lock():
             self._world._terminated.value = False
-        
-        return self._obs ,
+
+        return (self._obs)
 
     def reward(self):
         """
-        returns the reward for the current state
+            returns the reward for the current state
+            
         """
-
         r = self._world.time().cycle() - self._terminal_time.cycle()
         return r
-        
 
-    def _restart(self):
+    def _restart(self)-> None:
         self.full_restart()
 
-    def full_restart(self):
+    def full_restart(self)-> None:
         """Restart the environment. Required after each full episode."""
-        # TODO process management utility
-        # self._launch_game()
-        # close all agent processes
+
         self.close()
-        # self._launch_game()
         self.start()
         self.force_restarts += 1
 
-    def start(self):
+    def start(self)-> None:
+        """Start the players. Required before any other method calls."""
+
         if self._episode_count == 0:
             for i in range(self.num_keepers):
                 self._keepers[i].start()
@@ -285,86 +288,89 @@ class KeepawayEnv(MultiAgentEnv):
                 self._takers[i].start()
 
             self._sleep.sleep(2.0)
-            # print("starting coach")
+            
+            ## uncomment to include some coaching
             # self._coach[0].start()
 
             atexit.register(self.close)
             self._episode_count += 1
         else:
             pass
-            # print("already started")
 
-    def close(self):
+
+    def close(self)-> None:
         """Close the environment. No other method calls possible afterwards."""
-    
+
         for p in self._keepers:
             p.terminate()
 
         for s in self._server:
             s.terminate()
-        
+
         for t in self._takers:
             t.terminate()
 
-    
         for r in self._render:
             r.terminate()
             self.renderer = None
         # self._coach[0].terminate()
-    
-    def render(self, mode= "human"):
+
+    def render(self, mode="human")-> None:
         """Render the environment using the monitor."""
         self._render.append(self._launch_monitor())
         self.renderer = mode
-    
-    
-        
-    def get_avail_agent_actions(self, agent_id):
+
+    def get_avail_agent_actions(self, agent_id)-> list:
         """Returns the available actions for agent_id."""
+        
         l = [3] * self.num_agents
         # return self._shared_values[agent_id]
         return l
 
-    def get_obs(self):
-        # obs = np.frombuffer(self._obs, dtype=np.float64)
+    def get_obs(self)-> dict:
+        """Returns the observation for all agents."""
         return self._obs
     
-    def get_obs_agent(self, agent_id):
+    def get_reward(self)-> int:
+        """ Returns the rewards for all agents."""
+        return self._reward
+
+    def get_obs_agent(self, agent_id)-> dict:
         """Returns the observation for agent_id."""
         return self._obs[agent_id]
-    
-    def get_total_actions(self):
+
+    def get_total_actions(self)-> int:
         """Returns the total number of actions an agent could ever take."""
         return self.actions
-    
+
     def get_obs_size(self):
         """Returns the shape of the observation."""
+        ## this should change based on the number of agents
         return 13
+
     def get_state_size(self):
         """Returns the shape of the state."""
-        return self.get_obs_size() * self.num_agents
-    
+        obs_size = self.get_obs_size()
+        return self.num_agents
+
     def get_proximity_adj_mat(self):
         adjacent_matrix = np.frombuffer(self._proximity_adj_mat, dtype=np.float64)
-        return adjacent_matrix 
-    
+        return adjacent_matrix
+
     def get_state(self):
         """Returns the global state."""
-
-        ## TODO: verify state variables to be for all agents or just one
-        ## check for dec execution/
-        ## partial observation or state variables 
 
         obs = self.get_obs().values()["state_vars"]
         obs_concat = np.concatenate(obs, axis=0)
         return obs_concat
+
     def _check_process(self):
         """Check if the process is still running."""
         for p in self._keepers + self._takers:
             if not p.is_alive():
                 return False
         return True
-    
+
     def step(self, actions):
         """A single environment step. Returns reward, terminated, info.
 
@@ -397,10 +403,13 @@ class KeepawayEnv(MultiAgentEnv):
         if game_state == 1:
             terminated = True
             if not self.sparse_reward:
-                total_reward = self._reward.value
+                pass
+                # total_reward = self._reward.value
+
                 pass
             else:
-                total_reward = self._reward.value
+                total_reward += copy.deepcopy(self._reward.value)
+                print(total_reward)
 
             self._terminal_time = self._world.time()
         if terminated:
@@ -409,6 +418,5 @@ class KeepawayEnv(MultiAgentEnv):
             ## check if processes are still running
             if not self._check_process():
                 self._restart()
-
 
         return total_reward, terminated, info

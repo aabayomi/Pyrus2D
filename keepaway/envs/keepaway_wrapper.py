@@ -1,48 +1,83 @@
-# # Using local gym
-from keepaway.envs import KeepawayEnv
+"""
+Sample wrapper for the Keep-away environment. 
+This wrapper is used to make the environment compatible with the OpenAI Gym API.
+
+"""
+
+
+
+import akro
 import gym
 import numpy as np
-
+from gym import spaces
+from gymnasium.utils import EzPickle
+from gymnasium.utils import seeding
+from keepaway.envs.keepaway_env import KeepawayEnv
+from keepaway.config.game_config import get_config
 
 class KeepawayWrapper(KeepawayEnv):
-    def __init__(self, centralized, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    
+    def __init__(self,centralized,config, *args, **kwargs):
+        super().__init__(config,*args, **kwargs)
+        
         self.reward_range = (-np.inf, np.inf)
         self.viewer = None
-        self.action_space = gym.spaces.Discrete(self.n_actions)
-        self.agent_obs_dim = np.sum(
-            [
-                np.prod(self.get_obs_move_feats_size()),
-                np.prod(self.get_obs_enemy_feats_size()),
-                np.prod(self.get_obs_ally_feats_size()),
-                np.prod(self.get_obs_own_feats_size()),
-            ]
-        )
-        self.observation_space_low = [0] * self.agent_obs_dim
-        self.observation_space_high = [1] * self.agent_obs_dim
+        self.action_space = gym.spaces.Discrete(self.actions)
+        
+        observation_size = self.obs_size()
+        self._obs_low = np.array([-1] * observation_size)
+        self._obs_high = np.array([1] * observation_size)
+
+    
         self.observation_space = gym.spaces.Box(
-            low=np.array(self.observation_space_low),
-            high=np.array(self.observation_space_high),
+            low=np.array(self._obs_low),
+            high=np.array(self._obs_high),
         )
         self.centralized = centralized
-        if centralized:
-            self.observation_space = gym.spaces.Box(
-                low=np.array(self.observation_space_low * self.n_agents),
-                high=np.array(self.observation_space_high * self.n_agents),
+        
+    
+        self.observation_space = gym.spaces.Box(
+                low=np.array(self.observation_space_low * self.num_agents),
+                high=np.array(self.observation_space_high * self.num_agents),
             )
         self.pickleable = False
+    
+        self.state_size = observation_size
+        self.state_space = spaces.Box(
+            low=-1, high=1, shape=(self.state_size,), dtype="float32"
+        )
+        self._reward = super().reward()
+        self.episode_limit = 100000
+        self.metric_name = "EvalAverageReturn"
+        self.run_flag = False
 
-        def reset(self):
-            obses = super().reset()[0]
-            if not self.centralized:
-                return obses
-            else:
-                return np.concatenate(obses)
+    def obs_size(self):
+        state = super().get_obs_size()
+        return state
+    
+    def render(self, mode="human"):
+        super().render()
 
-        def step(self, actions):
-            reward, terminated, info = super().step(actions)
-            if not self.centralized:
-                return super().get_obs(), [reward] * self.n_agents, \
-                        [terminated] * self.n_agents, info 
-            else:
-                return np.concatenate(super().get_obs()), reward, terminated, info
+
+    def close(self):
+        super().close()
+
+    def launch_game(self):
+        launch = super()._launch_game()
+        return launch
+    
+    def reset(self):
+        import copy
+        obses = copy.deepcopy(super().reset())
+        return obses
+
+    def step(self, actions):
+
+        reward, terminated, info = super().step(actions)
+        s = super().reward()
+        return super().get_obs(),s, terminated, info
+        
+    
+    def __del__(self):
+        super().close()
+

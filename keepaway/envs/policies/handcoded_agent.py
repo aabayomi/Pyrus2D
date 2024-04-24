@@ -25,26 +25,11 @@ class HandcodedPolicy():
 
         self.distance_threshold = 10.0
 
-    # def is_full_observation(self, obs):
-    #     """Returns True if the observation is complete.
-    #     Args:
-    #         obs: dict of observations for each agent.
-    #     Returns:
-    #     """
-    #     for i in obs.keys():
-    #         if obs[i] is None:
-    #             return False
-    #         if obs[i]["state_vars"] is None:
-    #             return False
-    #         if len(obs[i]["state_vars"]) < 13:
-    #             return False
-    #     return True
 
     def select_agent_action(self, obs, agent_id):
         """
-        Returns the ac in the keepaway domain."""
-
-
+            Returns the ac in the keep-away domain.
+        """
 
         scores = [0] * self.num_keepers
 
@@ -66,12 +51,7 @@ class HandcodedPolicy():
 
         # set current agent index to a very small value
         scores[agent_id - 1] = -1000000.0
-
-        
-
         my_distance_to_taker = obs[start_idx : start_idx + self.num_takers]
-        
-    
         if my_distance_to_taker[0] > self.distance_threshold:
             return 0
 
@@ -89,7 +69,8 @@ class HandcodedPolicy():
             return 0
         
     def get_actions(self, obs):
-        """Returns the actions for the agents in the keepaway domain.
+
+        """ Returns the actions for the agents in the keep-away domain.
             Hold threshold (alpha)
             beta : Dist/Ang ratio (beta)
         Args:   
