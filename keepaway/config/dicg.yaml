@@ -27,7 +27,7 @@ visualize: false
 eval: false
 eval_steps: 20000
 eval_epochs: 10
-continuing_checkpoint: null
+# continuing_checkpoint: 'save/keepaway/dicg/3v2/best.pth.tar'
 
 
 # Env:

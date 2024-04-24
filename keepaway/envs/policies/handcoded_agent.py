@@ -8,18 +8,20 @@ Handcoded policy keepaway adapted from Adaptive Behavior '05 article
 
 import numpy as np
 
-class HandcodedPolicy():
+
+class HandcodedPolicy:
     def __init__(self, config=None):
-        """Initializes the policy."""
+        """Initializes the policy.
+        Args:
+            config: Configuration dictionary.
+        
+        """
         if config is not None:
             self.num_keepers = config["num_keepers"]
             self.num_takers = config["num_takers"]
         else:
             self.num_keepers = 3
             self.num_takers = 2
-
-        # self.num_keepers = 3
-        # self.num_takers = 2
 
         ## this is same as beta in the paper stone et al. 2005
         self.hold_distance = 90.0
@@ -28,7 +30,7 @@ class HandcodedPolicy():
 
         self.distance_threshold = 5.0
 
-    def is_full_observation(self, obs):
+    def is_full_observation(self, obs)->bool:
         """Returns True if the observation is complete.
         Args:
             obs: dict of observations for each agent.
@@ -43,7 +45,7 @@ class HandcodedPolicy():
                 return False
         return True
 
-    def select_agent_action(self, obs, agent_id):
+    def select_agent_action(self, obs, agent_id)->int:
         """Returns the action for the agent in the keep-away domain."""
 
         # print("obs ", obs)
@@ -51,12 +53,11 @@ class HandcodedPolicy():
         scores = [None] * self.num_keepers
 
         # set current agent index to a very small value
-        
+
         if isinstance(obs, dict):
             obs = obs["state_vars"]
         else:
             obs = obs
-
 
         if self.num_keepers == 3:
             start_idx = 7
@@ -65,11 +66,11 @@ class HandcodedPolicy():
         elif self.num_keepers == 5:
             start_idx = 13
 
-        last_index = (len(obs) - 1) - self.num_takers 
+        last_index = (len(obs) - 1) - self.num_takers
 
         nearest_opp_k_dist = obs[start_idx : start_idx + self.num_takers]
-        nearest_opp_k_angle = obs[last_index + 1 : ]
-        
+        nearest_opp_k_angle = obs[last_index + 1 :]
+
         if len(nearest_opp_k_dist) > 0:
             if nearest_opp_k_dist[0] > self.distance_threshold:
                 return 0
@@ -78,10 +79,7 @@ class HandcodedPolicy():
             if i == agent_id - 1:
                 scores[i] = -1000000.0
             else:
-                scores[i] = (
-                    self.dist_weight * obs[start_idx + i]
-                    + obs[last_index + i]
-                )  
+                scores[i] = self.dist_weight * obs[start_idx + i] + obs[last_index + i]
 
         best = np.argmax(scores)
         if scores[best] > self.hold_distance:
@@ -89,10 +87,10 @@ class HandcodedPolicy():
         else:
             return 0
 
-    def get_actions(self, obs):
+    def get_actions(self, obs)->tuple:
         """Returns the actions for the agents in the keepaway domain."""
 
-        agent_ids = obs.keys() 
+        agent_ids = obs.keys()
         ## Hold threshold (alpha)
         ## beta : Dist/Ang ratio (beta)
 

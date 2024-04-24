@@ -14,7 +14,7 @@ class EpisodeRunner:
         assert self.batch_size == 1
         self.env_config = vars(args) ## should do some optimzations.
         self.env = env_REGISTRY[self.args.env](num_keepers=self.args.num_keepers, num_takers=self.args.num_takers, pitch_size=self.args.pitch_size)
-        self.episode_limit = 1000
+        self.episode_limit = 100
         self.t = 0
         self.t_env = 0
 
@@ -81,6 +81,7 @@ class EpisodeRunner:
             self.reset()
             self.env._run_flag = True
             
+        
         terminated = False
         episode_return = 0
         self.mac.init_hidden(batch_size=self.batch_size)
@@ -106,87 +107,83 @@ class EpisodeRunner:
         # import time
         # time.sleep(10)
 
-        while not terminated:
+        # while not terminated:
 
-            if not self.env._is_game_started():
-                time.sleep(1)
-                # continue
+        #     if not self.env._is_game_started():
+        #         time.sleep(1)
+        #         continue
 
-            pre_transition_data = {
-                "state": [self.env.get_state()],
-                "avail_actions": [self.env.get_avail_actions()],
-                "obs": [self.convert_to_numpy(self.env.get_obs())]
-            }
+        #     pre_transition_data = {
+        #         "state": [self.env.get_state()],
+        #         "avail_actions": [self.env.get_avail_actions()],
+        #         "obs": [self.convert_to_numpy(self.env.get_obs())]
+        #     }
+
             
-            # print("pre_transition_data ", pre_transition_data)
+        #     print("pre_transition_data ", pre_transition_data)
 
-            self.batch.update(pre_transition_data, ts=self.t)
+        #     self.batch.update(pre_transition_data, ts=self.t)
 
-            # Pass the entire batch of experiences up till now to the agents
-            # Receive the actions for each agent at this time step in a batch of size 1
-            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+        #     # Pass the entire batch of experiences up till now to the agents
+        #     # Receive the actions for each agent at this time step in a batch of size 1
+        #     actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
             
-            print("actions ", actions)
-            reward, terminated, env_info = self.env.step(actions[0])
-            episode_return += reward
+        #     # print("actions ", actions)
+        #     reward, terminated, env_info = self.env.step(actions[0])
+        #     episode_return += reward
 
-            post_transition_data = {
-                "actions": actions,
-                "reward": [(reward,)],
-                "terminated": [(terminated != env_info.get("episode_limit", False),)],
-            }
-            # print("post_transition_data ", post_transition_data)
-            self.batch.update(post_transition_data, ts=self.t)
-            print("timestep before ", self.t)
-            self.t += 1
-            print("timestep after ", self.t)
+        #     post_transition_data = {
+        #         "actions": actions,
+        #         "reward": [(reward,)],
+        #         "terminated": [(terminated != env_info.get("episode_limit", False),)],
+        #     }
+        #     # print("post_transition_data ", post_transition_data)
+        #     self.batch.update(post_transition_data, ts=self.t)
+        #     # print("timestep before ", self.t)
+        #     self.t += 1
+        #     # print("timestep after ", self.t)
 
-        # print("episode_return ", episode_return)
-        self.env._episode_count += 1
+        # print("episode_return ", episode_return, "time ", self.t)
+        # self.env._episode_count += 1
 
-        # print("episode_return ", episode_return, " episode_count ", self.env._episode_count)
-        last_data = {
-            "state": [self.env.get_state()],
-            "avail_actions": [self.env.get_avail_actions()],
-            "obs": [self.convert_to_numpy(self.env.get_obs())]
-        }
-        self.batch.update(last_data, ts=self.t)
+        # # print("episode_return ", episode_return, " episode_count ", self.env._episode_count)
+        # last_data = {
+        #     "state": [self.env.get_state()],
+        #     "avail_actions": [self.env.get_avail_actions()],
+        #     "obs": [self.convert_to_numpy(self.env.get_obs())]
+        # }
+        # self.batch.update(last_data, ts=self.t)
 
-        # # Select actions in the last stored state
-        actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-        self.batch.update({"actions": actions}, ts=self.t)
+        # # # Select actions in the last stored state
+        # actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+        # self.batch.update({"actions": actions}, ts=self.t)
 
-        cur_stats = self.test_stats if test_mode else self.train_stats
-        cur_returns = self.test_returns if test_mode else self.train_returns
-        log_prefix = "test_" if test_mode else ""
-        cur_stats.update({k: cur_stats.get(k, 0) + env_info.get(k, 0) for k in set(cur_stats) | set(env_info)})
-        cur_stats["n_episodes"] = 1 + cur_stats.get("n_episodes", 0)
-        cur_stats["ep_length"] = self.t + cur_stats.get("ep_length", 0)
+        # cur_stats = self.test_stats if test_mode else self.train_stats
+        # cur_returns = self.test_returns if test_mode else self.train_returns
+        # log_prefix = "test_" if test_mode else ""
+        # cur_stats.update({k: cur_stats.get(k, 0) + env_info.get(k, 0) for k in set(cur_stats) | set(env_info)})
+        # cur_stats["n_episodes"] = 1 + cur_stats.get("n_episodes", 0)
+        # cur_stats["ep_length"] = self.t + cur_stats.get("ep_length", 0)
 
-        if not test_mode:
-            self.t_env += self.t
+        # if not test_mode:
+        #     self.t_env += self.t
 
-        cur_returns.append(episode_return)
+        # cur_returns.append(episode_return)
 
-        if test_mode and (len(self.test_returns) == self.args.test_nepisode):
-            self._log(cur_returns, cur_stats, log_prefix)
-        elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
-            self._log(cur_returns, cur_stats, log_prefix)
-            if hasattr(self.mac.action_selector, "epsilon"):
-                self.logger.log_stat("epsilon", self.mac.action_selector.epsilon, self.t_env)
-            self.log_train_stats_t = self.t_env
+        # if test_mode and (len(self.test_returns) == self.args.test_nepisode):
+        #     self._log(cur_returns, cur_stats, log_prefix)
+        # elif self.t_env - self.log_train_stats_t >= self.args.runner_log_interval:
+        #     self._log(cur_returns, cur_stats, log_prefix)
+        #     if hasattr(self.mac.action_selector, "epsilon"):
+        #         self.logger.log_stat("epsilon", self.mac.action_selector.epsilon, self.t_env)
+        #     self.log_train_stats_t = self.t_env
 
-        return self.batch
+        # return self.batch
         
-    
-
 
     def convert_to_numpy(self,proxy):
         regular_dict = dict(proxy)
         values = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in regular_dict.values()] 
-        # for i in range(len(values)):
-        #     print("values ", values[i], "length ", len(values[i]))
-        # print("values ", values[0], "length ", len(values[0]))
         numpy_array = np.stack(values, axis=0)
         return numpy_array
 

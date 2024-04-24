@@ -2242,32 +2242,51 @@ class WorldModel:
     def get_current_cycle(self):
         return self._time.cycle()
 
-    def adjacency_matrix(self):
-        """Returns the adjacency matrix for the given players."""
+    def adjacency_matrix(self)-> np.ndarray:
+        """
+            Utility function to get the adjacency matrix for the given players.
+            Used for the DCG and DICG.
+            Returns the adjacency matrix for the given players.
+        """
+
+        import numpy as np
         import copy
 
         if self.our_side() == SideID.RIGHT:
-            pass
-        else: 
+            pass  
+        else:
             n = len(self._agents)
             ids = [p.unum() for p in self._teammates] + [self._self.unum()]
             ids = sorted(ids)
-            matrix = np.frombuffer(self._adjacency_matrix, dtype=np.float64).reshape((n, n))
-            matrix[:] = 0  # Reset the matrix to zeros
-            # matrix = np.zeros((n, n))
+            matrix = np.zeros((n, n))  # Initialize a zero matrix directly
+
             all_players = copy.deepcopy(self._teammates) + [self._self]
             all_players = sorted(all_players, key=lambda x: x.unum())
-            all_idx = [p.unum() for p in all_players]
-            for i in range(n - 1):
-                for j in range(i + 1, n):
-                    if i in all_idx and j in all_idx:
-                        pi, pj = all_players[i], all_players[j]
-                        dist = pi.pos().dist(pj.pos())
-                        if dist <= self.threshold:
-                            matrix[i, j] = 1
-                            matrix[j, i] = 1
-            return matrix
-    
+
+            # Create a mapping from player's unique number to their index in all_players
+            unum_to_index = {player.unum(): idx for idx, player in enumerate(all_players)}
+
+
+            if len(all_players) <= len(self._agents):
+                return matrix
+            else:
+                for i in range(n - 1):
+                    for j in range(i + 1, n):
+                        player_i_unum = ids[i]
+                        player_j_unum = ids[j]
+                        # Use the mapping to get the actual index in the all_players list
+                        if player_i_unum in unum_to_index and player_j_unum in unum_to_index:
+                            idx_i = unum_to_index[player_i_unum]
+                            idx_j = unum_to_index[player_j_unum]
+                            pi, pj = all_players[idx_i], all_players[idx_j]
+                            dist = pi.pos().dist(pj.pos())
+                            if dist <= self.threshold:
+                                matrix[i, j] = 1
+                                matrix[j, i] = 1
+
+                return matrix
+
+        
 
     def get_proximity_adj_mat(self,con_adj,inv_d, raw=False):
         import copy

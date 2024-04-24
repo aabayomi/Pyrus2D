@@ -708,7 +708,7 @@ class PlayerAgent(SoccerAgent):
     #     return soc2
 
     def accel_ball_vel(self, vel: Vector2D):
-        # print("accel ball vel is called")
+        print("accel ball vel is called")
 
         SP = ServerParam.i()
         ang = self.world().self().body()
@@ -784,7 +784,7 @@ class PlayerAgent(SoccerAgent):
         return self.accel_ball_vel(vel_des)
 
     def kick_ball_close_to_body(self, angle, dKickRatio):
-        # print("kick_ball_close_to_body - ")
+        print("kick_ball_close_to_body - ")
         SP = ServerParam.i()
         ang = self.world().self().body()
         pred_pos = Tools.predict_pos_after_n_cycles(self.world().self(), 1, 0)

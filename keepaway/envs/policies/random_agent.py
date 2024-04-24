@@ -9,17 +9,16 @@ Random policy keepaway.baseline adapted from Adaptive Behavior '05 article
 import random
 
 
-class RandomPolicy():
+class RandomPolicy:
     def __init__(self, config=None):
         """Initializes the policy."""
         if config is not None:
             self.num_keepers = config["num_keepers"]
             self.num_takers = config["num_takers"]
-    
 
-    def get_actions(self, obs):
+    def get_actions(self, obs)->tuple:
         """
-        Returns a random action for each agent.
+            Returns a random action for each agent.
         """
         agents_ids = obs.keys()
         actions = []
@@ -30,6 +29,4 @@ class RandomPolicy():
             else:
                 l = [num for num in range(0, self.num_keepers + 1) if num != idx]
                 actions.append(random.choice(l))
-
-        # print("randoms actions: ", actions)
         return actions, {}

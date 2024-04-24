@@ -1,4 +1,3 @@
-
 import os
 import datetime
 import pprint
@@ -7,7 +6,7 @@ import threading
 import copy
 import torch as th
 import numpy as np
-import yaml 
+import yaml
 from types import SimpleNamespace as SN
 from keepaway.dcg.utils.logging import Logger
 from keepaway.dcg.utils.timehelper import time_left, time_str
@@ -17,16 +16,14 @@ from keepaway.dcg.components.transforms import OneHot
 from collections.abc import Mapping
 from keepaway.dcg.learner.q_learner import QLearner
 from keepaway.dcg.learner.dcg_learner import DCGLearner
-from keepaway.dcg.runners.episode_runner import EpisodeRunner 
+from keepaway.dcg.runners.episode_runner import EpisodeRunner
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.config.game_config import get_config
 from keepaway.dcg.controller.dcg_controller import DeepCoordinationGraphMAC
-
 from keepaway.dcg.utils.logging import get_logger
-
 logger = get_logger()
-
 results_path = os.path.join(dirname(dirname(abspath(__file__))), "results")
+
 
 def evaluate_sequential(args, runner):
     for _ in range(args.test_nepisode):
@@ -42,26 +39,27 @@ def run_sequential(args, logger):
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
         "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
-        "avail_actions": {"vshape": (env_info["n_actions"],), "group": "agents", "dtype": th.int},
+        "avail_actions": {
+            "vshape": (env_info["n_actions"],),
+            "group": "agents",
+            "dtype": th.int,
+        },
         "reward": {"vshape": (1,)},
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
 
-    groups = {
-        "agents": args.n_agents
-    }
-    preprocess = {
-        "actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])
-    }
+    groups = {"agents": args.n_agents}
+    preprocess = {"actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])}
 
-    buffer = ReplayBuffer(scheme, groups, args.buffer_size, env_info["episode_limit"] + 1,
-                          preprocess=preprocess,
-                          device="cpu" if args.buffer_cpu_only else args.device)
-    
+    buffer = ReplayBuffer(
+        scheme,
+        groups,
+        args.buffer_size,
+        env_info["episode_limit"] + 1,
+        preprocess=preprocess,
+        device="cpu" if args.buffer_cpu_only else args.device,
+    )
 
-    # mac = mac_REGISTRY[args.mac](buffer.scheme, groups, args)
-    # print("args ", scheme)
-    # print("groups ", preprocess)
     mac = DeepCoordinationGraphMAC(scheme, groups, args)
 
     # Give runner the scheme
@@ -69,25 +67,26 @@ def run_sequential(args, logger):
 
     # Learner
     learner = DCGLearner(mac, buffer.scheme, logger, args)
-    
+
     if args.use_cuda:
         learner.cuda()
 
     if args.checkpoint_path != "":
-
         timesteps = []
         timestep_to_load = 0
 
         if not os.path.isdir(args.checkpoint_path):
-            logger.console_logger.info("Checkpoint directory {} doesn't exist".format(args.checkpoint_path))
+            logger.console_logger.info(
+                "Checkpoint directory {} doesn't exist".format(args.checkpoint_path)
+            )
             return
-        
+
         for name in os.listdir(args.checkpoint_path):
             full_name = os.path.join(args.checkpoint_path, name)
             # Check if they are dirs the names of which are numbers
             if os.path.isdir(full_name) and name.isdigit():
                 timesteps.append(int(name))
-        
+
         if args.load_step == 0:
             # choose the max timestep
             timestep_to_load = max(timesteps)
@@ -98,13 +97,11 @@ def run_sequential(args, logger):
         model_path = os.path.join(args.checkpoint_path, str(timestep_to_load))
         logger.console_logger.info("Loading model from {}".format(model_path))
         learner.load_models(model_path)
-
         runner.t_env = timestep_to_load
-
         if args.evaluate or args.save_replay:
             evaluate_sequential(args, runner)
             return
-        
+
     episode = 0
     last_test_T = -args.test_interval - 1
     last_log_T = 0
@@ -114,7 +111,7 @@ def run_sequential(args, logger):
     last_time = start_time
 
     logger.console_logger.info("Beginning training for {} timesteps".format(args.t_max))
-    
+
     while runner.t_env <= args.t_max:
         episode_batch = runner.run(test_mode=False)
         buffer.insert_episode_batch(episode_batch)
@@ -132,18 +129,32 @@ def run_sequential(args, logger):
             learner.train(episode_sample, runner.t_env, episode)
             n_test_runs = max(1, args.test_nepisode // runner.batch_size)
             if (runner.t_env - last_test_T) / args.test_interval >= 1.0:
-
-                logger.console_logger.info("t_env: {} / {}".format(runner.t_env, args.t_max))
-                logger.console_logger.info("Estimated time left: {}. Time passed: {}".format( time_left(last_time, last_test_T, runner.t_env, args.t_max), time_str(time.time() - start_time)))
+                logger.console_logger.info(
+                    "t_env: {} / {}".format(runner.t_env, args.t_max)
+                )
+                logger.console_logger.info(
+                    "Estimated time left: {}. Time passed: {}".format(
+                        time_left(last_time, last_test_T, runner.t_env, args.t_max),
+                        time_str(time.time() - start_time),
+                    )
+                )
                 last_time = time.time()
                 last_test_T = runner.t_env
 
                 for _ in range(n_test_runs):
                     runner.run(test_mode=True)
-            
-            if args.save_model and (runner.t_env - model_save_time >= args.save_model_interval or model_save_time == 0):
+
+            if args.save_model and (
+                runner.t_env - model_save_time >= args.save_model_interval
+                or model_save_time == 0
+            ):
                 model_save_time = runner.t_env
-                save_path = os.path.join(args.local_results_path, "models", args.unique_token, str(runner.t_env))
+                save_path = os.path.join(
+                    args.local_results_path,
+                    "models",
+                    args.unique_token,
+                    str(runner.t_env),
+                )
                 os.makedirs(save_path, exist_ok=True)
                 logger.console_logger.info("Saving models to {}".format(save_path))
 
@@ -160,8 +171,6 @@ def run_sequential(args, logger):
     print("runner t_env ", runner.t_env)
     runner.close_env()
     logger.console_logger.info("Finished Training")
- 
-
 
 
 def args_sanity_check(config, _log):
@@ -171,15 +180,19 @@ def args_sanity_check(config, _log):
 
     if config.use_cuda and not th.cuda.is_available():
         config.use_cuda = False
-        _log.warning("CUDA flag use_cuda was switched OFF automatically because no CUDA devices are available!")
+        _log.warning(
+            "CUDA flag use_cuda was switched OFF automatically because no CUDA devices are available!"
+        )
 
     if config.test_nepisode < config.batch_size_run:
         config.test_nepisode = config.batch_size_run
     else:
-        config.test_nepisode = (config.test_nepisode //config.batch_size_run) * config.batch_size_run
+        config.test_nepisode = (
+            config.test_nepisode // config.batch_size_run
+        ) * config.batch_size_run
 
     return config
-                
+
 
 def _get_config(params, arg_name, subfolder):
     config_name = None
@@ -191,7 +204,9 @@ def _get_config(params, arg_name, subfolder):
 
     if config_name is not None:
         current_working_dir = os.getcwd()
-        config_path = os.path.join(current_working_dir, "config", "{}.yaml".format(config_name))
+        config_path = os.path.join(
+            current_working_dir, "config", "{}.yaml".format(config_name)
+        )
         with open(config_path, "r") as f:
             try:
                 config_dict = yaml.safe_load(f)
@@ -218,27 +233,31 @@ def config_copy(config):
         return copy.deepcopy(config)
 
 
-
-def run(_config,_log):
+def run(_config, _log):
     args = SN(**_config)
     args = args_sanity_check(args, _log)
-    args.device = th.device("cuda" if th.cuda.is_available() and args.use_cuda else "cpu")
+    args.device = th.device(
+        "cuda" if th.cuda.is_available() and args.use_cuda else "cpu"
+    )
     logger = Logger(_log)
 
-    #### 
-    unique_token = "{}__{}".format(args.name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    ####
+    unique_token = "{}__{}".format(
+        args.name, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    )
     args.unique_token = unique_token
     if args.use_tensorboard:
-        tb_logs_direc = os.path.join(dirname(dirname(abspath(__file__))), "results", "tb_logs")
+        tb_logs_direc = os.path.join(
+            dirname(dirname(abspath(__file__))), "results", "tb_logs"
+        )
         tb_exp_direc = os.path.join(tb_logs_direc, "{}").format(unique_token)
         logger.setup_tb(tb_exp_direc)
 
     # print("args run sequential ")
-    print(args.env)     
+    print(args.env)
     run_sequential(args=args, logger=logger)
 
 
-        
 if __name__ == "__main__":
     # Load the configuration
     params = ["--config=dcg"]
@@ -253,20 +272,16 @@ if __name__ == "__main__":
             assert False, "default.yaml error: {}".format(exc)
 
     # Load algorithm and env base configs
-    # env_config = _get_config(params, "--env-config", "envs")
     alg_config = _get_config(params, "--config", "algs")
-    # config_dict = {**config_dict, **env_config, **alg_config}
-    # config_dict = recursive_dict_update(config_dict, env_config)
     config_dict = recursive_dict_update(config_dict, alg_config)
-    
-    # print(config_dict)
-    config = get_config()["3v2"]
+
+    config = get_config()["4v3"]
     config = config | config_dict
     config["log_level"] = "INFO"
     config["name"] = "keepaway"
     config["n_agents"] = config["num_keepers"]
     # config["n_agents"] = config["num_keepers"] + config["num_takers"]
-    config["n_actions"] = config["num_keepers"] 
+    config["n_actions"] = config["num_keepers"]
 
     # Set the random seed
     # Set the device
@@ -300,8 +315,7 @@ if __name__ == "__main__":
         "state_shape": env.get_state_size(),
         "obs_shape": env.get_obs_size(),
         "n_actions": env.get_total_actions(),
-        "episode_limit": env.episode_limit
+        "episode_limit": env.episode_limit,
     }
     print(env_info)
     run(config, logger)
-    

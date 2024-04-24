@@ -3,6 +3,7 @@ from absl import logging
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.random_agent import RandomPolicy
 from keepaway.config.game_config import get_config
+
 logging.set_verbosity(logging.DEBUG)
 
 config = get_config()["3v2"]

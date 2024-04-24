@@ -6,8 +6,8 @@ from keepaway.envs.policies.random_agent import RandomPolicy
 
 # def main():
 #     """
-#     run a random agent policy    
-    
+#     run a random agent policy
+
 #     """
 #     env = ka2pz.env()
 #     episodes = 10
@@ -15,7 +15,7 @@ from keepaway.envs.policies.random_agent import RandomPolicy
 #     done = False
 #     completed_episodes = 0
 #     policy = RandomPolicy()
-    
+
 #     for e in range(episodes):
 #         print(f"Episode {e}")
 #         info = env.reset()
@@ -37,6 +37,7 @@ from keepaway.envs.policies.random_agent import RandomPolicy
 #     print("closing game")
 #     env.close()
 #     print("Average total reward", total_reward / episodes)
+
 
 def main():
     """
@@ -69,7 +70,6 @@ def main():
     env.close()
 
     print("Average total reward", total_reward / episodes)
-
 
 
 if __name__ == "__main__":

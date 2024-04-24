@@ -1,64 +1,34 @@
 """
-Example Keepaway Wrapper useful for environment
+Example Keep-away Wrapper useful for environment
 customization.  
 
 """
 
-from keepaway.envs.keepaway_env import KeepawayEnv
-from gymnasium.utils import EzPickle
-from gymnasium.utils import seeding
-# from gymnasium import spaces
 import akro
 import gym
-from gym import spaces
-from keepaway.config.game_config import get_config
-# from pettingzoo.utils.env import ParallelEnv
-# from pettingzoo.utils.conversions import (
-#     parallel_to_aec as from_parallel_wrapper,
-# )
-# from pettingzoo.utils import wrappers
 import numpy as np
-
+from gym import spaces
+from gymnasium.utils import EzPickle
+from gymnasium.utils import seeding
+from keepaway.config.game_config import get_config
+from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.spaces import MultiAgentActionSpace, MultiAgentObservationSpace
-
-
-# def parallel_env(max_cycles=None, **ka_args):
-#     if max_cycles is None:
-#         map_name = ka_args.get("map_name", "3v2")
-#         # print(map_name)
-#         # print(get_config())
-#         max_cycles = get_config()[map_name]["limit"]
-#         print(max_cycles)
-#     return _parallel_env(max_cycles, **ka_args)
-
-# def raw_env(max_cycles=None, **ka_args):
-#     return from_parallel_wrapper(parallel_env(max_cycles, **ka_args))
-
-# def make_env(raw_env):
-#     def env_fn(**kwargs):
-#         env = raw_env(**kwargs)
-#         env = wrappers.AssertOutOfBoundsWrapper(env)
-#         env = wrappers.OrderEnforcingWrapper(env)
-#         return env
-
-#     return env_fn
-
+# from gymnasium import spaces
 # class keepaway_env(ParallelEnv):
 from keepaway.envs.multiagentenv import MultiAgentEnv
 
-class keepaway_env(KeepawayEnv):
 
+class keepaway_env(KeepawayEnv):
     def __init__(self, env):
         super().__init__()
-        self.cycles = 1000
-        self.env = env
-        self.env.reset()
-        self.reset_flag = 0
-        ## TODO: Check if this is the right way to do it
+
+
+        self.action_space = 
+        self._players = self._construct_players(config['players'], player_config)
+        
         self.agents, self.action_spaces = self._init_agents()
         self.num_agents = len(self.agents)
         # print("num agents ", self.num_agents)
-        
 
         self.action_spaces = MultiAgentActionSpace(self.action_spaces)
         self.action_space = self.action_spaces[0]
@@ -67,19 +37,20 @@ class keepaway_env(KeepawayEnv):
         observation_size = env.get_obs_size()
         self._obs_low = np.array([-1] * observation_size)
         self._obs_high = np.array([1] * observation_size)
-        
-        self.ob = MultiAgentObservationSpace([akro.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)])
+
+        self.ob = MultiAgentObservationSpace(
+            [akro.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)]
+        )
         # self.observation_space = self.ob[0]
 
         self._obs_low = np.array([-1] * observation_size)
         self._obs_high = np.array([1] * observation_size)
-    
+
         self.observation_space = gym.spaces.Box(self._obs_low, self._obs_high)
         self.observation_space = akro.Box(
-                low=np.array(list(self.observation_space.low) * self.num_agents),
-                high=np.array(list(self.observation_space.high) * self.num_agents),
-            )
-
+            low=np.array(list(self.observation_space.low) * self.num_agents),
+            high=np.array(list(self.observation_space.high) * self.num_agents),
+        )
 
         # print("observation space ", self.observation_space)
 
@@ -88,13 +59,12 @@ class keepaway_env(KeepawayEnv):
         observation_size = env.get_obs_size()
         # print("obs size ", observation_size)
 
-         ##should be abstracted into a wrapper 
+        ##should be abstracted into a wrapper
         self.alive_mask = np.array([True] * self.num_agents)
         self.threshold = 2
         self.self_connected_adj = False
         self.inv_D = False
         self.pickleable = True
-        
 
         # self.observation_spaces = {
         #     name: akro.Dict(
@@ -115,30 +85,30 @@ class keepaway_env(KeepawayEnv):
         #     )
         #     for name in self.agents
         # }
-        
 
         # self.observation_s = self.obs()
         # print("observation space ", MultiAgentObservationSpace([spaces.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)]))
 
         state_size = env.get_state_size()
         # print("state size ", state_size)
-        self.state_space = spaces.Box(low=-1, high=1, shape=(state_size,), dtype="float32")
+        self.state_space = spaces.Box(
+            low=-1, high=1, shape=(state_size,), dtype="float32"
+        )
         self._reward = 0
         self.episode_limit = 100000
-        self.metric_name = 'EvalAverageReturn'
+        self.metric_name = "EvalAverageReturn"
         self.run_flag = False
         self.centralized = True
-    
 
     def obs(self):
-       o = [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)]
-       p = MultiAgentObservationSpace(o)
-       return o
+        o = [spaces.Box(self._obs_low, self._obs_high) for _ in range(self.num_agents)]
+        p = MultiAgentObservationSpace(o)
+        return o
 
     def observation_space(self, agent):
         # print("agent ", self.observation_spaces)
         return self.observation_spaces[agent]
-    
+
     def obs_space(self, agent):
         # return self.observation_spaces["keeper_1"]["observation"]
         return self.observation_spaces[agent]
@@ -146,11 +116,10 @@ class keepaway_env(KeepawayEnv):
     def act_space(self, agent):
         # return self.action_spaces["keeper_1"]
         return self.action_spaces[agent]
-    
+
     def action_space(self, agent):
         return self.action_spaces[agent]
-    
-    
+
     def _init_agents(self):
         agents = []
         action_spaces = []
@@ -186,8 +155,7 @@ class keepaway_env(KeepawayEnv):
 
         return agents, action_spaces
         # return agents, action_spaces
-    
-    
+
     # def _init_agents(self):
     #     last_type = ""
     #     agents = []
@@ -195,13 +163,12 @@ class keepaway_env(KeepawayEnv):
     #     self.agents_id = {}
     #     keeper_count = 1
     #     taker_count = 1
-      
 
     #     for agent_id in range(len(self.env._agents())):
     #         unit_action_space = akro.Discrete(
     #             self.env.get_total_actions()
     #         )  # no-op in dead units is not an action
-            
+
     #         # unit_action_space = spaces.Discrete(
     #         #     self.env.get_total_actions()
     #         # )  # no-op in dead units is not an action
@@ -230,8 +197,7 @@ class keepaway_env(KeepawayEnv):
     #         last_type = agent_type
     #     print("agents id ", self.agents_id)
     #     return agents, action_spaces
-    
-    
+
     def render(self, mode="human"):
         self.env.render(mode)
 
@@ -240,7 +206,6 @@ class keepaway_env(KeepawayEnv):
 
     def launch_game(self):
         return super()._launch_game()
-
 
     def reset(self, seed=None, options=None):
         self.env._episode_count = 1
@@ -259,19 +224,14 @@ class keepaway_env(KeepawayEnv):
             return avail_actions
         else:
             return np.concatenate(avail_actions)
-    
 
-    
     def get_agent_id(self, agent):
         return self.agents_id[agent]
-    
-    
+
     def _all_rewards(self, reward):
         all_rewards = [reward] * len(self.agents)
-        return {
-            agent: reward for agent, reward in zip(self.agents, all_rewards)
-        }
-    
+        return {agent: reward for agent, reward in zip(self.agents, all_rewards)}
+
     def _observe_all(self):
         all_obs = []
         for agent in self.agents:
@@ -284,14 +244,13 @@ class keepaway_env(KeepawayEnv):
             obs = np.asarray(obs, dtype=np.float32)
             all_obs.append({"observation": obs, "action_mask": action_mask})
         return {agent: obs for agent, obs in zip(self.agents, all_obs)}
-    
+
     def step(self, actions):
-        r,t,info = super().step(actions)
+        r, t, info = super().step(actions)
         # r,t,info = self.env._step(actions)
         # print("rewards ", r, "term ", t, "info ", info)
-        return r,t,info
+        return r, t, info
 
-    
     def _all_terms_truncs(self, terminated=False, truncated=False):
         terminations = [True] * len(self.agents)
 
@@ -309,7 +268,7 @@ class keepaway_env(KeepawayEnv):
         truncations = {a: truncated for a in self.agents}
 
         return terminations, truncations
-    
+
     # def step(self, all_actions):
     #     action_list = [0] * self.env.n_agents
     #     for agent in self.agents:
@@ -333,13 +292,12 @@ class keepaway_env(KeepawayEnv):
     #     self.agents = [agent for agent in self.agents if not all_truncs[agent]]
 
     #     return all_observes, all_rewards, all_terms, all_truncs, all_infos
-    
+
     def state(self):
         return self.env.get_state()
-    
+
     # def __del__(self):
     #     self.env.close()
-    
 
 
 # env = make_env(raw_env)
@@ -352,5 +310,3 @@ class keepaway_env(KeepawayEnv):
 #         EzPickle.__init__(self, max_cycles, **ka_args)
 #         env = KeepawayEnv(**ka_args)
 #         super().__init__(env, max_cycles)
-
-

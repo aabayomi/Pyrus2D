@@ -121,10 +121,10 @@ class EpisodeBatch:
             # print(k,len(v))
             
             v = th.tensor(v, dtype=dtype, device=self.device)
-            # print("v", v.shape)
-            # print("slices , ",_slices)
-            # print("target[k] ", target[k][_slices])
-            # print("target", k ,target[k][_slices].shape)
+            print("v", v.shape)
+            print("slices , ",_slices)
+            print("target[k] ", target[k][_slices])
+            print("target", k ,target[k][_slices].shape)
 
             ## state .
             if k == "state":

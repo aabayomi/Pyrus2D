@@ -1,4 +1,3 @@
-
 import os
 import akro
 import atexit
@@ -19,17 +18,16 @@ from keepaway.envs.spaces import MultiAgentActionSpace, MultiAgentObservationSpa
 
 config_dir = os.getcwd() + "/config"
 
+
 class KeepawayEnv(MultiAgentEnv):
     """
-        Keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0.
-        
+        robocup2d keepaway environment for multi-agent reinforcement learning scenarios version 0.1.0.
     """
 
-    def __init__(self,**kwargs):
-        
+    def __init__(self, **kwargs):
         """
         Initialize a keep-away environment.
-    
+
         Parameters obtained from kwargs:
         - num_keepers: Number of keepers in the environment.
         - num_takers: Number of takers in the environment.
@@ -65,7 +63,7 @@ class KeepawayEnv(MultiAgentEnv):
         - _proximity_threshold: Proximity threshold.
         - renderer: Renderer for the environment.
         - _run_flag: Flag to run the environment.
-        
+
         """
         super().__init__()
 
@@ -73,26 +71,26 @@ class KeepawayEnv(MultiAgentEnv):
 
         default_num_keepers = 3
         default_num_takers = 2
-        default_pitch_size = 20 
+        default_pitch_size = 20
 
-        self.num_keepers = kwargs.get('num_keepers', default_num_keepers)
-        self.num_takers = kwargs.get('num_takers', default_num_takers)
-        self.pitch_size = kwargs.get('pitch_size', default_pitch_size)  
-        self.sparse_reward  = kwargs.get('sparse_reward', default_pitch_size)
+        self.num_keepers = kwargs.get("num_keepers", default_num_keepers)
+        self.num_takers = kwargs.get("num_takers", default_num_takers)
+        self.pitch_size = kwargs.get("pitch_size", default_pitch_size)
+        self.sparse_reward = kwargs.get("sparse_reward", default_pitch_size)
         self.actions = self.num_keepers  # 0: hold, 1: pass
-        
+
         self._episode_count_ = 0
         self._episode_steps_ = 0
-        self._total_steps_ = 0        
+        self._total_steps_ = 0
         self.force_restarts = 0
         self.episode_limit = 10000
-        
+
         self.num_agents = self.num_keepers + self.num_takers
-        
+
         ## Set up shared variables
         manager = multiprocessing.Manager()
         self._event = multiprocessing.Event()
-        self._world = WorldModel("real",self.num_keepers ,manager)  # for all agents
+        self._world = WorldModel("real", self.num_keepers, manager)  # for all agents
         self._lock = self._world
         self._barrier = multiprocessing.Barrier(self.num_keepers)
         self._episode_count = self._world._episode_count
@@ -113,7 +111,7 @@ class KeepawayEnv(MultiAgentEnv):
 
         ## shared reward
         self._reward = self._world._reward
-        
+
         ## Episode termination
         self._terminated = self._world._terminated
 
@@ -126,7 +124,6 @@ class KeepawayEnv(MultiAgentEnv):
         self._action_time = self._world._action_time
         self._action_time_counter = self._world._action_time_counter
 
-        
         ## TODO:  This should in in a wrapper class
         self.action_spaces = [akro.Discrete(3) for _ in range(self.num_keepers)]
         self.action_spaces = MultiAgentActionSpace(self.action_spaces)
@@ -139,7 +136,7 @@ class KeepawayEnv(MultiAgentEnv):
         self.inv_D = False
         self.pickleable = True
 
-        ## Initialize Keepers and Takers
+        # Initialize Keepers and Takers
         self._keepers = [
             multiprocessing.Process(
                 target=kp.main,
@@ -205,29 +202,40 @@ class KeepawayEnv(MultiAgentEnv):
         self._server = []
         self._render = []
         self._sleep = time
-    
-       
 
-    def _is_game_started(self):
-        """Check if the game has started."""
+    def _is_game_started(self) -> bool:
+        """
+        Check if the game has started.
+
+        returns: bool
+        """
         if self._world.game_mode().type() == "play_on":
             return True
         return False
-    
 
     def _agents(self):
-        """ Utility to return all agents in the environment. """
+        """
+        Utility to return all agents in the environment.
+
+        returns: list
+        """
         return self._keepers + self._takers
 
-
     def _launch_monitor(self) -> int:
-        """Launches the monitor."""
+        """Launches the soccer window."""
+
         logging.debug("Built the command to connect to the server")
+
         monitor_cmd = f"soccerwindow2 &"
         popen = Popen(monitor_cmd, shell=True)
+
         return popen
-    
-    def load_agent_config(self,file_path):
+
+    def load_agent_config(self, file_path) -> dict:
+        """
+        Load the agent configuration from the given file path.
+        """
+
         with open(file_path) as f:
             return yaml.safe_load(f)
 
@@ -312,8 +320,9 @@ class KeepawayEnv(MultiAgentEnv):
         # args, other_args = parser.parse_known_args()
         self._server.append(self._launch_server(options))
 
-    def reset(self,):
-        
+    def reset(
+        self,
+    ):
         """Reset the environment. Required after each full episode."""
 
         # print("resetting")
@@ -322,29 +331,28 @@ class KeepawayEnv(MultiAgentEnv):
 
         if self._episode_steps.get_lock():
             self._episode_steps.value = 0
-        
+
         if self._total_steps.get_lock():
             self._total_steps.value = 0
-
 
         self.last_action = None
         self._episode_reward = []
         self.info = {}
         if self._world._terminated.get_lock():
             self._world._terminated.value = False
-        
-        return self._obs,
+
+        return (self._obs,)
 
     def reward(self):
         """
-            returns the reward for the current state
+        returns the reward for the current state
         """
         r = self._world.time().cycle() - self._terminal_time.cycle()
         return r
-        
+
     def _check_agents(self):
         """
-            Check if all agents process are running.
+        Check if all agents process are running.
         """
         for p in self._keepers:
             if not p.is_alive():
@@ -353,8 +361,6 @@ class KeepawayEnv(MultiAgentEnv):
             if not p.is_alive():
                 return False
         return True
-
-
 
     def _restart(self):
         self.full_restart()
@@ -386,29 +392,27 @@ class KeepawayEnv(MultiAgentEnv):
 
     def close(self):
         """Close the environment. No other method calls possible afterwards."""
-    
+
         for p in self._keepers:
             p.terminate()
 
         for s in self._server:
             s.terminate()
-        
+
         for t in self._takers:
             t.terminate()
 
-    
         for r in self._render:
             r.terminate()
             self.renderer = None
-        
+
         # self._coach[0].terminate()
-    
-    def render(self, mode= "human"):
+
+    def render(self, mode="human"):
         """Render the environment using the monitor."""
         self._render.append(self._launch_monitor())
         self.renderer = mode
-    
-    
+
     def get_avail_actions(self):
         """Returns the available actions for agent_id."""
         avail_actions = [[1] * self.action_space.n for _ in range(self.num_keepers)]
@@ -416,47 +420,48 @@ class KeepawayEnv(MultiAgentEnv):
             return avail_actions
         else:
             return np.concatenate(avail_actions)
-    
+
     def get_total_actions(self):
         pass
-    
+
     def get_obs(self):
         # obs = np.frombuffer(self._obs, dtype=np.float64)
         # print("obs ", self._obs) .
         return self._obs
-    
+
     def get_obs_agent(self, agent_id):
         """Returns the observation for agent_id."""
         return self._obs[agent_id]
-    
+
     def get_total_actions(self):
         """Returns the total number of actions an agent could ever take."""
         return self.actions
-    
+
     def get_obs_size(self):
         """Returns the shape of the observation."""
         # print("length ", len(self._obs.values()[0]))
         return len(self._obs.values()[0])
+
     def get_state_size(self):
-        """ Returns the shape of the state. """
+        """Returns the shape of the state."""
         # print("obs size us ", self.get_obs_size() * self.num_agents)
         # print("numbr of keepers ", self.num_keepers)
         return self.get_obs_size() * self.num_keepers
-    
+
     ## TODO: Should be a wrapper method.
-    def get_proximity_adj_mat(self,raw,con_adj,inv_d):
+    def get_proximity_adj_mat(self, raw, con_adj, inv_d):
         adjacent_matrix = np.frombuffer(self._proximity_adj_mat, dtype=np.float64)
 
         adj = copy.deepcopy(adjacent_matrix)
         adj = adj.reshape(self.num_keepers, self.num_keepers)
-        
+
         ## calculate the renormalized adjacency matrix
 
         adj_raw = copy.deepcopy(adj)
-        
+
         if raw:
             return adj_raw
-        
+
         if not inv_d:
             adj = (adj + np.eye(self.num_keepers)) if con_adj else adj
             sqrt_D = np.diag(np.sqrt(np.sum(adj, axis=1)))
@@ -465,21 +470,22 @@ class KeepawayEnv(MultiAgentEnv):
             adj = adj + np.eye(self.num_keepers)
             inv_sqrt_D = np.diag(np.sum(adj, axis=1) ** (-0.5))
             adj_renormalized = inv_sqrt_D @ adj @ inv_sqrt_D
-    
+
             return adj_renormalized
-    
+
     def get_state(self):
         """Returns the global state."""
 
         ## TODO: verify state variables to be for all agents or just one
         ## check for dec execution/
-        ## partial observation or state variables 
+        ## partial observation or state variables
         # print("obs ," ,self.get_obs())
         obs = self.get_obs().values()
-        obs = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in obs]
-        obs_concat = np.concatenate(obs , axis=0)
+        obs = [
+            item if isinstance(item, np.ndarray) else item["state_vars"] for item in obs
+        ]
+        obs_concat = np.concatenate(obs, axis=0)
         return obs_concat
-    
 
     def _step(self, actions):
         """
@@ -514,10 +520,10 @@ class KeepawayEnv(MultiAgentEnv):
         self._actions = copy.deepcopy(actions_int)
         self._shared_values = multiprocessing.Array("i", self._actions)
         self._observation = self._world._obs
-        
+
         t = self._world._terminated.value
         r = self._reward.value
-        
+
         # if game_state == 1:
         #     terminated = True
         #     if not self.sparse_reward:
@@ -527,7 +533,7 @@ class KeepawayEnv(MultiAgentEnv):
         #         total_reward = self._reward.value
 
         #     self._terminal_time = self._world.time()
-        
+
         if t == 1:
             self._episode_count.value += 1
 
@@ -546,7 +552,6 @@ class KeepawayEnv(MultiAgentEnv):
         applies all actions to the
         send an action signal and return observation.
         """
-
 
         if isinstance(actions, torch.Tensor):
             actions = actions.cpu().tolist()
@@ -586,19 +591,33 @@ class KeepawayEnv(MultiAgentEnv):
             #     self.start()
         # print("total reward ", total_reward, "terminated ", terminated, "info ", info)
         return total_reward, terminated, info
-    
-    def convert_to_numpy(self,proxy):
+
+    def convert_to_numpy(self, proxy):
         if isinstance(proxy, dict):
             regular_dict = dict
         else:
             regular_dict = dict(proxy)
-        values = [item if isinstance(item, np.ndarray) else item['state_vars'] for item in regular_dict.values()] 
+        values = [
+            item if isinstance(item, np.ndarray) else item["state_vars"]
+            for item in regular_dict.values()
+        ]
         numpy_array = np.stack(values, axis=0)
         return numpy_array
-    
-    ## TODO: Should be a wrapper method. 
-    def eval(self, epoch, policy,max_episode_steps, n_eval_episodes=10, greedy=True, 
-            visualize=False, log=None, tbx=None, tabular=None):
+
+    ## TODO: Should be a wrapper method.
+
+    def eval(
+        self,
+        epoch,
+        policy,
+        max_episode_steps,
+        n_eval_episodes=10,
+        greedy=True,
+        visualize=False,
+        log=None,
+        tbx=None,
+        tabular=None,
+    ):
         eval_avg_return = 0
         eval_env_steps = 0
         # self.env._launch_game()
@@ -606,12 +625,12 @@ class KeepawayEnv(MultiAgentEnv):
         with torch.no_grad(), tqdm(total=n_eval_episodes) as progress_bar:
             for i_ep in range(n_eval_episodes):
                 # Start episode
-                obses = self.env.reset() # (n_agents, obs_dim)
+                obses = self.env.reset()  # (n_agents, obs_dim)
                 ob = obses[0]
                 # print("ob ", ob)
                 obs_ = self.convert_to_numpy(ob)
                 # env.start()
-    
+
                 for t in range(max_episode_steps):
                     if policy.proximity_adj:
                         adjs = self.get_proximity_adj_mat()
@@ -621,20 +640,25 @@ class KeepawayEnv(MultiAgentEnv):
                         alive_masks = np.array(self.alive_mask)
                     avail_actions = self.env.get_avail_actions()
                     actions, agent_infos_n = policy.get_actions(
-                        obs_, avail_actions, adjs=adjs, 
-                        alive_masks=alive_masks, greedy=greedy)
-                    
+                        obs_,
+                        avail_actions,
+                        adjs=adjs,
+                        alive_masks=alive_masks,
+                        greedy=greedy,
+                    )
+
                     rewards, done, info = self.env.step(actions)
 
                     eval_avg_return += np.mean(rewards)
                     if done:
-                        eval_env_steps += (t + 1)
+                        eval_env_steps += t + 1
                         break
                     # obses = next_obses
                     # obses = self.convert_to_numpy(obses[0])
                 # end episode
-                progress_bar.set_postfix(metric='{:.2f}'.format(
-                    eval_avg_return / (i_ep + 1)))
+                progress_bar.set_postfix(
+                    metric="{:.2f}".format(eval_avg_return / (i_ep + 1))
+                )
                 progress_bar.update(1)
             # end eval
 
@@ -642,27 +666,27 @@ class KeepawayEnv(MultiAgentEnv):
         eval_env_steps /= n_eval_episodes
 
         log_strs = [
-            'avg_return         {:.2f}'.format(eval_avg_return),
-            'avg_episode_steps  {}'.format(eval_env_steps)
+            "avg_return         {:.2f}".format(eval_avg_return),
+            "avg_episode_steps  {}".format(eval_env_steps),
         ]
 
         tbx_results = {
-            'avg_return': eval_avg_return,
-            'avg_episode_steps': eval_env_steps,
+            "avg_return": eval_avg_return,
+            "avg_episode_steps": eval_env_steps,
         }
 
         # Logging...
-        log.info('Eval' + '-' * 36)
+        log.info("Eval" + "-" * 36)
         for item in log_strs:
             log.info(item)
-        log.info('-' * 40)
+        log.info("-" * 40)
 
         for k, v in tbx_results.items():
-            if k[0] != ':':
-                tbx.add_scalar(f'eval/{k}', v, epoch)
+            if k[0] != ":":
+                tbx.add_scalar(f"eval/{k}", v, epoch)
             else:
-                tbx.add_histogram(f'eval/{k[1:]}', v, epoch)
-        
+                tbx.add_histogram(f"eval/{k[1:]}", v, epoch)
+
         tabular.record(self.metric_name, eval_env_steps)
 
-        return eval_avg_return # saver metric
+        return eval_avg_return  # saver metric

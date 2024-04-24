@@ -16,7 +16,7 @@ class AlwaysHoldPolicy(object):
             self.num_keepers = 3
             self.num_takers = 2
 
-    def get_actions(self, obs, greedy=False):
+    def get_actions(self, obs, greedy=False)->tuple:
         agent_ids = obs.keys()  # {1, 2, 3}
         actions = [0] * self.num_keepers
         for id, agent_obs in obs.items():
