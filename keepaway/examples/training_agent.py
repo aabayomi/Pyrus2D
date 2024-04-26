@@ -12,6 +12,8 @@ from keepaway.envs.policies.handcoded_agent import HandcodedPolicy
 from keepaway.config.game_config import get_config
 from tc import ValueFunctionWithTile
 
+import random
+
 config = get_config()["3v1"]
 from absl import flags, app
 
@@ -78,19 +80,26 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
     alpha = 0.125
     _lambda = 1
     reward_list=[]
-    bin_size = 500
-    policy = HandcodedPolicy(env_configs)
+    bin_size = 1
+    policy = RandomPolicy(env_configs)
     #state_vars [] -> [tile-coding index] = s
     #initialize Q(s, a) arbitrariliy as q
 
     #Initialize model array M(S, A)
-    #planning_iterations = n
+    planning_iterations = 50
     sum_of_reward = 0
     for episodes in range(nepisode):
+        states = []
+        actions = []
+        next_states = []
+        next_reward = []
+
     #     #initialize e(s, a) = 0 for all s, a
-        print(f"Episode {episodes}")
+        print(f"Episode {episodes} out of nepisode {nepisode}")
         env.reset()
+        # print("reset")
         _obs = env.get_obs()
+        # print("obs")
         
         obs = _obs[2]
         while(type(obs) == dict and 'state_vars' in obs):
@@ -99,11 +108,12 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
         action = epsilon_greedy(Q, state_index)
         done = False
         env.start()
+        print("env start")
         while not done:
             obs = env.get_obs()[2]
             reward, done, _ = env.step([np.random.randint(0, 4), action, np.random.randint(0, 4)])
-            if not done:
-                continue
+            # print(reward != 0.0)
+           
             # obs = env.get_obs()
             
             while(type(obs) == dict and 'state_vars' in obs):
@@ -117,11 +127,18 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
             delta = reward + gamma * next_Q_value - current_Q_value
             e[state_index, action] = 1
 
+            states.append(state_index)
+            actions.append(action)
+            next_states.append(next_state_index)
+            next_reward.append(reward)
+
+
             for i in range(10*5*5*10):
                 for l in range(4):
                     Q[i, l] += alpha * delta * e[i, l]
                     e[i, l] = gamma * _lambda * e[i, l]
             action = next_action
+            # print("update action")
             # print(np.any(Q))
             # print(Q[np.where(Q!=0)])
             # print(np.any(e))
@@ -129,13 +146,27 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
             # print(Q,e)
         sum_of_reward += reward
         if(episodes % bin_size == bin_size - 1):
+            print("Sum of reward ", sum_of_reward)
             reward_list.append(sum_of_reward/bin_size)
             print(reward_list)
             sum_of_reward = 0
+
         time.sleep(0.25)
+        for _ in range(planning_iterations):
+            index = np.random.randint(0, len(states))
+            random_state = states[index]
+            random_action = actions[index]
+            random_next_state = next_states[index]
+            random_reward = next_reward[index]
+            max_q = np.NINF
+            for possible_action in range(4):
+                max_q = max(max_q, Q[random_next_state, possible_action])
+            Q[random_state, random_action] += alpha * (random_reward + gamma * max_q - Q[random_state, random_action])
+
 
         #for i in range(n):
         # perform Q learning over all M(S, A)
+    print("The reward_list ", reward_list)
     plt.plot(range(int(nepisode/bin_size)), reward_list)
     plt.show()
     env.close()
