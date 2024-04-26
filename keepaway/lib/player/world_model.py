@@ -2069,7 +2069,7 @@ class WorldModel:
         if 0 <= index < len(lst):
             lst[index] = value
         else:
-            print(f"Warning: Attempt to assign to index {index} which is out of bounds.")
+            # print(f"Warning: Attempt to assign to index {index} which is out of bounds.")
             pass
 
     def _convert_players_observation(self):

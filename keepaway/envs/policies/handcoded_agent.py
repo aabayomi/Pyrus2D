@@ -47,8 +47,7 @@ class HandcodedPolicy():
             start_idx = 13
 
         
-        last_index = (len(obs) - 1) - self.num_takers 
-
+        last_index = (len(obs) - 1) - 2 * self.num_takers 
         # set current agent index to a very small value
         scores[agent_id - 1] = -1000000.0
         my_distance_to_taker = obs[start_idx : start_idx + self.num_takers]
@@ -85,7 +84,7 @@ class HandcodedPolicy():
 
         ## Check if no observations are available.
         actions = [0] * len(agent_ids)
-
+        
         for id, agent_obs in obs.items():
             if agent_obs is None:
                 actions[id - 1] = 0

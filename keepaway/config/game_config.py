@@ -12,6 +12,13 @@ game_play = {
         "pitch_size": 20,
         "sparse_reward": False,
     },
+    "3v1":{
+        "num_keepers": 3,
+        "num_takers": 1,
+        "limit": 10,
+        "pitch_size": 20,
+        "sparse_reward": False,
+    },
     "4v3":{
         "num_keepers": 4,
         "num_takers": 3,
