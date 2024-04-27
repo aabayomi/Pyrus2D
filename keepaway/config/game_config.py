@@ -7,7 +7,7 @@ It is used to define the number of keepers, takers, limit and pitch size for eac
 game_play = {
     "3v2":{
         "num_keepers": 3,
-        "num_takers": 2,
+        "num_takers": 1,
         "limit": 10,
         "pitch_size": 20,
         "sparse_reward": False,

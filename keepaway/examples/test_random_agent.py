@@ -27,6 +27,7 @@ def main():
             actions, agent_infos = policy.get_actions(obs)
             # print(actions)
             reward, terminated, info = env.step(actions)
+            print(reward)
             time.sleep(0.15)
             episode_reward += reward
 
