@@ -5,11 +5,11 @@ from keepaway.envs.policies.random_agent import RandomPolicy
 from keepaway.config.game_config import get_config
 logging.set_verbosity(logging.DEBUG)
 
-config = get_config()["5v4"]
+config = get_config()["3v2"]
 
 def main():
     env = KeepawayEnv(config)
-    episodes = 10
+    episodes = 1000
     print("Training episodes")
     print("launching game")
     env._launch_game()
@@ -27,7 +27,7 @@ def main():
             actions, agent_infos = policy.get_actions(obs)
             # print(actions)
             reward, terminated, info = env.step(actions)
-            print(reward)
+            # print(reward)
             time.sleep(0.15)
             episode_reward += reward
 

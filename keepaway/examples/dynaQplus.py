@@ -13,6 +13,9 @@ from keepaway.config.game_config import get_config
 from tc import ValueFunctionWithTile
 from vf import CentValueFunction
 import random
+import torch.nn as nn
+import torch
+import torch.optim as optim
 
 config = get_config()["3v2"]
 from absl import flags, app
@@ -64,33 +67,36 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
     env.render()
     time.sleep(1)
     
-    state_low = np.zeros(13)
-    state_high = np.array([28.29, 28.29, 28.29, 28.29, 28.29, 28.29, 28.29, 28.29, 28.29, 28.29, 28.29, 90, 90]) #come back to make last two 90
-    V = ValueFunctionWithTile(
-        state_low,
-        state_high,
-        num_tilings=10,
-        tile_width=np.array([8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 29, 29])) 
     
-    Q = np.zeros((10*10*5*5, 4)) 
+    
+    Q = np.zeros((50, 4)) 
 
-    e = np.zeros((10*10*5*5, 4))
-    model_count = np.zeros((10*10*5*5, 4))
-    k = 0.5
+    e = np.zeros((50, 4))
+
+    model_count = np.zeros((50, 4))
+
     gamma = 0.999
     alpha = 0.125
     _lambda = 1
     reward_list=[]
-    bin_size = 50
+    bin_size = 1
+    k = 0.5
     policy = RandomPolicy(env_configs)
+    
     #state_vars [] -> [tile-coding index] = s
     #initialize Q(s, a) arbitrariliy as q
 
     #Initialize model array M(S, A)
     planning_iterations = 50
     sum_of_reward = 0
+    vf = CentValueFunction(state_size=13)
+    optimizer = optim.Adam(vf.parameters(), lr=0.01)
+    criterion = nn.MSELoss()
+
     for episodes in range(nepisode):
         states = []
+        observations = []
+        predicted_state_reps = []
         actions = []
         next_states = []
         next_reward = []
@@ -106,9 +112,14 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
         while(type(obs) == dict and 'state_vars' in obs):
             obs = obs['state_vars']
         
-        # obs_np = np.array(obs)
-        state_index = V.get_feature_vector(obs)
-        # vf = CentValueFunction(state_size=13)
+        observations.append(obs)
+        
+        
+        value_function = vf(obs)
+        predicted_state_reps.append(value_function)
+        state_index = max(0, min(49, int((value_function * 10) + 25 + 0.5)))
+
+        
         # print(vf(obs))
 
         action = epsilon_greedy(Q, state_index)
@@ -125,7 +136,13 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
                 obs = obs['state_vars']
 
             # print("obs ", obs)
-            next_state_index = V.get_feature_vector(obs)
+            # next_state_index = V.get_feature_vector(obs)
+            value_function = vf(obs)
+            observations.append(obs)
+            predicted_state_reps.append(value_function)
+
+            next_state_index = max(0, min(49, int((value_function * 10) + 25 + 0.5)))
+            # print("next_state_index ", next_state_index)
             # print(vf(obs))
             next_action = epsilon_greedy(Q, next_state_index)
             next_Q_value = Q[next_state_index, next_action]
@@ -139,15 +156,25 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
             next_reward.append(reward)
 
 
-            for i in range(10*5*5*10):
+            for i in range(50):
                 for l in range(4):
                     Q[i, l] += alpha * delta * e[i, l]
                     e[i, l] = gamma * _lambda * e[i, l]
-                    
-            action = next_action
+
             state_index = next_state_index
+            action = next_action
           
         sum_of_reward += reward
+        
+        ## Train CVF
+        for obs in observations:
+            # print(state)
+            # print(sum_of_rewar
+            loss = criterion(vf(obs), torch.tensor(float(sum_of_reward), dtype=torch.float32, requires_grad=True))
+            optimizer.zero_grad()
+            loss.backward()
+
+
         if(episodes % bin_size == bin_size - 1):
             # print("Sum of reward ", sum_of_reward)
             reward_list.append(sum_of_reward/bin_size)
@@ -155,16 +182,6 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
             sum_of_reward = 0
 
         time.sleep(0.25)
-        # for _ in range(planning_iterations):
-        #     index = np.random.randint(0, len(states))
-        #     random_state = states[index]
-        #     random_action = actions[index]
-        #     random_next_state = next_states[index]
-        #     random_reward = next_reward[index]
-        #     max_q = np.NINF
-        #     for possible_action in range(4):
-        #         max_q = max(max_q, Q[random_next_state, possible_action])
-        #     Q[random_state, random_action] += alpha * (random_reward + gamma * max_q - Q[random_state, random_action])
         for _ in range(planning_iterations):
             index = np.random.randint(0, len(states))
             random_state = states[index]
@@ -183,8 +200,6 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
                         model_count[state, action] += 1
 
 
-        #for i in range(n):
-        # perform Q learning over all M(S, A)
     print("The reward_list ", reward_list)
     plt.plot(range(int(nepisode/bin_size)), reward_list)
     plt.show()

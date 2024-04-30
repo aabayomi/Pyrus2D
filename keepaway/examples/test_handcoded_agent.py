@@ -12,11 +12,12 @@ config = get_config()["3v2"]
 
 def main():
     env = KeepawayEnv(config)
-    episodes = 20
+    episodes = 1000
     env._launch_game()
     agents = env.num_keepers
     policy = HandcodedPolicy(config)
     env.render()
+    total = 0.0
     for e in range(episodes):
         print(f"Episode {e}")
         env.reset()
@@ -32,7 +33,9 @@ def main():
             # print("matrix jfjfj ", env.get_proximity_adj_mat())
             time.sleep(0.15)
             episode_reward += reward
+        total += episode_reward
 
+    print("Average reward", total/episodes)
     print("closing game")
     env.close()
 

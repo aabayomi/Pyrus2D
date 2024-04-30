@@ -16,7 +16,7 @@ class HandcodedPolicy():
             self.num_takers = config["num_takers"]
         else:
             self.num_keepers = 3
-            self.num_takers = 2
+            self.num_takers = 1
 
         ## this is same as beta in the paper stone et al. 2005
         self.hold_distance = 90.0
@@ -62,7 +62,7 @@ class HandcodedPolicy():
             start_idx = 13
 
         
-        last_index = (len(obs) - 1) - self.num_takers 
+        last_index = (len(obs) - 1) - self.num_takers -1
 
         # set current agent index to a very small value
         scores[agent_id - 1] = -1000000.0
