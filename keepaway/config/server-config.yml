@@ -1,6 +1,6 @@
 # server configuration file - server-config.yml
 # This file is used to configure the server.
-## server parameters for keepaway
+## server parameters for keepaway passed 
 
 coach: 0
 coach_port: 6001

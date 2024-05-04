@@ -1,4 +1,3 @@
-
 class MultiAgentEnv(object):
     def step(self, actions):
         """Returns reward, terminated, info."""
@@ -10,14 +9,6 @@ class MultiAgentEnv(object):
 
     def get_obs_agent(self, agent_id):
         """Returns observation for agent_id."""
-        raise NotImplementedError
-
-    def get_capabilities(self):
-        """Returns the capabilities of all agents in a list."""
-        raise NotImplementedError
-
-    def get_capabilities_agent(self, agent_id):
-        """Returns the capabilities of a single agent."""
         raise NotImplementedError
 
     def get_obs_size(self):
@@ -32,9 +23,6 @@ class MultiAgentEnv(object):
         """Returns the size of the global state."""
         raise NotImplementedError
 
-    def get_cap_size(self):
-        """Returns the size of the own capabilities of the agent."""
-        raise NotImplementedError
 
     def get_avail_actions(self):
         """Returns the available actions of all agents in a list."""
@@ -52,14 +40,9 @@ class MultiAgentEnv(object):
         """Returns initial observations and states."""
         raise NotImplementedError
 
-   
     def close(self):
         raise NotImplementedError
 
-
-    def save_replay(self):
-        """Save a replay."""
-        raise NotImplementedError
 
     def get_env_info(self):
         env_info = {

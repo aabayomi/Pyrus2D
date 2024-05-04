@@ -12,7 +12,7 @@ def main():
     episodes = 10
     print("Training episodes")
     print("launching game")
-    env._launch_game()
+    env.launch_game()
     policy = RandomPolicy(config)
     env.render()
     for e in range(episodes):

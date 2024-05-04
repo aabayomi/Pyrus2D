@@ -25,28 +25,25 @@ class KeepawayWrapper(KeepawayEnv):
         self.action_space = gym.spaces.Discrete(self.actions)
         
         observation_size = self.obs_size()
+
         self._obs_low = np.array([-1] * observation_size)
         self._obs_high = np.array([1] * observation_size)
 
     
         self.observation_space = gym.spaces.Box(
-            low=np.array(self._obs_low),
-            high=np.array(self._obs_high),
+            low=np.array(self._obs_low * self.num_agents),
+            high=np.array(self._obs_high * self.num_agents),
         )
-        self.centralized = centralized
         
     
-        self.observation_space = gym.spaces.Box(
-                low=np.array(self.observation_space_low * self.num_agents),
-                high=np.array(self.observation_space_high * self.num_agents),
-            )
         self.pickleable = False
-    
+
         self.state_size = observation_size
         self.state_space = spaces.Box(
             low=-1, high=1, shape=(self.state_size,), dtype="float32"
         )
-        self._reward = super().reward()
+        # self._reward = super().reward()
+
         self.episode_limit = 100000
         self.metric_name = "EvalAverageReturn"
         self.run_flag = False
@@ -58,12 +55,11 @@ class KeepawayWrapper(KeepawayEnv):
     def render(self, mode="human"):
         super().render()
 
-
     def close(self):
         super().close()
 
     def launch_game(self):
-        launch = super()._launch_game()
+        launch = super().launch_game()
         return launch
     
     def reset(self):
@@ -74,10 +70,8 @@ class KeepawayWrapper(KeepawayEnv):
     def step(self, actions):
 
         reward, terminated, info = super().step(actions)
-        s = super().reward()
-        return super().get_obs(),s, terminated, info
+        return super().get_obs(),super().get_reward().value, terminated, info
         
-    
     def __del__(self):
         super().close()
 

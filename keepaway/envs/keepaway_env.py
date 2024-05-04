@@ -36,7 +36,7 @@ class KeepawayEnv(MultiAgentEnv):
                 Size of the pitch.
             sparse_reward: bool
                 Whether to use a sparse reward signal.
-
+    
         """
 
         self.num_keepers = config["num_keepers"]
@@ -61,11 +61,11 @@ class KeepawayEnv(MultiAgentEnv):
         self._event = multiprocessing.Event()
         self._barrier = multiprocessing.Barrier(self.num_keepers)
 
-        ### Event implementation
+        ## Event implementation
         self._event_from_subprocess = multiprocessing.Event()
         self._main_process_event = (
             multiprocessing.Event()
-        )  # To be set by main process to wake up all subprocesses
+        )  
 
         self._actions = [0] * self.num_keepers
         self._shared_values = multiprocessing.Array("i", self._actions)
@@ -82,6 +82,8 @@ class KeepawayEnv(MultiAgentEnv):
         self._terminated = self._world._terminated
         self._episode_reward = []
         self._proximity_threshold = 2
+
+        self._terminal_time = None
 
         self.renderer = None
 
@@ -155,7 +157,6 @@ class KeepawayEnv(MultiAgentEnv):
         """Launches the monitor."""
         
         logging.debug("Built the command to connect to the server")
-        
         monitor_cmd = f"soccerwindow2 &"
         popen = Popen(monitor_cmd, shell=True)
         return popen
@@ -237,7 +238,7 @@ class KeepawayEnv(MultiAgentEnv):
 
         return popen
 
-    def _launch_game(self)-> None:
+    def launch_game(self)-> None:
         """Launch a keepaway game instance."""
         options = self._parse_options()
         self._server.append(self._launch_server(options))
@@ -258,10 +259,7 @@ class KeepawayEnv(MultiAgentEnv):
         return (self._obs)
 
     def reward(self):
-        """
-            returns the reward for the current state
-            
-        """
+        """ returns the reward for the current state """
         r = self._world.time().cycle() - self._terminal_time.cycle()
         return r
 
@@ -405,12 +403,9 @@ class KeepawayEnv(MultiAgentEnv):
             if not self.sparse_reward:
                 pass
                 # total_reward = self._reward.value
-
-                pass
             else:
                 total_reward += copy.deepcopy(self._reward.value)
-                print(total_reward)
-
+            
             self._terminal_time = self._world.time()
         if terminated:
             self._episode_count += 1
@@ -418,5 +413,4 @@ class KeepawayEnv(MultiAgentEnv):
             ## check if processes are still running
             if not self._check_process():
                 self._restart()
-
         return total_reward, terminated, info

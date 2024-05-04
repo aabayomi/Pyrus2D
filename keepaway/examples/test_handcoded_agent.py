@@ -10,7 +10,7 @@ config = get_config()["5v4"]
 def main():
     env = KeepawayEnv(config)
     episodes = 20
-    env._launch_game()
+    env.launch_game()
     policy = HandcodedPolicy(config)
     env.render()
     for e in range(episodes):

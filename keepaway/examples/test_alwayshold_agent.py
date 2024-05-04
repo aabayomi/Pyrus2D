@@ -13,7 +13,7 @@ config = get_config()["4v3"]
 def main():
     env = KeepawayEnv(config)
     episodes = 1000000
-    env._launch_game()
+    env.launch_game()
     agents = env.num_keepers
     policy = AlwaysHoldPolicy(config)
     env.render()

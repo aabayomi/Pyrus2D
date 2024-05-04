@@ -12,7 +12,6 @@ from keepaway.config.game_config import get_config
 from absl import flags, app
 
 
-
 # Edit the configuration path if needed(this is the default path)
 agent_config_path = os.getcwd() + "/config/sample_agent_config.yml"
 
