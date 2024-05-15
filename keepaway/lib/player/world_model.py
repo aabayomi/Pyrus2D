@@ -142,11 +142,10 @@ class WorldModel:
 
         self._dir_count: list[int] = [1000 for _ in range(WorldModel.DIR_CONF_DIVS)]
 
-        ## keep-away Defined variables ##
+        ## keepaway variables
 
         self._episode_start = timeit.default_timer()
-        self._cumulative_reward = 0
-        self._step_count = 0
+    
         self._observation = None
         self._result = {}
 
@@ -156,9 +155,7 @@ class WorldModel:
         self._available_actions = [None] * 4
 
         self._info = {}
-        # self._agents = [1, 2, 3]  # hardcoded for now
         self._agents = [i for i in range(1, num_keepers + 1)]
-        # self.observations = {agent: None for agent in self._agents}
 
         self.observations = {
             agent: np.zeros(13, dtype=np.float32) if len(self._agents) == 3 else
@@ -403,7 +400,7 @@ class WorldModel:
     def teammates_from_ball(self):
         return self._teammates_from_ball
 
-    ## utility methods for keep-away ##
+
     def all_teammates_from_ball(self):
         return self._all_teammates_from_ball
 
@@ -2010,7 +2007,7 @@ class WorldModel:
                 return True
         return False
 
-    ################################################  Keep-away Utils ##########################################
+    # keepaway specific methods
 
     def check_ball(self):
         """Check if the ball is in the field."""

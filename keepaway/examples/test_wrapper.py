@@ -25,7 +25,7 @@ def main():
             obs = env.get_obs()
             actions, agent_infos = policy.get_actions(obs)
             obs, reward, terminated, info = env.step(actions)
-            print(f"Obs: {obs}" ,f"Reward: {reward}", f"Terminated: {terminated}", f"Info: {info}", f"Actions: {actions}")
+            # print(f"Obs: {obs}" ,f"Reward: {reward}", f"Terminated: {terminated}", f"Info: {info}", f"Actions: {actions}")
             time.sleep(0.15)
             episode_reward += reward
 

@@ -4,7 +4,7 @@ logging.set_verbosity(logging.DEBUG)
 from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.handcoded_agent import HandcodedPolicy
 from keepaway.config.game_config import get_config
-config = get_config()["5v4"]
+config = get_config()["3v2"]
 
 
 def main():

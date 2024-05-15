@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
 """
-This file is the main file for the keepaway player. It is called by the keepaway environment to start the player.
-It creates an instance of the KeepawayPlayer class and calls the run method of the class.
+    This file is the main file for the keepaway player. It is called by the keepaway environment to start the player.
+    It initializes the player and runs the player.
 """
 
 from keepaway.utils.keepaway_player import KeepawayPlayer

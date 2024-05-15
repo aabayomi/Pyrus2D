@@ -32,7 +32,8 @@ def setup_agent(policy):
     return agent_config
 
 
-def train_agent(env_configs, agent_config, nepisode, nsteps):
+def test_agent(env_configs, agent_config, nepisode, nsteps):
+    print(f"nepisode: {nepisode}, nsteps: {nsteps}")
 
     if agent_config.get('policy') == 'random':
         policy = RandomPolicy(env_configs)
@@ -44,7 +45,7 @@ def train_agent(env_configs, agent_config, nepisode, nsteps):
         raise ValueError(f"Unknown policy: {agent_config.get('policy')}")
 
     env = KeepawayEnv(env_configs)
-    env._launch_game()
+    env.launch_game()
     env.render()
     time.sleep(1)
     for e in range(nepisode):
@@ -75,7 +76,7 @@ def run(args):
     # print(f"Training agent with configuration: {agent}")
     # print(f"Training agent with environment configuration: {environment}")
 
-    train_agent(environment, agent, args.nepisode, args.nsteps)
+    test_agent(environment, agent, args.nepisode, args.nsteps)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train an agent with specific configurations.')
@@ -83,7 +84,7 @@ if __name__ == '__main__':
                         help='Configuration to use, defines the number of keepers e.g., "3v2", "4v3", or "5v4"')
     parser.add_argument('--num_timesteps', type=int, default=int(2e6),
                         help='Number of timesteps to run for.')
-    parser.add_argument('--nepisode', type=int, default=10,
+    parser.add_argument('--nepisode', type=int, default=5,
                         help='Number of episodes')
     parser.add_argument('--nsteps', type=int, default=128,
                         help='Number of environment steps per epoch; batch size is nsteps * nenv')

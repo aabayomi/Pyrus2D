@@ -116,11 +116,11 @@ class KeepawayPlayer(PlayerAgent):
         intercept_pos = wm.ball().inertia_point(self_min)
         heard_pos = wm.messenger_memory().pass_()[0]._pos
 
-        print(
-            "(sample player do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}".format(
-                heard_pos=heard_pos, intercept_pos=intercept_pos
-            )
-        )
+        # print(
+        #     "(sample player do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}".format(
+        #         heard_pos=heard_pos, intercept_pos=intercept_pos
+        #     )
+        # )
 
         log.sw_log().team().add_text(
             f"(sample player do heard pass) heard_pos={heard_pos}, intercept_pos={intercept_pos}"

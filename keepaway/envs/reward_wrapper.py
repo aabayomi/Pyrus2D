@@ -7,7 +7,10 @@
 import gym
 
 class CheckpointReward(gym.RewardWrapper):
-  """ Reward shaping for the keepaway environment."""
+  """ 
+    Reward shaping for the keepaway environment.
+    
+  """
 
   def __init__(self, env):
     gym.RewardWrapper.__init__(self, env)

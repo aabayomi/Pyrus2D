@@ -1,3 +1,9 @@
+"""
+    This module contains the implementation of the actions that the player can perform. 
+    The Behaviors are a modification of Pyrus2D's soccer behaviors.
+    
+"""
+
 import functools
 
 from keepaway.lib.debug.debug import log

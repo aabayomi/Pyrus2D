@@ -36,16 +36,7 @@ from keepaway.lib.parser.parser_message_fullstate_world import (
 from keepaway.base.sample_communication import SampleCommunication
 
 from keepaway.lib.player_command.trainer_command import (
-    TrainerTeamNameCommand,
-    TrainerSendCommands,
-    TrainerMoveBallCommand,
     TrainerMovePlayerCommand,
-    TrainerInitCommand,
-    TrainerDoneCommand,
-    TrainerEyeCommand,
-    TrainerEarCommand,
-    TrainerChangeModeCommand,
-    TrainerRecoverCommand,
 )
 
 from pyrusgeom.angle_deg import AngleDeg
@@ -95,14 +86,8 @@ class PlayerAgent(SoccerAgent):
         self._time_last_said_ = -5.0
 
     def send_init_command(self):
-        # TODO check reconnection
-
-        # com = PlayerInitCommand(team_config.TEAM_NAME, team_config.PLAYER_VERSION, self._goalie)
         com = PlayerInitCommand(self._team_name, 18, self._goalie)
-        # TODO set team name from keepaway.config
-        # self._full_world._team_name = team_config.TEAM_NAME
         self._full_world._team_name = self._team_name
-
         if self._client.send_message(com.str()) <= 0:
             log.os_log().error("ERROR failed to connect to server")
             self._client.set_server_alive(False)
@@ -164,13 +149,6 @@ class PlayerAgent(SoccerAgent):
         self.update_current_time(PlayerAgent.parse_cycle_info(message), False)
         _, cycle, sender = tuple(message.split(" ")[:3])
         cycle = int(cycle)
-
-        ## commmented out since we do not need a referee message
-        # if sender[0].isnumeric() or sender[0] == "-":  # PLAYER MESSAGE
-        #     self.hear_player_parser(message)
-        #     pass
-        # elif sender == "referee":
-        #     self.hear_referee_parser(message)
 
     def hear_player_parser(self, message: str):
         log.debug_client().add_message(f"rcv msg:#{message}#")

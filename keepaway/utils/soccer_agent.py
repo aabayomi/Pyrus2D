@@ -1,3 +1,7 @@
+"""
+    This file contains the SoccerAgent class which is the base class for all the agents.    
+"""
+
 import argparse
 from keepaway.config import team_config
 from keepaway.lib.player.basic_client import BasicClient

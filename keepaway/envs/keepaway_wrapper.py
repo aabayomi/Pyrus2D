@@ -1,7 +1,6 @@
 """
-Sample wrapper for the Keep-away environment. 
-This wrapper is used to make the environment compatible with the OpenAI Gym API.
-
+    Sample wrapper for the Keep-away environment. 
+    This wrapper is used to make the environment compatible with the OpenAI Gym API.
 """
 
 
@@ -42,8 +41,6 @@ class KeepawayWrapper(KeepawayEnv):
         self.state_space = spaces.Box(
             low=-1, high=1, shape=(self.state_size,), dtype="float32"
         )
-        # self._reward = super().reward()
-
         self.episode_limit = 100000
         self.metric_name = "EvalAverageReturn"
         self.run_flag = False
@@ -68,7 +65,6 @@ class KeepawayWrapper(KeepawayEnv):
         return obses
 
     def step(self, actions):
-
         reward, terminated, info = super().step(actions)
         return super().get_obs(),super().get_reward().value, terminated, info
         

@@ -1,3 +1,9 @@
+"""
+    This Utilities module contains decision behaviors for Keepers and Takers.
+
+"""
+
+
 from pyrusgeom.geom_2d import *
 from keepaway.lib.rcsc.server_param import ServerParam
 from pyrusgeom.vector_2d import Vector2D
@@ -36,14 +42,29 @@ class Takers:
     def get_marking_position(
         wm: "WorldModel", player_pos: Vector2D, distance: float
     ) -> Vector2D:
-        """Returns the marking position."""
+        """
+            Returns the marking position.
+            Args:
+                wm: WorldModel
+                player_pos: Vector2D
+                distance: float
+        """
+
         ball_pos = wm.ball().pos()
         ball_angle = (ball_pos - player_pos._pos).dir()
         return player_pos._pos + Vector2D.polar2vector(distance, ball_angle)
 
     @staticmethod
     def mark_opponent(wm: "WorldModel", p, distance, obj, agent: "PlayerAgent"):
-        """Mark the given opponent."""
+        """ 
+            Mark the given opponent. 
+            Args:   
+                wm: WorldModel
+                p: PlayerObject
+                distance: float
+                obj: str
+                agent: PlayerAgent
+        """
 
         # pos_mark = get_marking_position(wm, p, distance)
         player_mark_pos = Takers.get_marking_position(wm, p, distance)
@@ -73,7 +94,11 @@ class Takers:
 
     @staticmethod
     def mark_most_open_opponent(wm: "WorldModel", agent: "PlayerAgent"):
-        """Mark the most open opponent."""
+        """ Mark the most open opponent.   
+            Args:
+                wm: WorldModel
+                agent: PlayerAgent 
+        """
         keepers = wm.opponents()
         if len(keepers) == 0:
             return
@@ -101,11 +126,30 @@ class Keepers:
     def keeper_with_ball(
         wm: "WorldModel", agent: "PlayerAgent", actions, last_action_time
     ):
+        """
+            This method implements the keeper with ball.
+           
+            
+            Args:
+                wm: WorldModel
+                agent: PlayerAgent
+                actions: list
+                last_action_time: float
+        """
+
         action = actions[wm.self().unum() - 1]
         Keepers.interpret_keeper_action(wm, agent, action)
 
     @staticmethod
     def interpret_keeper_action(wm: "WorldModel", agent, action):
+        """
+            This method interprets the keeper action.
+            Args:
+                wm: WorldModel
+                agent: PlayerAgent
+                action: int
+        """
+
         if action == 0:
             return HoldBall().execute(agent)
         else:
@@ -118,10 +162,14 @@ class Keepers:
         return
 
     ## should be removed ** i dont know just yet
+    
     @staticmethod
     def do_heard_pass_receive(wm: "WorldModel", agent):
         """
-        check on pass .
+            This method implements the heard pass receive.
+            Args:
+                wm: WorldModel
+                agent: PlayerAgent
 
         """
         if (
@@ -164,13 +212,13 @@ class Keepers:
     @staticmethod
     def keeper_support(wm, fastest, agent):
         """
-        This method implements the keeper support.
-        Keeper support.
-
-        :param wm: WorldModel
-        :param fastest: fastest player
-        :param agent: PlayerAgent
+            This method implements the keeper support.
+            Args:
+                wm: WorldModel
+                fastest: PlayerObject
+                agent: PlayerAgent
         """
+        
         from keepaway.lib.messenger.one_player_messenger import OnePlayerMessenger
 
         sp = ServerParam.i()

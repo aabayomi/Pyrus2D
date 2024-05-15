@@ -1,6 +1,7 @@
 """
-Keepaway decision making module.
-
+    This module contains the decision making logic for the keepaway mode.
+    All shared objects are passed as arguments to the decision making function.
+    
 """
 
 from keepaway.lib.action.neck_turn_to_ball import NeckTurnToBall
