@@ -6,11 +6,11 @@ This project offers a python implementation of the RoboCup keepaway environment,
 The published [paper](https://www.cs.utexas.edu/~pstone/Papers/bib2html/b2hd-AB05.html) and [code](https://github.com/tjpalmer/keepaway) outlines the motivation for keepaway for reinforcement learning and some initial research results using the environment.
 
 
-To get started with this project, follow the instructions in the [Quick Start Guide](https://github.com/aabayomi/keepaway-python#quick-start).
+To get started with this project, follow the instructions in the [Quick Start Guide](##Quick-Start-Guide).
 
 ### Using Docker
 
-This is the recommended way to avoid incompatible package versions. Instructions are available [here](doc/docker.md).
+This is the recommended way to avoid incompatible package versions. Instructions are available [here](docs/docker.md).
 
 
 
