@@ -18,6 +18,7 @@ from keepaway.lib.action.intercept import Intercept
 from pyrusgeom.soccer_math import *
 from typing import TYPE_CHECKING
 from keepaway.utils.keepaway_utils import Takers, Keepers
+from keepaway.utils.hfo_utils import OffenseAgent, DefenseAgent
 import math as Math
 
 if TYPE_CHECKING:
@@ -86,3 +87,32 @@ def get_decision_keepaway(
             return NeckTurnToBall().execute(agent)
 
         return Intercept().execute(agent)
+
+
+## HFO Decision Making ..
+
+def get_decision_hfo(
+    agent: "PlayerAgent",
+    count_list,
+    barrier,
+    event_to_set,
+    event_to_wait,
+    obs,
+    last_action_time,
+    reward,
+    terminated,
+    full_world,
+    adj_matrix,
+):
+    ## TODO: add the logic for the defense and offense and name it properly
+    wm: "WorldModel" = agent.world()
+
+    if wm.our_team_name() == "offense":
+        barrier.wait()
+        OffenseAgent.offense_with_ball(wm, agent, count_list, last_action_time)
+        pass
+
+    if wm.our_team_name() == "defense":
+        barrier.wait()
+        DefenseAgent.defense_with_ball(wm, agent, count_list, last_action_time)
+        pass

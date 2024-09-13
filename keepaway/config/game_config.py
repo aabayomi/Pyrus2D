@@ -26,6 +26,15 @@ game_play = {
         "pitch_size": 40,
         "sparse_reward": False,
     },
+
+    "hfo":{
+        "num_offense_agents": 1,
+        "num_defense_agents": 1,
+        "limit": 10,
+        "pitch_size": 20,
+        "sparse_reward": False,
+        "epsilon": 0.1,
+    }
 }
 
 def get_config():
