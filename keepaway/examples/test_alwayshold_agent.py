@@ -8,7 +8,9 @@ from keepaway.envs.keepaway_env import KeepawayEnv
 from keepaway.envs.policies.always_hold import AlwaysHoldPolicy
 
 from keepaway.config.game_config import get_config
+
 config = get_config()["3v2"]
+
 
 def main():
     env = KeepawayEnv(config)

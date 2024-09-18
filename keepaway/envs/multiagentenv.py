@@ -23,7 +23,6 @@ class MultiAgentEnv(object):
         """Returns the size of the global state."""
         raise NotImplementedError
 
-
     def get_avail_actions(self):
         """Returns the available actions of all agents in a list."""
         raise NotImplementedError
@@ -42,7 +41,6 @@ class MultiAgentEnv(object):
 
     def close(self):
         raise NotImplementedError
-
 
     def get_env_info(self):
         env_info = {

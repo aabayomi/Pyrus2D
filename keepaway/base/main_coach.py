@@ -10,7 +10,7 @@ def main():
     agent = SampleCoach()
     print(agent.handle_start())
     if not agent.handle_start():
-        # print("Failed to start") 
+        # print("Failed to start")
         agent.handle_exit()
         return
     print("Starting Coach")

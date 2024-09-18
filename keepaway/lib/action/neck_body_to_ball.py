@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 
 
 class NeckBodyToBall(NeckAction):
-    def __init__(self, angle_buf: Union[AngleDeg,float] = 5.):
+    def __init__(self, angle_buf: Union[AngleDeg, float] = 5.0):
         self._angle_buf = float(angle_buf)
 
-    def execute(self, agent: 'PlayerAgent'):
-        log.debug_client().add_message('BodyToBall/')
+    def execute(self, agent: "PlayerAgent"):
+        log.debug_client().add_message("BodyToBall/")
         wm = agent.world()
         if wm.ball().pos_valid():
             ball_next = wm.ball().pos() + wm.ball().vel()

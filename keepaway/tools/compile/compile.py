@@ -41,15 +41,15 @@ class Src:
         return False
 
 
-def make_file_list(dir='.'):
+def make_file_list(dir="."):
     lst = []
     for file_dir in listdir(dir):
-        if file_dir[0] == '.' or file_dir == 'compile.py':
+        if file_dir[0] == "." or file_dir == "compile.py":
             continue
 
-        new_dir = dir + '/' + file_dir
-        file_splt = file_dir.split('.')
-        src = Src(dir, '.'.join(file_splt[:-1]), file_splt[-1])
+        new_dir = dir + "/" + file_dir
+        file_splt = file_dir.split(".")
+        src = Src(dir, ".".join(file_splt[:-1]), file_splt[-1])
         if isdir(new_dir):
             lst += make_file_list(new_dir)
         else:
@@ -70,13 +70,13 @@ def main():
     ext_modules = [Extension(file.name, [file.full_path()]) for file in files]
 
     setup(
-        name='My Program Name',
-        cmdclass={'build_ext': build_ext},
-        ext_modules=ext_modules
+        name="My Program Name",
+        cmdclass={"build_ext": build_ext},
+        ext_modules=ext_modules,
     )
 
     move_files(files)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

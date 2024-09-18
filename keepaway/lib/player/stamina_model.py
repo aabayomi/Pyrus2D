@@ -39,15 +39,17 @@ class StaminaModel:
                 self._effort += SP.effort_inc()
                 self._effort = min(self._effort, player_type.effort_max())
 
-        stamina_inc = min(player_type.stamina_inc_max() * self._recovery,
-                          SP.stamina_max() - self._stamina)
+        stamina_inc = min(
+            player_type.stamina_inc_max() * self._recovery,
+            SP.stamina_max() - self._stamina,
+        )
         if SP.stamina_capacity() >= 0:
             self._stamina += min(stamina_inc, self._capacity)
             self._capacity -= stamina_inc
             self._capacity = max(0, self._capacity)
         else:
             self._stamina += stamina_inc
-        self._stamina = min(self._stamina, SP.stamina_max()) 
+        self._stamina = min(self._stamina, SP.stamina_max())
 
     def simulate_waits(self, player_type: PlayerType, n_wait: int):
         for i in range(n_wait):
@@ -61,10 +63,7 @@ class StaminaModel:
         self._stamina = max(0, self._stamina)
         self.simulate_wait(player_type)
 
-    def simulate_dashes(self,
-                        player_type: PlayerType,
-                        n_dash: int,
-                        dash_power: float):
+    def simulate_dashes(self, player_type: PlayerType, n_dash: int, dash_power: float):
         consumption = dash_power if dash_power >= 0 else dash_power * -2
 
         for i in range(n_dash):
@@ -74,10 +73,7 @@ class StaminaModel:
             self.simulate_wait(player_type)
 
     def copy(self):
-        return StaminaModel(self._stamina,
-                            self._effort,
-                            self._recovery,
-                            self._capacity)
+        return StaminaModel(self._stamina, self._effort, self._recovery, self._capacity)
 
     def stamina(self):
         return self._stamina
@@ -93,13 +89,15 @@ class StaminaModel:
 
     def get_safety_dash_power(self, player_type: PlayerType, dash_power):
         normalized_power = ServerParam.i().normalize_dash_power(dash_power)
-        required_stamina = (normalized_power
-                            if normalized_power > 0
-                            else normalized_power * -2)
+        required_stamina = (
+            normalized_power if normalized_power > 0 else normalized_power * -2
+        )
 
-        threshold = (-player_type.extra_stamina()
-                     if self.capacity_is_empty()
-                     else ServerParam.i().recover_dec_thr_value() + 1)
+        threshold = (
+            -player_type.extra_stamina()
+            if self.capacity_is_empty()
+            else ServerParam.i().recover_dec_thr_value() + 1
+        )
         safety_stamina = self._stamina - threshold
         available_stamina = max(0, safety_stamina)
         result_power = min(required_stamina, available_stamina)
@@ -110,13 +108,15 @@ class StaminaModel:
 
         return result_power
 
-    def update_by_sense_body(self,
-                             sensed_stamina: float,
-                             sensed_effort: float,
-                             sensed_capacity: float,
-                             current_time: GameTime):
+    def update_by_sense_body(
+        self,
+        sensed_stamina: float,
+        sensed_effort: float,
+        sensed_capacity: float,
+        current_time: GameTime,
+    ):
         SP = ServerParam.i()
-        
+
         self._stamina = sensed_stamina
         self._effort = sensed_effort
         self._capacity = sensed_capacity
@@ -124,10 +124,11 @@ class StaminaModel:
         half_time = SP.actual_half_time()
         normal_time = half_time * SP.nr_normal_halfs()
 
-        if (half_time >= 0
+        if (
+            half_time >= 0
             and SP.nr_normal_halfs() >= 0
             and current_time.cycle() < normal_time
-            and current_time.cycle() %  half_time == 1):
-            
-            self._recovery = SP.recover_init()
+            and current_time.cycle() % half_time == 1
+        ):
 
+            self._recovery = SP.recover_init()

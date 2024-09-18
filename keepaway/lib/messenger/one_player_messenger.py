@@ -17,16 +17,26 @@ if TYPE_CHECKING:
 
 
 class OnePlayerMessenger(Messenger):
-    CONVERTER = MessengerConverter(Messenger.SIZES[Messenger.Types.ONE_PLAYER], [
-        (1, 23, 22),
-        (-ServerParam.i().pitch_half_length(), ServerParam.i().pitch_half_length(), 168),
-        (-ServerParam.i().pitch_half_width(), ServerParam.i().pitch_half_width(), 108),
-    ])
+    CONVERTER = MessengerConverter(
+        Messenger.SIZES[Messenger.Types.ONE_PLAYER],
+        [
+            (1, 23, 22),
+            (
+                -ServerParam.i().pitch_half_length(),
+                ServerParam.i().pitch_half_length(),
+                168,
+            ),
+            (
+                -ServerParam.i().pitch_half_width(),
+                ServerParam.i().pitch_half_width(),
+                108,
+            ),
+        ],
+    )
 
-    def __init__(self,
-                 u1: int = None,
-                 p1: Vector2D = None,
-                 message: str = None) -> None:
+    def __init__(
+        self, u1: int = None, p1: Vector2D = None, message: str = None
+    ) -> None:
         super().__init__()
         if message is None:
             self._unums: list[int] = [u1]
@@ -46,24 +56,34 @@ class OnePlayerMessenger(Messenger):
         ep = 0.001
         for p, u in zip(self._player_poses, self._unums):
             if not 1 <= u <= 22:
-                log.os_log().error(f'(ball player messenger) illegal unum={u}')
-                log.sw_log().sensor().add_text(f'(ball player messenger) illegal unum={u}')
-                return ''
+                log.os_log().error(f"(ball player messenger) illegal unum={u}")
+                log.sw_log().sensor().add_text(
+                    f"(ball player messenger) illegal unum={u}"
+                )
+                return ""
             data.append(u)
-            data.append(bound(-SP.pitch_half_length() + ep, p.x(), SP.pitch_half_length() - ep))
-            data.append(bound(-SP.pitch_half_width() + ep, p.y(), SP.pitch_half_width() - ep))
+            data.append(
+                bound(-SP.pitch_half_length() + ep, p.x(), SP.pitch_half_length() - ep)
+            )
+            data.append(
+                bound(-SP.pitch_half_width() + ep, p.y(), SP.pitch_half_width() - ep)
+            )
 
         msg = OnePlayerMessenger.CONVERTER.convert_to_word(data)
-        return f'{self._header}{msg}'
+        return f"{self._header}{msg}"
 
-    def decode(self, messenger_memory: MessengerMemory, sender: int, current_time: GameTime) -> None:
+    def decode(
+        self, messenger_memory: MessengerMemory, sender: int, current_time: GameTime
+    ) -> None:
         data = OnePlayerMessenger.CONVERTER.convert_to_values(self._message)
         for i in range(1):
             u = data[i * 3]
             px = data[i * 3 + 1]
             py = data[i * 3 + 2]
 
-            messenger_memory.add_player(sender,u,  Vector2D(px, py), current_time)  # TODO IMP FUNC
+            messenger_memory.add_player(
+                sender, u, Vector2D(px, py), current_time
+            )  # TODO IMP FUNC
 
     def __repr__(self) -> str:
         return "ball player msg"

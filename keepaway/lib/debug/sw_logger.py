@@ -6,9 +6,10 @@ from keepaway.lib.debug.level import Level
 from keepaway.lib.rcsc.game_time import GameTime
 
 import os
+
 # logs_dir = "/logs"
 up_one_dir = os.getcwd()
-logs_dir  = os.path.join(up_one_dir, "logs")
+logs_dir = os.path.join(up_one_dir, "logs")
 
 
 class SoccerWindow_Logger:
@@ -18,14 +19,16 @@ class SoccerWindow_Logger:
             self._time: GameTime = game_time
             self._commands = ""
 
-        def add_line(self,
-                     x1: float = None,
-                     y1: float = None,
-                     x2: float = None,
-                     y2: float = None,
-                     start: Vector2D = None,
-                     end: Vector2D = None,
-                     color: Color = Color(string="red")):
+        def add_line(
+            self,
+            x1: float = None,
+            y1: float = None,
+            x2: float = None,
+            y2: float = None,
+            start: Vector2D = None,
+            end: Vector2D = None,
+            color: Color = Color(string="red"),
+        ):
             if x1 is not None:
                 self._commands += f"{self._time.cycle()},{self._time.stopped_cycle()} {self.level.value} l {x1} {y1} {x2} {y2} {color}\n"
             elif start is not None:
@@ -34,43 +37,49 @@ class SoccerWindow_Logger:
         def add_text(self, message: str = ""):
             self._commands += f"{self._time.cycle()},{self._time.stopped_cycle()} {self.level.value} M {message}\n"  # TODO flush if message size is so large like 8192 and bigger
 
-        def add_circle(self,
-                       r: float = None,
-                       cx: float = None,
-                       cy: float = None,
-                       center: Vector2D = None,
-                       circle: Circle2D = None,
-                       fill: bool = False,
-                       color: Color = Color(string='red'), ):
+        def add_circle(
+            self,
+            r: float = None,
+            cx: float = None,
+            cy: float = None,
+            center: Vector2D = None,
+            circle: Circle2D = None,
+            fill: bool = False,
+            color: Color = Color(string="red"),
+        ):
             if cx is not None:
                 self._commands += f"{self._time.cycle()},{self._time.stopped_cycle()} {self.level.value} {'C' if fill else 'c'} {cx} {cy} {r} {color}\n"
             elif center is not None:
                 self.add_circle(r, center.x(), center.y(), color=color, fill=fill)
             elif circle is not None:
-                self.add_circle(circle.radius(), circle.center().x(), circle.center().y(), fill=fill,
-                                color=color)
+                self.add_circle(
+                    circle.radius(),
+                    circle.center().x(),
+                    circle.center().y(),
+                    fill=fill,
+                    color=color,
+                )
 
-        def add_point(self,
-                      x: float = None,
-                      y: float = None,
-                      pos: Vector2D = None,
-                      color: Color = Color(string='red')):
+        def add_point(
+            self,
+            x: float = None,
+            y: float = None,
+            pos: Vector2D = None,
+            color: Color = Color(string="red"),
+        ):
             if x is not None:
                 self._commands += f"{self._time.cycle()},{self._time.stopped_cycle()} {self.level.value} p {x} {y} {color}"
             elif pos is not None:
                 self.add_point(pos.x(), pos.y(), color=color)
 
-        def add_message(self,
-                        x,
-                        y,
-                        msg):
+        def add_message(self, x, y, msg):
             self._commands += f"{self._time.cycle()},{self._time.stopped_cycle()} {self.level.value} m {round(x, 4)} {round(y, 4)} {msg}\n"
 
     def __init__(self, team_name: str, unum: int, time: GameTime):
         ## modified to be saved in the current working directory
-        # self._file = open(f"/tmp/{team_name}-{unum}.log", 'w') - original code 
+        # self._file = open(f"/tmp/{team_name}-{unum}.log", 'w') - original code
         # print(f"logs_dir: {logs_dir}")
-        self._file = open(f"{logs_dir}/{team_name}-{unum}.log", 'w')
+        self._file = open(f"{logs_dir}/{team_name}-{unum}.log", "w")
         #  self._file = open(f"logs/{team_name}-{unum}.log", 'w')
         self._time: GameTime = time
 
@@ -88,12 +97,18 @@ class SoccerWindow_Logger:
         self._clear = SoccerWindow_Logger.LoggerLevel(Level.CLEAR, self._time)
         self._block = SoccerWindow_Logger.LoggerLevel(Level.BLOCK, self._time)
         self._mark = SoccerWindow_Logger.LoggerLevel(Level.MARK, self._time)
-        self._positioning = SoccerWindow_Logger.LoggerLevel(Level.POSITIONING, self._time)
+        self._positioning = SoccerWindow_Logger.LoggerLevel(
+            Level.POSITIONING, self._time
+        )
         self._role = SoccerWindow_Logger.LoggerLevel(Level.ROLE, self._time)
         self._team = SoccerWindow_Logger.LoggerLevel(Level.TEAM, self._time)
-        self._communication = SoccerWindow_Logger.LoggerLevel(Level.COMMUNICATION, self._time)
+        self._communication = SoccerWindow_Logger.LoggerLevel(
+            Level.COMMUNICATION, self._time
+        )
         self._analyzer = SoccerWindow_Logger.LoggerLevel(Level.ANALYZER, self._time)
-        self._action_chain = SoccerWindow_Logger.LoggerLevel(Level.ACTION_CHAIN, self._time)
+        self._action_chain = SoccerWindow_Logger.LoggerLevel(
+            Level.ACTION_CHAIN, self._time
+        )
         self._plan = SoccerWindow_Logger.LoggerLevel(Level.PLAN, self._time)
         self._training = SoccerWindow_Logger.LoggerLevel(Level.TRAINING, self._time)
         self._any = SoccerWindow_Logger.LoggerLevel(Level.LEVEL_ANY, self._time)
@@ -121,7 +136,7 @@ class SoccerWindow_Logger:
             self._action_chain,
             self._plan,
             self._training,
-            self._any
+            self._any,
         ]
 
     def flush(self):

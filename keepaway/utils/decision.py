@@ -91,6 +91,7 @@ def get_decision_keepaway(
 
 ## HFO Decision Making ..
 
+
 def get_decision_hfo(
     agent: "PlayerAgent",
     count_list,
@@ -109,6 +110,9 @@ def get_decision_hfo(
 
     if wm.our_team_name() == "offense":
         barrier.wait()
+        with count_list.get_lock():
+                obs[wm.self().unum()] = wm._retrieve_observation("hfo")
+
         OffenseAgent.offense_with_ball(wm, agent, count_list, last_action_time)
         pass
 

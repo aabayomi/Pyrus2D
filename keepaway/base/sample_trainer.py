@@ -10,13 +10,15 @@ class SampleTrainer(TrainerAgent):
         super().__init__()
 
     def action_impl(self):
-        if self.world().team_name_left() == "":  # TODO left team name...  # TODO is empty...
+        if (
+            self.world().team_name_left() == ""
+        ):  # TODO left team name...  # TODO is empty...
             self.do_teamname()
             return
         self.sample_action()
 
     def sample_action(self):
-        log.sw_log().block().add_text( "Sample Action")
+        log.sw_log().block().add_text("Sample Action")
 
         wm = self.world()
         ballpos = wm.ball().pos()

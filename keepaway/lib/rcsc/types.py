@@ -14,12 +14,16 @@ from enum import Enum, unique, auto
 
 @unique
 class SideID(Enum):
-    LEFT = 'l'
-    NEUTRAL = 'n'
-    RIGHT = 'r'
-    
+    LEFT = "l"
+    NEUTRAL = "n"
+    RIGHT = "r"
+
     def invert(self):
-        return SideID.RIGHT if self == SideID.LEFT else SideID.LEFT if self != SideID.NEUTRAL else SideID.NEUTRAL
+        return (
+            SideID.RIGHT
+            if self == SideID.LEFT
+            else SideID.LEFT if self != SideID.NEUTRAL else SideID.NEUTRAL
+        )
 
     def __repr__(self):
         return self.value
@@ -112,10 +116,10 @@ class MarkerID(Enum):
 
 @unique
 class LineID(Enum):
-    Line_Left = 'l'
-    Line_Right = 'r'
-    Line_Top = 't'
-    Line_Bottom = 'b'
+    Line_Left = "l"
+    Line_Right = "r"
+    Line_Top = "t"
+    Line_Bottom = "b"
     Line_Unknown = auto()
 
 
@@ -194,13 +198,18 @@ class GameModeType(Enum):
         return self == GameModeType.FreeKick_Left or self == GameModeType.FreeKick_Right
 
     def is_corner_kick(self):
-        return self == GameModeType.CornerKick_Left or self == GameModeType.CornerKick_Right
+        return (
+            self == GameModeType.CornerKick_Left
+            or self == GameModeType.CornerKick_Right
+        )
 
     def is_goal_kick(self):
         return self == GameModeType.GoalKick_Left or self == GameModeType.GoalKick_Right
 
     def is_after_goal(self):
-        return self == GameModeType.AfterGoal_Left or self == GameModeType.AfterGoal_Right
+        return (
+            self == GameModeType.AfterGoal_Left or self == GameModeType.AfterGoal_Right
+        )
 
     def is_offside(self):
         return self == GameModeType.OffSide_Left or self == GameModeType.OffSide_Right
@@ -209,52 +218,95 @@ class GameModeType(Enum):
         return self == GameModeType.PK_Left or self == GameModeType.PK_Right
 
     def is_foul_charge(self):
-        return self == GameModeType.Foul_Charge_Left or self == GameModeType.Foul_Charge_Right
+        return (
+            self == GameModeType.Foul_Charge_Left
+            or self == GameModeType.Foul_Charge_Right
+        )
 
     def is_foul_push(self):
-        return self == GameModeType.Foul_Push_Left or self == GameModeType.Foul_Push_Right
+        return (
+            self == GameModeType.Foul_Push_Left or self == GameModeType.Foul_Push_Right
+        )
 
     def is_foul_multiple_attacker(self):
-        return self == GameModeType.Foul_MultipleAttacker_Left or self == GameModeType.Foul_MultipleAttacker_Right
+        return (
+            self == GameModeType.Foul_MultipleAttacker_Left
+            or self == GameModeType.Foul_MultipleAttacker_Right
+        )
 
     def is_foul_ball_out(self):
-        return self == GameModeType.Foul_BallOut_Left or self == GameModeType.Foul_BallOut_Right
+        return (
+            self == GameModeType.Foul_BallOut_Left
+            or self == GameModeType.Foul_BallOut_Right
+        )
 
     def is_back_pass(self):
-        return self == GameModeType.Back_Pass_Left or self == GameModeType.Back_Pass_Right
+        return (
+            self == GameModeType.Back_Pass_Left or self == GameModeType.Back_Pass_Right
+        )
 
     def is_free_kick_fault(self):
-        return self == GameModeType.Free_Kick_Fault_Left or self == GameModeType.Free_Kick_Fault_Right
+        return (
+            self == GameModeType.Free_Kick_Fault_Left
+            or self == GameModeType.Free_Kick_Fault_Right
+        )
 
     def is_catch_fault(self):
-        return self == GameModeType.CatchFault_Left or self == GameModeType.CatchFault_Right
+        return (
+            self == GameModeType.CatchFault_Left
+            or self == GameModeType.CatchFault_Right
+        )
 
     def is_ind_free_kick(self):
-        return self == GameModeType.IndFreeKick_Left or self == GameModeType.IndFreeKick_Right
+        return (
+            self == GameModeType.IndFreeKick_Left
+            or self == GameModeType.IndFreeKick_Right
+        )
 
     def is_penalty_setup(self):
-        return self == GameModeType.PenaltySetup_Left or self == GameModeType.PenaltySetup_Right
+        return (
+            self == GameModeType.PenaltySetup_Left
+            or self == GameModeType.PenaltySetup_Right
+        )
 
     def is_penalty_ready(self):
-        return self == GameModeType.PenaltyReady_Left or self == GameModeType.PenaltyReady_Right
+        return (
+            self == GameModeType.PenaltyReady_Left
+            or self == GameModeType.PenaltyReady_Right
+        )
 
     def is_penalty_taken(self):
-        return self == GameModeType.PenaltyTaken_Left or self == GameModeType.PenaltyTaken_Right
+        return (
+            self == GameModeType.PenaltyTaken_Left
+            or self == GameModeType.PenaltyTaken_Right
+        )
 
     def is_penalty_miss(self):
-        return self == GameModeType.PenaltyMiss_Left or self == GameModeType.PenaltyMiss_Right
+        return (
+            self == GameModeType.PenaltyMiss_Left
+            or self == GameModeType.PenaltyMiss_Right
+        )
 
     def is_penalty_score(self):
-        return self == GameModeType.PenaltyScore_Left or self == GameModeType.PenaltyScore_Right
+        return (
+            self == GameModeType.PenaltyScore_Left
+            or self == GameModeType.PenaltyScore_Right
+        )
 
     def is_goalie_catch_ball(self):
-        return self == GameModeType.GoalieCatchBall_Left or self == GameModeType.GoalieCatchBall_Right
+        return (
+            self == GameModeType.GoalieCatchBall_Left
+            or self == GameModeType.GoalieCatchBall_Right
+        )
 
     def is_illegal_defense(self):
-        return self == GameModeType.IllegalDefense_Left or self == GameModeType.IllegalDefense_Right
-    
+        return (
+            self == GameModeType.IllegalDefense_Left
+            or self == GameModeType.IllegalDefense_Right
+        )
+
     def side(self) -> SideID:
-        side = self.value.split('_')[-1]
+        side = self.value.split("_")[-1]
         if side == "l":
             return SideID.LEFT
         if side == "r":
@@ -308,98 +360,100 @@ HETERO_UNKNOWN = -1
 HETERO_DEFAULT = 0
 
 # ! playmode string table defined in rcssserver.
-GAMEMODETYPE_STRINGS = ["",  # TODO Value of PlayerMode enum be these strings....?
-                        "before_kick_off",
-                        "time_over",
-                        "play_on",
-                        "kick_off_l",
-                        "kick_off_r",
-                        "kick_in_l",
-                        "kick_in_r",
-                        "free_kick_l",
-                        "free_kick_r",
-                        "corner_kick_l",
-                        "corner_kick_r",
-                        "goal_kick_l",
-                        "goal_kick_r",
-                        "goal_l",
-                        "goal_r",
-                        "drop_ball",
-                        "offside_l",
-                        "offside_r",
-                        "penalty_kick_l",
-                        "penalty_kick_r",
-                        "first_half_over",
-                        "pause",
-                        "human_judge",
-                        "foul_charge_l",
-                        "foul_charge_r",
-                        "foul_push_l",
-                        "foul_push_r",
-                        "foul_multiple_attack_l",
-                        "foul_multiple_attack_r",
-                        "foul_ballout_l",
-                        "foul_ballout_r",
-                        "back_pass_l",
-                        "back_pass_r",
-                        "free_kick_fault_l",
-                        "free_kick_fault_r",
-                        "catch_fault_l",
-                        "catch_fault_r",
-                        "indirect_free_kick_l",
-                        "indirect_free_kick_r",
-                        "penalty_setup_l",
-                        "penalty_setup_r",
-                        "penalty_ready_l",
-                        "penalty_ready_r",
-                        "penalty_taken_l",
-                        "penalty_taken_r",
-                        "penalty_miss_l",
-                        "penalty_miss_r",
-                        "penalty_score_l",
-                        "penalty_score_r",
-                        "illegal_defense_l",
-                        "illegal_defense_r",
-                        "",
-                        "",
-                        "",
-                        "",
-                        ""
-                        ]
+GAMEMODETYPE_STRINGS = [
+    "",  # TODO Value of PlayerMode enum be these strings....?
+    "before_kick_off",
+    "time_over",
+    "play_on",
+    "kick_off_l",
+    "kick_off_r",
+    "kick_in_l",
+    "kick_in_r",
+    "free_kick_l",
+    "free_kick_r",
+    "corner_kick_l",
+    "corner_kick_r",
+    "goal_kick_l",
+    "goal_kick_r",
+    "goal_l",
+    "goal_r",
+    "drop_ball",
+    "offside_l",
+    "offside_r",
+    "penalty_kick_l",
+    "penalty_kick_r",
+    "first_half_over",
+    "pause",
+    "human_judge",
+    "foul_charge_l",
+    "foul_charge_r",
+    "foul_push_l",
+    "foul_push_r",
+    "foul_multiple_attack_l",
+    "foul_multiple_attack_r",
+    "foul_ballout_l",
+    "foul_ballout_r",
+    "back_pass_l",
+    "back_pass_r",
+    "free_kick_fault_l",
+    "free_kick_fault_r",
+    "catch_fault_l",
+    "catch_fault_r",
+    "indirect_free_kick_l",
+    "indirect_free_kick_r",
+    "penalty_setup_l",
+    "penalty_setup_r",
+    "penalty_ready_l",
+    "penalty_ready_r",
+    "penalty_taken_l",
+    "penalty_taken_r",
+    "penalty_miss_l",
+    "penalty_miss_r",
+    "penalty_score_l",
+    "penalty_score_r",
+    "illegal_defense_l",
+    "illegal_defense_r",
+    "",
+    "",
+    "",
+    "",
+    "",
+]
 
 # available characters in player's say or coach's free form message
 # [-0-9a-zA-Z ().+*/?<>_]
 # 74 characters
 
 # ! character set that player can say.
-SAY_CHARACTERS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ().+*/?<>_-"
+SAY_CHARACTERS = (
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ().+*/?<>_-"
+)
 
 # ! ball status string table for trainer.
-BALL_STATUS_STRINGS = ["",
-                       "in_field",
-                       "goal_l",
-                       "goal_r",
-                       "out_of_field",
-                       ]
+BALL_STATUS_STRINGS = [
+    "",
+    "in_field",
+    "goal_l",
+    "goal_r",
+    "out_of_field",
+]
 
 
 @unique
 class ViewWidth(Enum):
-    NARROW = 'narrow'
-    NORMAL = 'normal'
-    WIDE = 'wide'
-    ILLEGAL = 'illegal'
+    NARROW = "narrow"
+    NORMAL = "normal"
+    WIDE = "wide"
+    ILLEGAL = "illegal"
 
     def __repr__(self):
         return self.value
-    
+
     def width(self):
         if self is ViewWidth.NARROW:
-            return 60.
+            return 60.0
         if self is ViewWidth.NORMAL:
-            return 120.
+            return 120.0
         if self is ViewWidth.WIDE:
-            return 180.
-        return 0.
-
-        
+            return 180.0
+        return 0.0

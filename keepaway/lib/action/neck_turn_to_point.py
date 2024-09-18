@@ -20,36 +20,22 @@ class NeckTurnToPoint(NeckAction):
         else:
             self._points = list(points)
 
-    def execute(self, agent: 'PlayerAgent'):
-        log.debug_client().add_message('TurnToPoint/')
+    def execute(self, agent: "PlayerAgent"):
+        log.debug_client().add_message("TurnToPoint/")
         ef = agent.effector()
         wm = agent.world()
         SP = ServerParam.i()
 
         next_pos = ef.queued_next_self_pos()
         next_body = ef.queued_next_self_body()
-        next_view_width = ef.queued_next_view_width().width()/2
+        next_view_width = ef.queued_next_view_width().width() / 2
 
         for p in self._points:
             rel_pos = p - next_pos
             rel_angle = rel_pos.th() - next_body
 
-            if rel_angle.abs() < SP.max_neck_angle() + next_view_width - 5.:
+            if rel_angle.abs() < SP.max_neck_angle() + next_view_width - 5.0:
                 return agent.do_turn_neck(rel_angle - agent.world().self().neck())
 
         NeckScanField().execute(agent)
         return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,14 +2,14 @@
 HFO Handcoded Policy
 
 """
+
 ## TODO: create an action table.
 
 import numpy as np
-
-class HFOHandcodedAgent:
+class HFOHandcodedPolicy:
     def __init__(self, config=None):
         """
-            Initializes the HFO handcoded agent.
+        Initializes the HFO handcoded agent.
         """
         self.old_ball_pos_x = -1
         self.old_ball_pos_y = 0
@@ -21,11 +21,11 @@ class HFOHandcodedAgent:
             self.num_times_overall[action] = 0
             self.num_times_kickable[action] = 0
 
-        self.misc_tracked = {'max_kickable_dist':0}
+        self.misc_tracked = {"max_kickable_dist": 0}
 
     def get_actions(self, obs):
         """
-            Returns the actions for the agents.
+        Returns the actions for the agents.
         """
         state = obs
         if episode_start:
@@ -38,16 +38,8 @@ class HFOHandcodedAgent:
             # do_random_defense_action(state, hfo_env)
             return 0
         else:
-            
-            # do_defense_action(state_vec=state, hfo_env=hfo_env,
-            #               num_opponents=numOpponents, num_teammates=numTeammates,
-            #               old_ball_pos_x=old_ball_pos_x, old_ball_pos_y=old_ball_pos_y,
-            #               num_times_overall=num_times_overall,
-            #               num_times_kickable=num_times_kickable,
-            #               misc_tracked=misc_tracked)
-           
-            self.old_ball_pos_x=state[3]
-            self.old_ball_pos_y=state[4]
+            self.old_ball_pos_x = state[3]
+            self.old_ball_pos_y = state[4]
             return 1
 
         # if status == hfo.SERVER_DOWN:
@@ -65,4 +57,3 @@ class HFOHandcodedAgent:
 
         # print("Episode {0:d} ended with {1:s}".format(episode,
         #                                           hfo_env.statusToString(status)))
-        

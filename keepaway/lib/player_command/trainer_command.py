@@ -73,8 +73,10 @@ class TrainerMoveBallCommand(TrainerCommand):
     def str(self):
         if self._vel is None:
             return f"(move (ball) {self._pos.x()} {self._pos.y()})"
-        return f"(move (ball) {self._pos.x()} {self._pos.y()}" \
-               f" 0 {self._vel.x()} {self._vel.y()})"
+        return (
+            f"(move (ball) {self._pos.x()} {self._pos.y()}"
+            f" 0 {self._vel.x()} {self._vel.y()})"
+        )
 
 
 class TrainerRecoverCommand(TrainerCommand):
@@ -85,16 +87,18 @@ class TrainerRecoverCommand(TrainerCommand):
         return TrainerCommand.Type.RECOVER
 
     def str(self):
-        return '(recover)'
+        return "(recover)"
 
 
 class TrainerMovePlayerCommand(TrainerCommand):
-    def __init__(self,
-                 teamname: str,
-                 unum: int,
-                 pos: Vector2D,
-                 angle: float = None,
-                 vel: Vector2D = None):
+    def __init__(
+        self,
+        teamname: str,
+        unum: int,
+        pos: Vector2D,
+        angle: float = None,
+        vel: Vector2D = None,
+    ):
         super().__init__()
         self._teamname = teamname.strip('"')
         self._unum = unum
@@ -110,16 +114,22 @@ class TrainerMovePlayerCommand(TrainerCommand):
             return ""
 
         if self._angle is None:
-            return f"(move (player {self._teamname} {self._unum}) " \
-                   f"{self._pos.x()} {self._pos.y()})"
+            return (
+                f"(move (player {self._teamname} {self._unum}) "
+                f"{self._pos.x()} {self._pos.y()})"
+            )
         else:
             if self._vel is None:
-                return f"(move (player {self._teamname} {self._unum})" \
-                       f" {self._pos.x()} {self._pos.y()} {self._angle})"
+                return (
+                    f"(move (player {self._teamname} {self._unum})"
+                    f" {self._pos.x()} {self._pos.y()} {self._angle})"
+                )
             else:
-                return f"(move (player {self._teamname} {self._unum}) " \
-                       f"{self._pos.x():.2f} {self._pos.y():.2f} {self._angle:.2f}" \
-                       f" {self._vel.x():.2f} {self._vel.y():.2f})"
+                return (
+                    f"(move (player {self._teamname} {self._unum}) "
+                    f"{self._pos.x():.2f} {self._pos.y():.2f} {self._angle:.2f}"
+                    f" {self._vel.x():.2f} {self._vel.y():.2f})"
+                )
 
     def check(self):
         if not 0 < self._unum < 12:

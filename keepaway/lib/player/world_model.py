@@ -6,7 +6,9 @@ from keepaway.lib.messenger.messenger import Messenger
 from keepaway.lib.messenger.messenger_memory import MessengerMemory
 from keepaway.lib.player.object_player import *
 from keepaway.lib.player.object_ball import *
-from keepaway.lib.parser.parser_message_fullstate_world import FullStateWorldMessageParser
+from keepaway.lib.parser.parser_message_fullstate_world import (
+    FullStateWorldMessageParser,
+)
 from keepaway.lib.player.object_self import SelfObject
 from keepaway.lib.player.sensor.body_sensor import SenseBodyParser
 from keepaway.lib.player.sensor.visual_sensor import SeeParser
@@ -63,7 +65,7 @@ class WorldModel:
     DIR_CONF_DIVS = 72
     DIR_STEP = 360.0 / DIR_CONF_DIVS
 
-    def __init__(self, name,num_keepers, manager=None):
+    def __init__(self, name, num_keepers, manager=None):
         self._name = name
         self._is_full_state = True if name == "full" else False
         self._player_types = [PlayerType() for _ in range(18)]
@@ -145,7 +147,7 @@ class WorldModel:
         ## keepaway variables
 
         self._episode_start = timeit.default_timer()
-    
+
         self._observation = None
         self._result = {}
 
@@ -158,10 +160,19 @@ class WorldModel:
         self._agents = [i for i in range(1, num_keepers + 1)]
 
         self.observations = {
-            agent: np.zeros(13, dtype=np.float32) if len(self._agents) == 3 else
-                np.zeros(20, dtype=np.float32) if len(self._agents) == 4 else
-                np.zeros(26, dtype=np.float32) if len(self._agents) == 5 else
-                np.zeros(0, dtype=np.float32)  
+            agent: (
+                np.zeros(13, dtype=np.float32)
+                if len(self._agents) == 3
+                else (
+                    np.zeros(20, dtype=np.float32)
+                    if len(self._agents) == 4
+                    else (
+                        np.zeros(26, dtype=np.float32)
+                        if len(self._agents) == 5
+                        else np.zeros(0, dtype=np.float32)
+                    )
+                )
+            )
             for agent in self._agents
         }
         self.last_action_time = 0  # hand-coded for now change later
@@ -399,7 +410,6 @@ class WorldModel:
 
     def teammates_from_ball(self):
         return self._teammates_from_ball
-
 
     def all_teammates_from_ball(self):
         return self._all_teammates_from_ball
@@ -2033,13 +2043,18 @@ class WorldModel:
     def is_terminal(self):
         return self._terminated
 
-    def _retrieve_observation(self):
+    def _retrieve_observation(self, game = None ):
         """
         Retrieve observation from the environment.
         this implementations the 13 state variables from the paper Peter Stone 2005.
         """
-        self._convert_players_observation()
-        self._observation = self._result
+        if game == "hfo":
+            self.high_level_observations()
+            self._observation = self._result
+        else:
+            self._convert_players_observation()
+            self._observation = self._result
+        
         return self._observation
 
     def get_observation(self, agent_id: int):
@@ -2060,13 +2075,15 @@ class WorldModel:
         return AngleDeg.normalize_angle(
             AngleDeg.acos_deg(dot_product / (x.r() * y.r()))
         )
-    
+
     def safe_assign(self, lst, index, value):
         """Safely assigns value to a list at the specified index."""
         if 0 <= index < len(lst):
             lst[index] = value
         else:
-            print(f"Warning: Attempt to assign to index {index} which is out of bounds.")
+            print(
+                f"Warning: Attempt to assign to index {index} which is out of bounds."
+            )
             pass
 
     def _convert_players_observation(self):
@@ -2082,26 +2099,24 @@ class WorldModel:
         closest_keeper_ball = self.teammates_from_ball()
         all_keeper_closest_to_ball = self.all_teammates_from_ball()
 
-
         if len(self._agents) == 3:
-            state_vars = [0.0] * 13 # 13
+            state_vars = [0.0] * 13  # 13
         elif len(self._agents) == 4:
-            state_vars = [0.0] * 20 # 19
+            state_vars = [0.0] * 20  # 19
         elif len(self._agents) == 5:
-            state_vars = [0.0] * 26 # 25
-
+            state_vars = [0.0] * 26  # 25
 
         # state_vars = []
         index = 0
-        
-        for p in self._all_players: 
+
+        for p in self._all_players:
             if p.pos_valid():
                 dist = (p.pos() - keepaway_field_center).r()
                 # state_vars.append(dist)
                 state_vars[index] = dist
                 index += 1
 
-        for p in self._teammates_from_self: # 3
+        for p in self._teammates_from_self:  # 3
             if p.pos_valid():
                 dist = p.dist_from_self()
                 # state_vars.append(dist)
@@ -2109,13 +2124,13 @@ class WorldModel:
                 self.safe_assign(state_vars, index, dist)
                 index += 1
 
-        for p in self._opponents_from_self: # 3
+        for p in self._opponents_from_self:  # 3
             if p.pos_valid():
                 dist = p.dist_from_self()
                 self.safe_assign(state_vars, index, dist)
                 index += 1
 
-        for k in self._teammates: # 3
+        for k in self._teammates:  # 3
             min_dist = 10000
             for t in self._opponents:
                 if t.pos_valid() and k.pos_valid():
@@ -2125,12 +2140,10 @@ class WorldModel:
             self.safe_assign(state_vars, index, dist)
             min_dist = 10000
             index += 1
-        
-
 
         closest_keeper = all_keeper_closest_to_ball[0]
-        
-        for k in self._teammates: 
+
+        for k in self._teammates:
             min_angle = 10000
             for t in self._opponents:
                 if closest_keeper != None:
@@ -2141,8 +2154,7 @@ class WorldModel:
             index += 1
         self._result["state_vars"] = np.array(state_vars, dtype=np.float32)
 
-    
-    def _pad(self,lst, min_length=13, pad_value=0):
+    def _pad(self, lst, min_length=13, pad_value=0):
         """
         Pad the list with zeros to the minimum length of state observation(13).
         sutton , stone and kulhman 2005.
@@ -2335,3 +2347,403 @@ class WorldModel:
             if d > 1.0:
                 return 0.0
             return d
+
+### Feature extraction methods for Half Field Offense.
+
+    def high_level_observations(self):
+        
+        """
+         High Level Features for Half Field Offense.
+
+
+        """
+        num_basic_features = 10
+        features_per_teammate = 6
+        features_per_opponent = 3
+
+        FEAT_INVALID = -1
+        FEAT_MAX = 1
+        FEAT_MIN = 0
+        
+        num_teammates = len(self._teammates)
+        num_opponents = len(self._opponents)
+        self.num_features = (num_teammates * features_per_teammate +
+                             num_opponents * features_per_opponent +
+                             num_basic_features + 2)  # +2 for action status and stamina
+        self.feature_vec = np.zeros(self.num_features)
+        self.feat_indx = 0
+
+        self.feat_indx = 0
+        SP = ServerParam.i()
+
+        self_obj = wm.self()
+        self_pos = self_obj.pos()
+        self_ang = self_obj.body().radian()
+
+        teammates = wm.teammates_from_self()
+        opponents = wm.opponents_from_self()
+        maxR = math.sqrt(SP.pitch_half_length()**2 + SP.pitch_width()**2)
+
+        # Features about self pos
+        tolerance_x = 0.1 * SP.pitch_half_length()
+        tolerance_y = 0.1 * SP.pitch_half_width()
+
+        # Feature[0]: X-position
+        if self.playing_offense:
+            self.add_norm_feature(self_pos.x, -tolerance_x, SP.pitch_half_length() + tolerance_x)
+        else:
+            self.add_norm_feature(self_pos.x, -SP.pitch_half_length() - tolerance_x, tolerance_x)
+
+        # Feature[1]: Y-Position
+        self.add_norm_feature(self_pos.y, -SP.pitch_half_width() - tolerance_y, SP.pitch_half_width() + tolerance_y)
+
+        # Feature[2]: Self Angle
+        self.add_norm_feature(self_ang, -math.pi, math.pi)
+
+        # Features about the ball
+        ball_pos = wm.ball().pos()
+        th, r = self.angle_dist_to_point(self_pos, ball_pos)
+
+        # Feature[3] and [4]: (x,y) position of the ball
+        if self.playing_offense:
+            self.add_norm_feature(ball_pos.x, -tolerance_x, SP.pitch_half_length() + tolerance_x)
+        else:
+            self.add_norm_feature(ball_pos.x, -SP.pitch_half_length() - tolerance_x, tolerance_x)
+        self.add_norm_feature(ball_pos.y, -SP.pitch_half_width() - tolerance_y, SP.pitch_half_width() + tolerance_y)
+
+        # Feature[5]: Able to kick
+        self.add_norm_feature(self_obj.is_kickable(), False, True)
+
+        # Features about distance to goal center
+        goal_center = np.array([SP.pitch_half_length(), 0])
+        if not self.playing_offense:
+            goal_center = np.array([-SP.pitch_half_length(), 0])
+        th, r = self.angle_dist_to_point(self_pos, goal_center)
+
+        # Feature[6]: Goal Center Distance
+        self.add_norm_feature(r, 0, maxR)
+
+        # Feature[7]: Angle to goal center
+        self.add_norm_feature(th, -math.pi, math.pi)
+
+        # Feature[8]: largest open goal angle
+        self.add_norm_feature(self.calc_largest_goal_angle(wm, self_pos), 0, math.pi)
+
+        # Feature[9]: Dist to our closest opp
+        if num_opponents > 0:
+            th, r = self.calc_closest_opp(wm, self_pos)
+            self.add_norm_feature(r, 0, maxR)
+        else:
+            self.add_feature(FEAT_INVALID)
+
+        # Features[9 - 9+T]: teammate's open angle to goal
+        detected_teammates = 0
+        for teammate in teammates:
+            if self.valid(teammate) and teammate.unum() > 0 and detected_teammates < num_teammates:
+                self.add_norm_feature(self.calc_largest_goal_angle(wm, teammate.pos()), 0, math.pi)
+                detected_teammates += 1
+
+        # Add zero features for any missing teammates
+        for _ in range(detected_teammates, num_teammates):
+            self.add_feature(FEAT_INVALID)
+
+        # Features[9+T - 9+2T]: teammates' dists to closest opps
+        if num_opponents > 0:
+            detected_teammates = 0
+            for teammate in teammates:
+                if self.valid(teammate) and teammate.unum() > 0 and detected_teammates < num_teammates:
+                    th, r = self.calc_closest_opp(wm, teammate.pos())
+                    self.add_norm_feature(r, 0, maxR)
+                    detected_teammates += 1
+
+            # Add zero features for any missing teammates
+            for _ in range(detected_teammates, num_teammates):
+                self.add_feature(FEAT_INVALID)
+        else:  # If no opponents, add invalid features
+            for _ in range(num_teammates):
+                self.add_feature(FEAT_INVALID)
+
+        # Features [9+2T - 9+3T]: open angle to teammates
+        detected_teammates = 0
+        for teammate in teammates:
+            if self.valid(teammate) and teammate.unum() > 0 and detected_teammates < num_teammates:
+                self.add_norm_feature(self.calc_largest_teammate_angle(wm, self_pos, teammate.pos()), 0, math.pi)
+                detected_teammates += 1
+
+        # Add zero features for any missing teammates
+        for _ in range(detected_teammates, num_teammates):
+            self.add_feature(FEAT_INVALID)
+
+        # Features [9+3T - 9+6T]: x, y, unum of teammates
+        detected_teammates = 0
+        for teammate in teammates:
+            if self.valid(teammate) and teammate.unum() > 0 and detected_teammates < num_teammates:
+                if self.playing_offense:
+                    self.add_norm_feature(teammate.pos().x, -tolerance_x, SP.pitch_half_length() + tolerance_x)
+                else:
+                    self.add_norm_feature(teammate.pos().x, -SP.pitch_half_length() - tolerance_x, tolerance_x)
+                self.add_norm_feature(teammate.pos().y, -tolerance_y - SP.pitch_half_width(),
+                                      SP.pitch_half_width() + tolerance_y)
+                self.add_feature(teammate.unum())
+                detected_teammates += 1
+
+        # Add zero features for any missing teammates
+        for _ in range(detected_teammates, num_teammates):
+            self.add_feature(FEAT_INVALID)
+            self.add_feature(FEAT_INVALID)
+            self.add_feature(FEAT_INVALID)
+
+        # Features [9+6T - 9+6T+3O]: x, y, unum of opponents
+        detected_opponents = 0
+        for opponent in opponents:
+            if self.valid(opponent) and opponent.unum() > 0 and detected_opponents < num_opponents:
+                if self.playing_offense:
+                    self.add_norm_feature(opponent.pos().x, -tolerance_x, SP.pitch_half_length() + tolerance_x)
+                else:
+                    self.add_norm_feature(opponent.pos().x, -SP.pitch_half_length() - tolerance_x, tolerance_x)
+                self.add_norm_feature(opponent.pos().y, -tolerance_y - SP.pitch_half_width(),
+                                      SP.pitch_half_width() + tolerance_y)
+                self.add_feature(opponent.unum())
+                detected_opponents += 1
+
+        # Add zero features for any missing opponents
+        for _ in range(detected_opponents, num_opponents):
+            self.add_feature(FEAT_INVALID)
+            self.add_feature(FEAT_INVALID)
+            self.add_feature(FEAT_INVALID)
+
+        # Last action status
+        if last_action_status:
+            self.add_feature(FEAT_MAX)
+        else:
+            self.add_feature(FEAT_MIN)
+
+        # Stamina feature
+        self.add_norm_feature(self_obj.stamina(), 0., observed_stamina_max)
+
+        assert self.feat_indx == self.num_features
+
+        self._result["state_vars"] = np.array(self.feature_vec, dtype=np.float32)
+
+        # return self.feature_vec
+
+
+    def add_norm_feature(self, value, min_value, max_value):
+        norm_value = (value - min_value) / (max_value - min_value)
+        self.feature_vec[self.feat_indx] = norm_value
+        self.feat_indx += 1
+
+    def add_feature(self, value):
+        self.feature_vec[self.feat_indx] = value
+        self.feat_indx += 1
+
+    def valid(self, player):
+        if not player:
+            return False
+        pos = player.pos()
+        return player.pos_valid() and pos.is_valid()
+
+    def angle_dist_to_point(self, from_pos, to_pos):
+        dx = to_pos.x - from_pos.x
+        dy = to_pos.y - from_pos.y
+        dist = math.sqrt(dx * dx + dy * dy)
+        angle = math.atan2(dy, dx)
+        return angle, dist
+
+    def calc_largest_goal_angle(self, wm, pos):
+        # Placeholder for actual goal angle calculation
+        return 0.0
+
+    def calc_closest_opp(self, wm, pos):
+        # Placeholder for actual closest opponent calculation
+        return 0.0, 0.0
+
+    def calc_largest_teammate_angle(self, wm, self_pos, teammate_pos):
+        # Placeholder for actual teammate angle calculation
+        return 0.0
+
+
+    ### Low Level Features for Half Field Offense.
+
+    # def add_feature(self, feature):
+    #     self.feature_vec.append(feature)
+    #     self.feat_indx += 1
+
+    # def add_ang_feature(self, angle):
+    #     self.add_feature(angle)
+
+    # def add_norm_feature(self, value, min_val, max_val):
+    #     norm_value = (value - min_val) / (max_val - min_val)
+    #     self.add_feature(norm_value)
+
+    # def add_landmark_features(self, landmark, self_pos, self_ang):
+    #     self.add_ang_feature(self_ang - landmark.angle_from_self())
+    #     self.add_norm_feature(self_pos.dist(landmark), 0, self.pitch_half_length)
+
+    # def add_dist_feature(self, value, max_val):
+    #     self.add_feature(value / max_val)
+
+    # def add_player_features(self, player, self_pos, self_ang):
+    #     self.add_landmark_features(player.pos(), self_pos, self_ang)
+    #     self.add_norm_feature(player.speed(), 0, self.observed_self_speed_max)
+
+    # def check_features(self):
+    #     assert self.feat_indx == self.num_basic_features
+
+    # def low_level_observation(self):
+
+    #     """
+    #         Low Level Features for Half Field Offense.
+    #     """
+        
+
+    #     num_teammates = len(self._teammates)
+    #     num_opponents = len(self._opponents)
+
+    #     num_basic_features = num_basic_features
+    #     self.features_per_player = features_per_player
+    #     self.observed_self_speed_max = observed_self_speed_max
+    #     self.observed_stamina_max = observed_stamina_max
+    #     self.observed_ball_speed_max = observed_ball_speed_max
+
+    #     self.pitch_half_length = pitch_half_length
+    #     self.goal_half_width = goal_half_width
+    #     self.penalty_area_length = penalty_area_length
+    #     self.penalty_area_width = penalty_area_width
+    #     self.pitch_half_width = pitch_half_width
+    #     self.pitch_width = pitch_width
+    #     self.feat_max = feat_max
+    #     self.feat_min = feat_min
+
+        
+    #     self.num_features = 0
+    #     self.feat_indx = 0
+    #     self.feature_vec = np.zeros(self.num_features)
+
+
+        
+
+    #     # ======================== SELF FEATURES ======================== #
+    #     self_obj = wm.self()
+    #     self_pos = self_obj.pos()
+    #     self_ang = self_obj.body()
+
+    #     self.add_feature(self.feat_max if self_obj.pos_valid() else self.feat_min)
+    #     self.add_feature(self.feat_max if self_obj.vel_valid() else self.feat_min)
+
+    #     if self_obj.vel_valid():
+    #         self.add_ang_feature(self_ang - self_obj.vel().th())
+    #         self.add_norm_feature(self_obj.speed(), 0, self.observed_self_speed_max)
+    #     else:
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+
+    #     self.add_ang_feature(self_ang)
+    #     self.add_norm_feature(self_obj.stamina(), 0, self.observed_stamina_max)
+    #     self.add_feature(self.feat_max if self_obj.is_frozen() else self.feat_min)
+
+    #     self.add_feature(self.feat_max if self_obj.collides_with_ball() else self.feat_min)
+    #     self.add_feature(self.feat_max if self_obj.collides_with_player() else self.feat_min)
+    #     self.add_feature(self.feat_max if self_obj.collides_with_post() else self.feat_min)
+    #     self.add_feature(self.feat_max if self_obj.is_kickable() else self.feat_min)
+
+    #     # ======================== LANDMARK FEATURES ======================== #
+    #     goal_center = (self.pitch_half_length, 0)
+    #     goal_post_top = (self.pitch_half_length, -self.goal_half_width)
+    #     goal_post_bot = (self.pitch_half_length, self.goal_half_width)
+    #     penalty_box_center = (self.pitch_half_length - self.penalty_area_length, 0)
+    #     penalty_box_top = (self.pitch_half_length - self.penalty_area_length, -self.penalty_area_width / 2)
+    #     penalty_box_bot = (self.pitch_half_length - self.penalty_area_length, self.penalty_area_width / 2)
+
+    #     corners = [
+    #         (0, 0),
+    #         (0, -self.pitch_half_width),
+    #         (self.pitch_half_length, -self.pitch_half_width),
+    #         (self.pitch_half_length, self.pitch_half_width),
+    #         (0, self.pitch_half_width)
+    #     ]
+
+    #     landmarks = [goal_center, goal_post_top, goal_post_bot, penalty_box_center, penalty_box_top, penalty_box_bot] + corners
+
+    #     for landmark in landmarks:
+    #         self.add_landmark_features(landmark, self_pos, self_ang)
+
+    #     if self_obj.pos_valid():
+    #         self.add_dist_feature(self_pos.x, 1.1 * self.pitch_half_length)
+    #         self.add_dist_feature(self.pitch_half_length - self_pos.x, 1.1 * self.pitch_half_length)
+    #         self.add_dist_feature(self.pitch_half_width + self_pos.y, 1.05 * self.pitch_width)
+    #         self.add_dist_feature(self.pitch_half_width - self_pos.y, 1.05 * self.pitch_width)
+    #     else:
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+
+    #     # ======================== BALL FEATURES ======================== #
+    #     ball = wm.ball()
+
+    #     self.add_feature(self.feat_max if ball.rpos_valid() else self.feat_min)
+    #     if ball.rpos_valid():
+    #         self.add_landmark_features(ball.pos(), self_pos, self_ang)
+    #     else:
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+
+    #     self.add_feature(self.feat_max if ball.vel_valid() else self.feat_min)
+    #     if ball.vel_valid():
+    #         self.add_norm_feature(ball.vel().r(), 0, self.observed_ball_speed_max)
+    #         self.add_ang_feature(ball.vel().th())
+    #     else:
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+    #         self.add_feature(0)
+
+    #     # ======================== TEAMMATE FEATURES ======================== #
+    #     detected_teammates = 0
+    #     teammates = wm.teammates_from_self()
+    #     for teammate in teammates:
+    #         if teammate.pos().x > 0 and teammate.unum() > 0 and detected_teammates < num_teammates:
+    #             self.add_player_features(teammate, self_pos, self_ang)
+    #             detected_teammates += 1
+
+    #     for _ in range(detected_teammates, num_teammates):
+    #         for _ in range(self.features_per_player):
+    #             self.add_feature(0)
+
+    #     # ======================== OPPONENT FEATURES ======================== #
+    #     detected_opponents = 0
+    #     opponents = wm.opponents_from_self()
+    #     for opponent in opponents:
+    #         if opponent.pos().x > 0 and opponent.unum() > 0 and detected_opponents < num_opponents:
+    #             self.add_player_features(opponent, self_pos, self_ang)
+    #             detected_opponents += 1
+
+    #     for _ in range(detected_opponents, num_opponents):
+    #         for _ in range(self.features_per_player):
+    #             self.add_feature(0)
+
+    #     # ========================= UNIFORM NUMBERS ========================== #
+    #     detected_teammates = 0
+    #     for teammate in teammates:
+    #         if teammate.pos().x > 0 and teammate.unum() > 0 and detected_teammates < num_teammates:
+    #             self.add_feature(teammate.unum() / 100.0)
+    #             detected_teammates += 1
+
+    #     for _ in range(detected_teammates, num_teammates):
+    #         self.add_feature(self.feat_min)
+
+    #     detected_opponents = 0
+    #     for opponent in opponents:
+    #         if opponent.pos().x > 0 and opponent.unum() > 0 and detected_opponents < num_opponents:
+    #             self.add_feature(opponent.unum() / 100.0)
+    #             detected_opponents += 1
+
+    #     for _ in range(detected_opponents, num_opponents):
+    #         self.add_feature(self.feat_min)
+
+    #     self.add_feature(self.feat_max if last_action_status else self.feat_min)
+
+    #     self.check_features()
+    #     return self.feature_vec

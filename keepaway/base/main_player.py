@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from keepaway.base.sample_player import SamplePlayer
 
+
 def main():
     agent = SamplePlayer()
     if not agent.handle_start():

@@ -28,8 +28,8 @@ def test():
     wm_sender = WorldModel()
     wm_reciever = WorldModel()
 
-    wm_sender._our_side = 'l'
-    wm_reciever._our_side = 'l'
+    wm_sender._our_side = "l"
+    wm_reciever._our_side = "l"
 
     player = PlayerObject()
     player._pos = Vector2D(10, 20)
@@ -73,7 +73,9 @@ def test():
     print(wm_sender._ball)
     print(wm_reciever._ball)
 
-    msg = Messenger.encode_all(wm_sender, [PlayerPosUnumMessenger(5), BallPosVelMessenger()])
+    msg = Messenger.encode_all(
+        wm_sender, [PlayerPosUnumMessenger(5), BallPosVelMessenger()]
+    )
 
     Messenger.decode_all(wm_reciever._messenger_memory, msg, 4, wm_reciever.time())
     wm_reciever.update_ball_by_haer(ActionEffector())
@@ -86,7 +88,9 @@ def test():
 
 
 def test2():
-    cc = MessengerConverter([(-52.5, 52.5, 2 ** 10), (-34, 34, 2 ** 9), (-2.7, 2.7, 2 ** 6), (-2.7, 2.7, 2 ** 6)])
+    cc = MessengerConverter(
+        [(-52.5, 52.5, 2**10), (-34, 34, 2**9), (-2.7, 2.7, 2**6), (-2.7, 2.7, 2**6)]
+    )
     w = cc.convert_to_word([3, 4, 2, -2])
     print(w)
 
@@ -109,10 +113,10 @@ def test3():
 
 def test_mm():
     gu = 1
-    gp = Vector2D(40., 12)
+    gp = Vector2D(40.0, 12)
     gb = AngleDeg(170)
     pu = 3
-    pp = Vector2D(40., 33.9)
+    pp = Vector2D(40.0, 33.9)
 
     mm = MessengerMemory()
 
@@ -138,7 +142,9 @@ def test_mm2():
     mm = MessengerMemory()
 
     print(u1, p1, u2, p2, u3, p3, stamina)
-    msg = Messenger.encode_all([TwoPlayerMessenger(u1, p1, u2, p2), StaminaMessenger(stamina)])
+    msg = Messenger.encode_all(
+        [TwoPlayerMessenger(u1, p1, u2, p2), StaminaMessenger(stamina)]
+    )
     print(msg)
 
     Messenger.decode_all(mm, msg, 3, GameTime(10))
@@ -149,7 +155,7 @@ def test_mm2():
 
 def test_one_player():
     unum = 1
-    pos = Vector2D(-52., 30)
+    pos = Vector2D(-52.0, 30)
     print(unum, pos)
     msg = OnePlayerMessenger(unum, pos).encode()
     print(msg)
@@ -171,9 +177,9 @@ def test_two_player():
 
 def test_three_player():
     u1 = 2 + 11
-    p1 = Vector2D(5.441864657550282,-36.15640365877976)
+    p1 = Vector2D(5.441864657550282, -36.15640365877976)
     u2 = 3 + 11
-    p2 = Vector2D(9.548082361799027,-37.26023761462523)
+    p2 = Vector2D(9.548082361799027, -37.26023761462523)
     u3 = 4 + 11
     p3 = Vector2D(12.174446180516131, -10.985076789602786)
     print(u1, p1, u2, p2, u3, p3)
@@ -185,7 +191,7 @@ def test_three_player():
 
 def test_goalie_messenger():
     gu = 1
-    gp = Vector2D(40., 12)
+    gp = Vector2D(40.0, 12)
     gb = AngleDeg(170)
 
     print(gu, gp, gb)
@@ -197,7 +203,7 @@ def test_goalie_messenger():
 def test_ball_goalie_messenger():
     bp = Vector2D(12, 30)
     bv = Vector2D(1, -1)
-    gp = Vector2D(40., 33.9)
+    gp = Vector2D(40.0, 33.9)
     gb = AngleDeg(170)
 
     print(bp, bv, gp, gb)
@@ -230,10 +236,10 @@ def test_ball_player_messenger():
 
 def test_goalie_player_messenger():
     gu = 1
-    gp = Vector2D(40., 12)
+    gp = Vector2D(40.0, 12)
     gb = AngleDeg(170)
     pu = 3
-    pp = Vector2D(40., 33.9)
+    pp = Vector2D(40.0, 33.9)
 
     print(gu, gp, gb, pu, pp)
     msg = GoaliePlayerMessenger(gu, gp, gb, pu, pp).encode()

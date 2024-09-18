@@ -65,9 +65,7 @@ class PlayerObject(Object):
         self._side = (
             SideID.RIGHT
             if dic["side_id"] == "r"
-            else SideID.LEFT
-            if dic["side_id"] == "l"
-            else SideID.NEUTRAL
+            else SideID.LEFT if dic["side_id"] == "l" else SideID.NEUTRAL
         )
         self._body = AngleDeg(float(dic["body"]))
         self._neck = AngleDeg(float(dic["neck"]))

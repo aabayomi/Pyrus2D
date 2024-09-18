@@ -54,7 +54,7 @@ class BhvKick:
             if len(action_candidates) == 0:
                 return self.no_candidate_action(agent)
 
-            best_action: KickAction = max(action_candidates)#
+            best_action: KickAction = max(action_candidates)  #
 
             target = best_action.target_ball_pos
             log.debug_client().set_target(target)
@@ -137,7 +137,7 @@ class BhvKick:
     #             # Log.log(102, "kick results in collision, change velDes from (%f,%f)",
     #             #         velDes.getX(), velDes.getY());
     #             travel_dist.set_polar(dist, travel_dist.th())
-        
+
     #     dDistOpp = std::numeric_limits<double>::max();
     #     objOpp = WM->getClosestInSetTo(OBJECT_SET_OPPONENTS,
     #                                      OBJECT_BALL, &dDistOpp);
@@ -156,20 +156,20 @@ class BhvKick:
     #             #         velDes.getX(), velDes.getY(), dSpeedPred, dSpeed, tmp);
     #             # // shoot nevertheless
 
-    #             return accelerateBallToVelocity(vel_des)   
+    #             return accelerateBallToVelocity(vel_des)
     #         elif (wm.kick_power_rate() > 0.85 * SP.kick_power_rate()):
     #             # {
     #             # Log.log(102, "point too far, freeze ball"); // ball well-positioned
     #             # // freeze ball
-    #             return freezeBall();                          
+    #             return freezeBall();
     #         else:
     #             # Log.log(102, "point too far, reposition ball (k_r = %f)",
     #             #         WM->getActualKickPowerRate() / (SS->getKickPowerRate()));
     #             # // else position ball better
 
-    #             return kickBallCloseToBody(0);            
-    #     # // can reach point 
-    #     else :                                           
+    #             return kickBallCloseToBody(0);
+    #     # // can reach point
+    #     else :
     #         Vector2D accBallDes = vel_des - vel_ball
     #         dPower = wm.get_kick_power_speed(accBallDes.getMagnitude())
 
@@ -178,15 +178,13 @@ class BhvKick:
     #                                             SP.getMaxPower())):                               // 1.05 since cannot get ball fully perfect
     #             # Log.log(102, "point good and can reach point %f", dPower);
     #             # // perform shooting action
-    #             return accelerateBallToVelocity(velDes);  
+    #             return accelerateBallToVelocity(velDes);
     #         else:
     #             # Log.log(102, "point good, but reposition ball since need %f", dPower);
     #             SoccerCommand soc = kickBallCloseToBody(0);
     #             VecPosition posPredBall;
-            
+
     #             WM->predictBallInfoAfterCommand(soc, &posPredBall);
     #             dDistOpp = posPredBall.getDistanceTo(WM->getGlobalPosition(objOpp));
     #             # // position ball better
-    #         return soc;            
-    
-
+    #         return soc;

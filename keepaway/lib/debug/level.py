@@ -26,7 +26,7 @@ class Level(Enum):
 
     TRAINING = 0x80000000
 
-    LEVEL_ANY = 0xffffffff
+    LEVEL_ANY = 0xFFFFFFFF
 
     # unused Levels :\
     LEVEL_00 = 0x00000000

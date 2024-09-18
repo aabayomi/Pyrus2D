@@ -24,7 +24,9 @@ class PlayerCommandReverser(PlayerCommand):
             # if "_dir" in commands[i].__dict__:
             #     commands[i]._dir = PlayerCommandReverser.reverse_deg(commands[i]._dir)
             if "_moment" in commands[i].__dict__:
-                commands[i]._moment = PlayerCommandReverser.reverse_deg(commands[i]._moment)
+                commands[i]._moment = PlayerCommandReverser.reverse_deg(
+                    commands[i]._moment
+                )
 
     @staticmethod
     def reverse_deg(direction):

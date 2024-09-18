@@ -11,13 +11,13 @@ class SeeParser:
     DIR_ERR = -360
 
     class ObjectType(Enum):
-        Obj_Goal = 'g'
-        Obj_Goal_Behind = 'G'
-        Obj_Marker = 'f'
-        Obj_Marker_Behind = 'F'
-        Obj_Line = 'l'
-        Obj_Ball = 'b'
-        Obj_Player = 'p'
+        Obj_Goal = "g"
+        Obj_Goal_Behind = "G"
+        Obj_Marker = "f"
+        Obj_Marker_Behind = "F"
+        Obj_Line = "l"
+        Obj_Ball = "b"
+        Obj_Player = "p"
         Obj_Unknown = auto()
 
     class PlayerInfoType(Enum):
@@ -53,14 +53,14 @@ class SeeParser:
         def __init__(self) -> None:
             super().__init__()
             self.has_vel_ = False
-            self.dist_chng_ = 0.
-            self.dir_chng_ = 0.
+            self.dist_chng_ = 0.0
+            self.dir_chng_ = 0.0
 
         def reset(self):
             super().reset()
             self.has_vel_ = False
-            self.dist_chng_ = 0.
-            self.dir_chng_ = 0.
+            self.dist_chng_ = 0.0
+            self.dir_chng_ = 0.0
 
     class LineT(PolarT):
         def __init__(self) -> None:
@@ -74,7 +74,7 @@ class SeeParser:
         @staticmethod
         def parse_string(key, value):
             line = SeeParser.LineT()
-            line_name = key.split(' ')[1]
+            line_name = key.split(" ")[1]
 
             line.id_ = LineID(line_name)
 
@@ -96,7 +96,7 @@ class SeeParser:
             self.id_ = MarkerID.Marker_Unknown
 
         def __str__(self):
-            return f'Marker {self.id_} {self.object_type_} {self.dist_} {self.dir_}'
+            return f"Marker {self.id_} {self.object_type_} {self.dist_} {self.dir_}"
 
         @staticmethod
         def parse_string(key, value, type, marker_map):
@@ -104,15 +104,17 @@ class SeeParser:
             marker.id_ = SeeParser.ObjectType.Obj_Unknown
             marker.object_type_ = type
 
-            if not (type == SeeParser.ObjectType.Obj_Marker_Behind
-                    or type == SeeParser.ObjectType.Obj_Goal_Behind):
+            if not (
+                type == SeeParser.ObjectType.Obj_Marker_Behind
+                or type == SeeParser.ObjectType.Obj_Goal_Behind
+            ):
                 if marker_map.get(key) is None:
                     log.os_log().error("No identified Marked Object!")
                     return None
 
                 marker.id_ = marker_map[key]
 
-            data = value.strip(" ").split(' ')
+            data = value.strip(" ").split(" ")
             marker.dist_ = float(data[0])
             marker.dir_ = float(data[1])
 
@@ -183,9 +185,11 @@ class SeeParser:
 
             if n_player_data >= 3:
                 player.unum_ = int(player_data[2])
-                result_type = (types.Player_Teammate
-                               if result_type == types.Player_Unknown_Teammate
-                               else types.Player_Opponent)
+                result_type = (
+                    types.Player_Teammate
+                    if result_type == types.Player_Unknown_Teammate
+                    else types.Player_Opponent
+                )
 
             else:
                 player.unum_ = UNUM_UNKNOWN
@@ -210,15 +214,15 @@ class SeeParser:
 
                 if n_state_data == 8:
                     player.arm_ = float(state_data[6])
-                    if state_data[7] == 'k':
+                    if state_data[7] == "k":
                         player.kicking_ = True
-                    if state_data[7] == 't':
+                    if state_data[7] == "t":
                         player.tackle_ = True
 
                 elif n_state_data == 7:
-                    if state_data[-1] == 'k':
+                    if state_data[-1] == "k":
                         player.kicking_ = True
-                    elif state_data[-1] == 't':
+                    elif state_data[-1] == "t":
                         player.tackle_ = True
                     else:
                         player.arm_ = float(state_data[-1])
@@ -228,10 +232,10 @@ class SeeParser:
                 player.dir_ = float(state_data[1])
 
                 if n_state_data == 4:
-                    if state_data[-1] == 't':
+                    if state_data[-1] == "t":
                         player.tackle_ = True
                         player.arm_ = float(state_data[-2])
-                    elif state_data[-1] == 'k':
+                    elif state_data[-1] == "k":
                         player.kicking_ = True
                         player.arm_ = float(state_data[-2])
                     else:
@@ -239,9 +243,9 @@ class SeeParser:
                         player.dir_chng_ = float(state_data[3])
                         player.has_vel_ = True
                 elif n_state_data == 3:
-                    if state_data[-1] == 'k':
+                    if state_data[-1] == "k":
                         player.kicking_ = True
-                    elif state_data[-1] == 't':
+                    elif state_data[-1] == "t":
                         player.tackle_ = True
                     else:
                         player.arm_ = float(state_data[-1])
@@ -350,7 +354,9 @@ class SeeParser:
             self._unknown_players.append(player)
 
     def sort_all(self):
-        def dist_lambda(a): return a.dist_
+        def dist_lambda(a):
+            return a.dist_
+
         self._teammates.sort(key=dist_lambda)
         self._unknown_teammates.sort(key=dist_lambda)
         self._opponents.sort(key=dist_lambda)
@@ -376,28 +382,35 @@ class SeeParser:
             value = key_value[1]
             types = SeeParser.ObjectType
             t: str = key[0]
-            if t in ['P', 'B', 'L']:
+            if t in ["P", "B", "L"]:
                 t = t.lower()
             obj_type = types(t)
-            
+
             value = value.strip(")")
 
             if obj_type == types.Obj_Marker or obj_type == types.Obj_Goal:
-                self._markers.append(SeeParser.MarkerT.parse_string(
-                    key, value, obj_type, self._marker_map))
-            elif obj_type == types.Obj_Marker_Behind or obj_type == types.Obj_Goal_Behind:
-                self._behind_markers.append(SeeParser.MarkerT.parse_string(
-                    key, value, obj_type, self._marker_map))
+                self._markers.append(
+                    SeeParser.MarkerT.parse_string(
+                        key, value, obj_type, self._marker_map
+                    )
+                )
+            elif (
+                obj_type == types.Obj_Marker_Behind or obj_type == types.Obj_Goal_Behind
+            ):
+                self._behind_markers.append(
+                    SeeParser.MarkerT.parse_string(
+                        key, value, obj_type, self._marker_map
+                    )
+                )
             elif obj_type == types.Obj_Player:
                 player, player_type = SeeParser.PlayerT.parse_string(
-                    key, value, team_name, self)
+                    key, value, team_name, self
+                )
                 self.add_player(player, player_type)
             elif obj_type == types.Obj_Line:
-                self._lines.append(
-                    SeeParser.LineT.parse_string(key, value))
+                self._lines.append(SeeParser.LineT.parse_string(key, value))
             elif obj_type == types.Obj_Ball:
-                self._balls.append(
-                    SeeParser.BallT.parse_string(key, value))
+                self._balls.append(SeeParser.BallT.parse_string(key, value))
             else:
                 log.os_log().error(f"A seen object is not identified by its type!!")
 
@@ -405,22 +418,22 @@ class SeeParser:
 
     def __str__(self):
         res = "\n"
-        res += "-"*50 + '\n'
+        res += "-" * 50 + "\n"
         res += "teammates: \n".upper()
         res += "\n".join(map(str, self._teammates))
-        res += "\n" + "-"*50 + "\nunknown_teammates: \n".upper()
+        res += "\n" + "-" * 50 + "\nunknown_teammates: \n".upper()
         res += "\n".join(map(str, self._unknown_teammates))
-        res += "\n" + "-"*50 + "\nopponents: \n".upper()
+        res += "\n" + "-" * 50 + "\nopponents: \n".upper()
         res += "\n".join(map(str, self._opponents))
-        res += "\n" + "-"*50 + "\nunknown_opponents: \n".upper()
+        res += "\n" + "-" * 50 + "\nunknown_opponents: \n".upper()
         res += "\n".join(map(str, self._unknown_opponents))
-        res += "\n" + "-"*50 + "\nunknown_players: \n".upper()
+        res += "\n" + "-" * 50 + "\nunknown_players: \n".upper()
         res += "\n".join(map(str, self._unknown_players))
-        res += "\n" + "-"*50 + "\nmarkers: \n".upper()
+        res += "\n" + "-" * 50 + "\nmarkers: \n".upper()
         res += "\n".join(map(str, self._markers))
-        res += "\n" + "-"*50 + "\nbehind_markers: \n".upper()
+        res += "\n" + "-" * 50 + "\nbehind_markers: \n".upper()
         res += "\n".join(map(str, self._behind_markers))
-        res += "\n" + "-"*50 + "\nlines: \n".upper()
+        res += "\n" + "-" * 50 + "\nlines: \n".upper()
         res += "\n".join(map(str, self._lines))
         return res
 

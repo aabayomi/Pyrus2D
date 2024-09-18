@@ -19,8 +19,7 @@ def main():
     # make accessors
     accessors = []
     for var in variables:
-        acc = f"def {var[6:]}(self):\n" \
-              f"\treturn {var}"
+        acc = f"def {var[6:]}(self):\n" f"\treturn {var}"
         accessors.append(acc)
 
     # write in file

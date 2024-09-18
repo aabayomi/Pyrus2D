@@ -11,36 +11,33 @@ class SoccerAgent:
         self._client: BasicClient = BasicClient()
 
     def parse_arguments(self):
-        parser = argparse.ArgumentParser(description='Start the Team. Runs the players and the coach.')
+        parser = argparse.ArgumentParser(
+            description="Start the Team. Runs the players and the coach."
+        )
 
-        parser.add_argument('-t', '--team-name',
-                            help='Team name to display')
+        parser.add_argument("-t", "--team-name", help="Team name to display")
 
-        parser.add_argument('-o', '--out',
-                            help='Output type(values->[std, textfile]). std for print on standard stream, unum for print to seperated files.')
+        parser.add_argument(
+            "-o",
+            "--out",
+            help="Output type(values->[std, textfile]). std for print on standard stream, unum for print to seperated files.",
+        )
 
-        parser.add_argument('-H', '--host',
-                            help='Server IP address')
+        parser.add_argument("-H", "--host", help="Server IP address")
 
-        parser.add_argument('-p', '--player-port',
-                            help='Server Player port')
+        parser.add_argument("-p", "--player-port", help="Server Player port")
 
-        parser.add_argument('-P', '--coach-port',
-                            help='Server Coach port')
+        parser.add_argument("-P", "--coach-port", help="Server Coach port")
 
-        parser.add_argument('--trainer-port',
-                            help='Server Trainer port')
+        parser.add_argument("--trainer-port", help="Server Trainer port")
 
-        parser.add_argument('-g', '--goalie',
-                            help='Server Trainer port',
-                            action='store_true')
-        
-        parser.add_argument( '--keeper-count',
-                            help = "Number of keepers.")
-        
-        parser.add_argument( '--taker-count',
-                            help = "Number of takers.")
-    
+        parser.add_argument(
+            "-g", "--goalie", help="Server Trainer port", action="store_true"
+        )
+
+        parser.add_argument("--keeper-count", help="Number of keepers.")
+
+        parser.add_argument("--taker-count", help="Number of takers.")
 
         args = parser.parse_args()
 
@@ -65,7 +62,6 @@ class SoccerAgent:
         if args.goalie:
             self._goalie = True
 
-
     def init_impl(self, goalie: bool) -> bool:
         pass
 
@@ -77,4 +73,3 @@ class SoccerAgent:
 
     def handle_exit(self):
         pass
-

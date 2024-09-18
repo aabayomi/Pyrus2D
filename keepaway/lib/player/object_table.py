@@ -5,7 +5,7 @@ from keepaway.lib.rcsc.server_param import ServerParam
 from keepaway.lib.rcsc.types import ViewWidth
 
 
-# TODO This two functions should be moved to pyrusgeom 
+# TODO This two functions should be moved to pyrusgeom
 def lower_bound(nums, target):
     l, r = 0, len(nums) - 1
     while l <= r:
@@ -45,7 +45,7 @@ class ObjectTable:
 
         self.static_table_seen_dist_dict: dict[float, int] = {}
         self.movable_table_seen_dist_dict: dict[float, int] = {}
-        
+
         self.create_landmark_map()
         self.create_table()
 
@@ -59,7 +59,7 @@ class ObjectTable:
         index = keys_dict[list(keys_dict.keys())[key]]
         average = static_table[index].average
         error = static_table[index].error
-        return average, error 
+        return average, error
 
     def get_distance_range(self, view_width: ViewWidth, quantized_dist: float):
         movable_table = self.movable_table
@@ -69,7 +69,7 @@ class ObjectTable:
         average = movable_table[index].average
         error = movable_table[index].error
         return average, error
-    
+
     def create_landmark_map(self):
         pitch_half_w = ServerParam.i().pitch_half_width()
         pitch_half_l = ServerParam.i().pitch_half_length()
@@ -84,12 +84,24 @@ class ObjectTable:
         self._landmark_map[MarkerID.Flag_LB] = Vector2D(-pitch_half_l, +pitch_half_w)
         self._landmark_map[MarkerID.Flag_RT] = Vector2D(+pitch_half_l, -pitch_half_w)
         self._landmark_map[MarkerID.Flag_RB] = Vector2D(+pitch_half_l, +pitch_half_w)
-        self._landmark_map[MarkerID.Flag_PLT] = Vector2D(-(pitch_half_l - penalty_l), -penalty_half_w)
-        self._landmark_map[MarkerID.Flag_PLC] = Vector2D(-(pitch_half_l - penalty_l), 0.0)
-        self._landmark_map[MarkerID.Flag_PLB] = Vector2D(-(pitch_half_l - penalty_l), +penalty_half_w)
-        self._landmark_map[MarkerID.Flag_PRT] = Vector2D(+(pitch_half_l - penalty_l), -penalty_half_w)
-        self._landmark_map[MarkerID.Flag_PRC] = Vector2D(+(pitch_half_l - penalty_l), 0.0)
-        self._landmark_map[MarkerID.Flag_PRB] = Vector2D(+(pitch_half_l - penalty_l), +penalty_half_w)
+        self._landmark_map[MarkerID.Flag_PLT] = Vector2D(
+            -(pitch_half_l - penalty_l), -penalty_half_w
+        )
+        self._landmark_map[MarkerID.Flag_PLC] = Vector2D(
+            -(pitch_half_l - penalty_l), 0.0
+        )
+        self._landmark_map[MarkerID.Flag_PLB] = Vector2D(
+            -(pitch_half_l - penalty_l), +penalty_half_w
+        )
+        self._landmark_map[MarkerID.Flag_PRT] = Vector2D(
+            +(pitch_half_l - penalty_l), -penalty_half_w
+        )
+        self._landmark_map[MarkerID.Flag_PRC] = Vector2D(
+            +(pitch_half_l - penalty_l), 0.0
+        )
+        self._landmark_map[MarkerID.Flag_PRB] = Vector2D(
+            +(pitch_half_l - penalty_l), +penalty_half_w
+        )
         self._landmark_map[MarkerID.Flag_GLT] = Vector2D(-pitch_half_l, -goal_half_w)
         self._landmark_map[MarkerID.Flag_GLB] = Vector2D(-pitch_half_l, +goal_half_w)
         self._landmark_map[MarkerID.Flag_GRT] = Vector2D(+pitch_half_l, -goal_half_w)

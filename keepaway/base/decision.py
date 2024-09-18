@@ -10,7 +10,12 @@ from keepaway.lib.action.scan_field import ScanField
 from keepaway.lib.debug.debug import log
 from keepaway.lib.action.hold_ball import HoldBall
 
-from keepaway.utils.keepaway_actions import SmartKick, GoToPoint, NeckTurnToBallOrScan,NeckBodyToPoint
+from keepaway.utils.keepaway_actions import (
+    SmartKick,
+    GoToPoint,
+    NeckTurnToBallOrScan,
+    NeckBodyToPoint,
+)
 
 from keepaway.lib.action.turn_to_ball import TurnToBall
 from keepaway.lib.action.neck_body_to_ball import NeckBodyToBall
@@ -215,7 +220,12 @@ def get_decision_keepaway(
             agent.set_neck_action(NeckTurnToBall())
 
         else:
-            print("(sample player do heard pass) go to point!,  cycle ", self_min, " i am ", wm.self().unum())
+            print(
+                "(sample player do heard pass) go to point!,  cycle ",
+                self_min,
+                " i am ",
+                wm.self().unum(),
+            )
 
             log.sw_log().team().add_text(
                 f"(sample player do heard pass) go to point!, cycle={self_min}"
@@ -300,13 +310,12 @@ def get_decision_keepaway(
             # take the point out of the rectangle -- meaning no point was valid.
             best_point = rect.center()
         return best_point
-    
-    def get_open(wm,best_point):
+
+    def get_open(wm, best_point):
         if wm.self().pos().dist(best_point) < 1.5:
             NeckBodyToPoint(best_point).execute(agent)
         else:
             GoToPoint(best_point, 0.2, 100).execute(agent)
-        
 
     def keeper_support(wm, fastest, agent):
         """Keeper support."""
@@ -338,12 +347,11 @@ def get_decision_keepaway(
         rect = wm.keepaway_rect()
         best_point = least_congested_point_for_pass_in_rectangle(rect, pos_pass_from)
 
-       
         if do_heard_pass_receive(wm, agent) == False:
             # print("i am ", wm.self()._unum,"no pass heard")
             # print("i am ", wm.self()._unum, "going to ", best_point)
             GoToPoint(best_point, 0.2, 100).execute(agent)
-            return 
+            return
         else:
             print("pass was heard ")
             # i am waiting for the pass.
@@ -361,10 +369,8 @@ def get_decision_keepaway(
         #     #                                     best_point))
         #     GoToPoint(best_point, 0.2, 100).execute(agent)
         #     return
-        
-        # # # # ObjectT lookObject = self._choose_look_object( 0.97 )
 
-   
+        # # # # ObjectT lookObject = self._choose_look_object( 0.97 )
 
     def search_ball(wm, agent):
         return ScanField().execute(agent)
@@ -372,6 +378,7 @@ def get_decision_keepaway(
     def hold(wm, agent):
         """ """
         from keepaway.lib.action.neck_scan_players import NeckScanPlayers
+
         agent.set_neck_action(NeckScanPlayers())
         HoldBall().execute(agent)
         return
@@ -448,7 +455,9 @@ def get_decision_keepaway(
                         # print("passing to player ", tm.unum(), "at pos ", temp_pos)
                         print(
                             "i am ",
-                            wm.self().unum(),"at pos ",wm.self().pos(),
+                            wm.self().unum(),
+                            "at pos ",
+                            wm.self().pos(),
                             "passing to player ",
                             tm.unum(),
                             "at pos ",
@@ -457,7 +466,7 @@ def get_decision_keepaway(
                         # ball_to_player.rotate(-wm.ball().vel().th())
                         agent.do_kick_to(tm, 1.5)
                         # agent.do_kick_2(tm, 1.5)
-                        ## test pass logic 
+                        ## test pass logic
                         # agent.test_pass(tm, 1.5)
                         # test_kick(wm,agent,temp_pos)
                         agent.set_neck_action(NeckScanPlayers())

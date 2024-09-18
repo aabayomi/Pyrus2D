@@ -9,6 +9,7 @@ from pyrusgeom.angle_deg import AngleDeg
 from keepaway.lib.rcsc.server_param import ServerParam
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from keepaway.lib.player.world_model import WorldModel
     from keepaway.lib.player.player_agent import PlayerAgent
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
 class StopBall(BodyAction):
     """
-      \ brief accessible from global.
+    \ brief accessible from global.
     """
 
     def __init__(self):
@@ -34,16 +35,18 @@ class StopBall(BodyAction):
       \ return True if action is performed
     """
 
-    def execute(self, agent: 'PlayerAgent'):
-        wm: 'WorldModel' = agent.world()
+    def execute(self, agent: "PlayerAgent"):
+        wm: "WorldModel" = agent.world()
         if not wm.self().is_kickable():
             return False
         if not wm.ball().vel_valid():  # Always true until NFS nice :)
             required_accel = wm.self().vel() - (wm.self().pos() - wm.ball().pos())
             kick_power = required_accel.r() / wm.self().kick_rate()
             kick_power *= 0.5
-            agent.do_kick(min(kick_power, ServerParam.i().max_power()),
-                          required_accel.th() - wm.self().body())
+            agent.do_kick(
+                min(kick_power, ServerParam.i().max_power()),
+                required_accel.th() - wm.self().body(),
+            )
             return True
 
         self._accel_radius = 0.0
@@ -58,14 +61,15 @@ class StopBall(BodyAction):
         # kick_power = self._accel_radius / wm.self().kickRate()
         # kick_power = min(kick_power, i.maxPower())
 
-        return agent.do_kick(kick_power,
-                             self._accel_angle - wm.self().body())
+        return agent.do_kick(kick_power, self._accel_angle - wm.self().body())
 
     def calcAccel(self, agent):
 
-        wm: 'WorldModel' = agent.world()
+        wm: "WorldModel" = agent.world()
 
-        safety_dist = wm.self().player_type().player_size() + ServerParam.i().ball_size() + 0.1
+        safety_dist = (
+            wm.self().player_type().player_size() + ServerParam.i().ball_size() + 0.1
+        )
 
         target_dist = wm.ball().dist_from_self()
         if target_dist < safety_dist:
@@ -102,7 +106,10 @@ class StopBall(BodyAction):
         next_ball_to_self -= wm.self().pos() - wm.ball().pos()
         next_ball_to_self -= wm.ball().vel()
 
-        keep_dist = wm.self().player_type().player_size() + wm.self().player_type().kickable_margin() * 0.4
+        keep_dist = (
+            wm.self().player_type().player_size()
+            + wm.self().player_type().kickable_margin() * 0.4
+        )
 
         self._accel_radius = min(max_accel, next_ball_to_self.r() - keep_dist)
         self._accel_angle = next_ball_to_self.th()

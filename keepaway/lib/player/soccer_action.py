@@ -85,7 +85,9 @@ class NeckAction(AbstractAction):
 
 class ViewAction(AbstractAction):
 
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
 
     def execute(self, agent):
@@ -125,6 +127,7 @@ class ArmAction(AbstractAction):
     def clone(self, agent):
         pass
 
+
 #  #################################/
 
 """
@@ -135,7 +138,9 @@ class ArmAction(AbstractAction):
 
 class FocusPointAction(AbstractAction):
 
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
 
     def execute(self, agent):
@@ -148,6 +153,7 @@ class FocusPointAction(AbstractAction):
 
     def clone(self, agent):
         pass
+
 
 #  #################################/
 

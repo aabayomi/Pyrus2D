@@ -8,7 +8,8 @@ Handcoded policy keepaway adapted from Adaptive Behavior '05 article
 
 import numpy as np
 
-class HandcodedPolicy():
+
+class HandcodedPolicy:
     def __init__(self, config=None):
         """Initializes the policy."""
         if config is not None:
@@ -25,15 +26,13 @@ class HandcodedPolicy():
 
         self.distance_threshold = 10.0
 
-
     def select_agent_action(self, obs, agent_id):
         """
-            Returns the ac in the keep-away domain.
+        Returns the ac in the keep-away domain.
         """
 
         scores = [0] * self.num_keepers
 
-        
         if isinstance(obs, dict):
             obs = obs["state_vars"]
         else:
@@ -46,8 +45,7 @@ class HandcodedPolicy():
         elif self.num_keepers == 5:
             start_idx = 13
 
-        
-        last_index = (len(obs) - 1) - self.num_takers 
+        last_index = (len(obs) - 1) - self.num_takers
 
         # set current agent index to a very small value
         scores[agent_id - 1] = -1000000.0
@@ -61,27 +59,25 @@ class HandcodedPolicy():
             else:
                 a = self.dist_weight * obs[start_idx + i] + obs[last_index + i]
                 scores[i] = a
-    
+
         best = np.argmax(scores)
         if scores[best] < self.hold_distance:
             return best
         else:
             return 0
-        
-    def get_actions(self, obs):
 
-        """ Returns the actions for the agents in the keep-away domain.
+    def get_actions(self, obs):
+        """Returns the actions for the agents in the keep-away domain.
             Hold threshold (alpha)
             beta : Dist/Ang ratio (beta)
-        Args:   
+        Args:
             obs: dict of observations for each agent.
         Returns:
             actions: list of actions for each agent.
             agent_infos: dict of agent information.
         """
 
-        agent_ids = obs.keys() 
-        
+        agent_ids = obs.keys()
 
         ## Check if no observations are available.
         actions = [0] * len(agent_ids)

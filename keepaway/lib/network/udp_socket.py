@@ -34,8 +34,8 @@ class UDPSocket:
         self._receive_first_message = False
 
     def send_msg(self, msg: str):
-        if msg[-1] != '\0':
-            msg += '\0'
+        if msg[-1] != "\0":
+            msg += "\0"
         return self._sock.sendto(msg.encode(), self._ip.tuple())
 
     def receive_msg(self):

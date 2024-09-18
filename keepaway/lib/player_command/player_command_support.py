@@ -98,9 +98,9 @@ class PlayerPointtoCommand(PlayerSupportCommand):
 
 class PlayerAttentiontoCommand(PlayerSupportCommand):
     class SideType(Enum):
-        OUR = 'our'
-        OPP = 'opp'
-        NONE = 'none'
+        OUR = "our"
+        OPP = "opp"
+        NONE = "none"
 
     def __init__(self, side=SideType.NONE, unum=0):
         self._side: PlayerAttentiontoCommand.SideType = side

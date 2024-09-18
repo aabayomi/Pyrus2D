@@ -20,12 +20,16 @@ class SeeState:
 
         if self._view_width != vw:
             if DEBUG:
-                log.sw_log().system().add_text(f"see state: (update by sense body)"
-                                               f"vew_width does not match."
-                                               f" old={self._view_width}, new={vw}")
-                log.os_log().info(f"see state: (update by sense body)"
-                                  f"vew_width does not match."
-                                  f" old={self._view_width}, new={vw}")
+                log.sw_log().system().add_text(
+                    f"see state: (update by sense body)"
+                    f"vew_width does not match."
+                    f" old={self._view_width}, new={vw}"
+                )
+                log.os_log().info(
+                    f"see state: (update by sense body)"
+                    f"vew_width does not match."
+                    f" old={self._view_width}, new={vw}"
+                )
             self._view_width = vw
 
     def update_by_see(self, see_time: GameTime, vw: ViewWidth):
@@ -46,7 +50,9 @@ class SeeState:
     def set_view_mode(self, new_width: ViewWidth):
         if self._last_see_time != self._current_time:
             if DEBUG:
-                log.sw_log().system().add_text("see state (set_view_mode) no current cycle see arrival")
+                log.sw_log().system().add_text(
+                    "see state (set_view_mode) no current cycle see arrival"
+                )
             return
 
         self._view_width = new_width
@@ -58,8 +64,10 @@ class SeeState:
         elif new_width == ViewWidth.NARROW:
             self._cycles_till_next_see = 1
 
-        log.sw_log().system().add_text(f"see state (set_view_mode)"
-                                       f" synch {new_width}: cycle = {self._cycles_till_next_see}")
+        log.sw_log().system().add_text(
+            f"see state (set_view_mode)"
+            f" synch {new_width}: cycle = {self._cycles_till_next_see}"
+        )
         return
 
     def cycles_till_next_see(self):

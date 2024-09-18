@@ -111,7 +111,7 @@ class PlayerAgent(SoccerAgent):
         #     team_config.TEAM_NAME, team_config.PLAYER_VERSION, self._goalie
         # )
         com = PlayerInitCommand(self._team_name, 18, self._goalie)
-        # TODO 
+        # TODO
         self._full_world._team_name = self._team_name
         if self._client.send_message(com.str()) <= 0:
             log.os_log().error("ERROR failed to connect to server")
@@ -185,7 +185,6 @@ class PlayerAgent(SoccerAgent):
             self.hear_referee_parser(message)
         elif sender == "coach":
             pass
-        
 
     def init_dlog(self, message):
         log.setup(self.world().team_name_l(), "coach", self._current_time)
@@ -570,9 +569,9 @@ class PlayerAgent(SoccerAgent):
 
     def accel_ball_vel(self, vel: Vector2D):
         """
-            This method issues a kick command to accelerate the ball to the desired velocity.
-            Args:
-                vel (Vector2D): The desired velocity of the ball.
+        This method issues a kick command to accelerate the ball to the desired velocity.
+        Args:
+            vel (Vector2D): The desired velocity of the ball.
         """
         SP = ServerParam.i()
         body_angle = self.world().self().body()
@@ -597,8 +596,8 @@ class PlayerAgent(SoccerAgent):
 
     def freeze_ball(self):
         """
-            This method issues a kick command to freeze the ball.
-            Args: None
+        This method issues a kick command to freeze the ball.
+        Args: None
         """
         SP = ServerParam.i()
         maximal_kick_dist = (
@@ -634,10 +633,10 @@ class PlayerAgent(SoccerAgent):
 
     def kick_ball_close_to_body(self, angle, kick_ratio):
         """
-            This method issues a kick command to kick the ball close to the body.
-            Args:
-                angle (float): The angle of the kick.
-                kick_ratio (float): The ratio of the kick.
+        This method issues a kick command to kick the ball close to the body.
+        Args:
+            angle (float): The angle of the kick.
+            kick_ratio (float): The ratio of the kick.
         """
 
         SP = ServerParam.i()
@@ -685,13 +684,12 @@ class PlayerAgent(SoccerAgent):
             return self._last_body_command.append(
                 self._effector.set_kick(d_power, ang_actual)
             )
-    
 
-    ## TODO: Refactor this 
+    ## TODO: Refactor this
 
     def update_receiver(self):
         """
-            This method updates the receiver of the pass.
+        This method updates the receiver of the pass.
         """
         receivers = []
         log.sw_log().pass_().add_text("===update receivers".format())
@@ -797,18 +795,18 @@ class PlayerAgent(SoccerAgent):
         ball_move_angle: AngleDeg,
     ):
         """
-            This method issues a kick command to accelerate the ball to the desired velocity.   
-            Args:
-                receiver (Player): The receiver of the pass.
-                receive_point (Vector2D): The point where the ball should be received.
-                min_step (int): The minimum number of steps to reach the receiver.
-                max_step (int): The maximum number of steps to reach the receiver.
-                min_first_ball_speed (float): The minimum speed of the ball.
-                max_first_ball_speed (float): The maximum speed of the ball.
-                min_receive_ball_speed (float): The minimum speed of the ball when received.
-                max_receive_ball_speed (float): The maximum speed of the ball when received.
-                ball_move_dist (float): The distance the ball should move.
-                ball_move_angle (AngleDeg): The angle the ball should move.        
+        This method issues a kick command to accelerate the ball to the desired velocity.
+        Args:
+            receiver (Player): The receiver of the pass.
+            receive_point (Vector2D): The point where the ball should be received.
+            min_step (int): The minimum number of steps to reach the receiver.
+            max_step (int): The maximum number of steps to reach the receiver.
+            min_first_ball_speed (float): The minimum speed of the ball.
+            max_first_ball_speed (float): The maximum speed of the ball.
+            min_receive_ball_speed (float): The minimum speed of the ball when received.
+            max_receive_ball_speed (float): The maximum speed of the ball when received.
+            ball_move_dist (float): The distance the ball should move.
+            ball_move_angle (AngleDeg): The angle the ball should move.
         """
         import pyrusgeom.soccer_math as smath
 
@@ -1012,10 +1010,10 @@ class PlayerAgent(SoccerAgent):
 
     def do_kick_to(self, teammate, speed):
         """
-            This method issues a kick command to pass the ball to a teammate.
-            Args:
-                teammate (Player): The teammate to pass the ball to.
-                speed (float): The speed of the pass.
+        This method issues a kick command to pass the ball to a teammate.
+        Args:
+            teammate (Player): The teammate to pass the ball to.
+            speed (float): The speed of the pass.
         """
         from keepaway.lib.messenger.pass_messenger import PassMessenger
 
@@ -1023,20 +1021,16 @@ class PlayerAgent(SoccerAgent):
         tar_pos = teammate.pos()
         debug_pass = True
 
-
         ptype = teammate.player_type()
         receive_point = ptype.inertiaFinalPoint(teammate.pos(), teammate.vel())
         tar_pos = receive_point
-    
 
         ball_pos = self.world().ball().pos()
         ball_vel = self.world().ball().vel()
         travel_dist = tar_pos - ball_pos
         curr_pos = self.world().self().pos()
 
-        cal_travel_speed = Tools.get_kick_travel(
-            travel_dist.r(), speed
-        )  
+        cal_travel_speed = Tools.get_kick_travel(travel_dist.r(), speed)
         vel_des = tar_pos - self.world().ball().pos()
         vel_des.set_length(cal_travel_speed)
         predict_pos = Tools.predict_pos_after_n_cycles(self.world().self(), 1, 0)
@@ -1198,8 +1192,6 @@ class PlayerAgent(SoccerAgent):
                 )
 
             return self.kick_ball_close_to_body(0, 0.16)
-
-   
 
     def do_tackle(self, power_or_dir: float, foul: bool):
         if self.world().self().is_frozen():

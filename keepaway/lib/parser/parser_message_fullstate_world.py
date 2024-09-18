@@ -35,14 +35,14 @@ class FullStateWorldMessageParser:
         self._say = 0
 
     def parse(self, message: str):
-        self._dic['time'] = message.split(" ")[1]
-        message = message[message.find("(", 1):-1]
+        self._dic["time"] = message.split(" ")[1]
+        message = message[message.find("(", 1) : -1]
 
         # before parsing players
-        msg = message[:message.find("((p")]
+        msg = message[: message.find("((p")]
         MessageParamsParser._parse(self._dic, msg)
 
-        data = list(map(int, self._dic['count'].split(' ')))
+        data = list(map(int, self._dic["count"].split(" ")))
 
         self._kick = data[0]
         self._dash = data[1]
@@ -54,7 +54,7 @@ class FullStateWorldMessageParser:
         self._say = data[7]
 
         # and now parsing players
-        msg = message[message.find("((p"):]
+        msg = message[message.find("((p") :]
         self._dic.update(PlayerMessageParser().parse(msg))
 
     def dic(self):
@@ -99,13 +99,13 @@ class PlayerMessageParser:
 
             if next_seek == -1:
                 next_seek = len(message)
-            msg = message[seek: next_seek].strip(" ()").split(" ")
+            msg = message[seek:next_seek].strip(" ()").split(" ")
             k = 0
             kk = 0
             use_point_to = 0
-            if msg[3] == 'g':
+            if msg[3] == "g":
                 k = 1
-            if msg[15 + k].find('stamina') > 0:
+            if msg[15 + k].find("stamina") > 0:
                 use_point_to = 2
             player_dic = {
                 "side_id": msg[1],
@@ -121,16 +121,16 @@ class PlayerMessageParser:
                     "stamina": msg[14 + k + kk + use_point_to],
                     "effort": msg[15 + k + kk + use_point_to],
                     "recovery": msg[16 + k + kk + use_point_to],
-                    "capacity": msg[17 + k + kk + use_point_to].strip("()")
+                    "capacity": msg[17 + k + kk + use_point_to].strip("()"),
                 },
                 "focus_dist": msg[11 + k + kk + use_point_to],
-                "focus_dir": msg[12 + k + kk + use_point_to].strip("()")
+                "focus_dir": msg[12 + k + kk + use_point_to].strip("()"),
             }
             if use_point_to == 2:
                 player_dic["pointto_dist"] = msg[10 + k].strip("()")
                 player_dic["pointto_dir"] = msg[11 + k].strip("()")
             if k == 1:
-                player_dic['goalie'] = 'g'
+                player_dic["goalie"] = "g"
             players.append(player_dic)
             seek = next_seek
         dic["players"] = players
@@ -140,7 +140,7 @@ class PlayerMessageParser:
         # dlog.debug(f"message {message}")
         n = 0
         for c in message[1:-1]:
-            if c == '(':
+            if c == "(":
                 n += 1
         # dlog.debug(f"n {n}")
         return n
@@ -148,6 +148,7 @@ class PlayerMessageParser:
     def parse(self, message):
         PlayerMessageParser._parser(self._dic, message)
         return self._dic
+
 
 # message = '(fullstate 109 (pmode play_on) (vmode high normal) (count 0 25 82 0 79 0 0 0) (arm (movable 0) (expires 0) (target 0 0) (count 0)) (score 0 0) ((b) 0 0 0 0) ((p r 10 9) 0.00733964 -23.0363 -0.399337 -0.0830174 -164.67 -90 44.2236 1.38729 (stamina 7539.49 0.935966 1 129861)) ((p r 11 10) 3.75961 -2.09864 -0.327071 0.126905 153.836 13 (stamina 7615.44 0.854839 1 129617))) '
 # msg = message[message.find("((p"):]

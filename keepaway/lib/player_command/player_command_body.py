@@ -35,7 +35,9 @@ class PlayerDashCommand(PlayerBodyCommand):
         self._dir = direction
 
     def str(self):
-        return f"(dash {self._power:.2f}" + (f" {self._dir:.2f})" if self._dir != 0 else ")")
+        return f"(dash {self._power:.2f}" + (
+            f" {self._dir:.2f})" if self._dir != 0 else ")"
+        )
 
     def __repr__(self):
         return "(Dash power:{}, dir:{})".format(self._power, self._dir)
@@ -108,9 +110,11 @@ class PlayerTackleCommand(PlayerBodyCommand):  # TODO Foul ...
         return CommandType.TACKLE
 
 
-PlayerBodyCommand.body_commands = [PlayerMoveCommand,
-                                   PlayerDashCommand,
-                                   PlayerTurnCommand,
-                                   PlayerKickCommand,
-                                   PlayerCatchCommand,
-                                   PlayerTackleCommand]
+PlayerBodyCommand.body_commands = [
+    PlayerMoveCommand,
+    PlayerDashCommand,
+    PlayerTurnCommand,
+    PlayerKickCommand,
+    PlayerCatchCommand,
+    PlayerTackleCommand,
+]

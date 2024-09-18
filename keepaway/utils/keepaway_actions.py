@@ -126,7 +126,7 @@ class HoldBall(BodyAction):
         if self.keepFront(agent):
             return True
 
-        if self.avoidOpponent(agent):
+        if self.avoid_opponent(agent):
             return True
 
         log.sw_log().kick().add_text("only stop ball")
@@ -139,7 +139,7 @@ class HoldBall(BodyAction):
           \ return True if action is performed
     """
 
-    def avoidOpponent(self, agent: "PlayerAgent"):
+    def avoid_opponent(self, agent: "PlayerAgent"):
         wm: "WorldModel" = agent.world()
         point = self.searchKeepPoint(wm)
         if not point.is_valid():

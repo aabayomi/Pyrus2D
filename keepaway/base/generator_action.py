@@ -43,7 +43,7 @@ class KickAction:
         )
 
     def evaluate(self, wm: "WorldModel" = None):
-        ## changed 52 to 10 
+        ## changed 52 to 10
         self.min_opp_dist = self.calculate_min_opp_dist(wm)
         self.eval = self.target_ball_pos.x() + max(
             0.0, 40.0 - self.target_ball_pos.dist(Vector2D(10, 0))

@@ -15,63 +15,43 @@ if TYPE_CHECKING:
 
 
 class NeckBodyToPoint(NeckAction):
-    def __init__(self, point: Vector2D, angle_buf: Union[AngleDeg, float] = 5.):
+    def __init__(self, point: Vector2D, angle_buf: Union[AngleDeg, float] = 5.0):
         super().__init__()
         self._point = point.copy()
         self._angle_buf = float(angle_buf)
 
-    def execute(self, agent: 'PlayerAgent'):
-        log.debug_client().add_message('BodyToPoint/')
+    def execute(self, agent: "PlayerAgent"):
+        log.debug_client().add_message("BodyToPoint/")
         SP = ServerParam.i()
         wm = agent.world()
 
-        angle_buf = bound(0., self._angle_buf, 180.)
+        angle_buf = bound(0.0, self._angle_buf, 180.0)
 
         my_next = wm.self().pos() + wm.self().vel()
         target_rel_angle = (self._point - my_next).th() - wm.self().body()
 
-        if SP.min_neck_angle() + angle_buf < target_rel_angle.degree() < SP.max_neck_angle() - angle_buf:
-            agent.do_turn(0.)
+        if (
+            SP.min_neck_angle() + angle_buf
+            < target_rel_angle.degree()
+            < SP.max_neck_angle() - angle_buf
+        ):
+            agent.do_turn(0.0)
             agent.set_neck_action(NeckTurnToRelative(target_rel_angle))
             return True
 
-        max_turn = wm.self().player_type().effective_turn(SP.max_moment(),wm.self().vel().r())
+        max_turn = (
+            wm.self().player_type().effective_turn(SP.max_moment(), wm.self().vel().r())
+        )
         if target_rel_angle.abs() < max_turn:
             agent.do_turn(target_rel_angle)
-            agent.set_neck_action(NeckTurnToRelative(0.))
+            agent.set_neck_action(NeckTurnToRelative(0.0))
             return True
 
         agent.do_turn(target_rel_angle)
-        if target_rel_angle.degree() > 0.:
+        if target_rel_angle.degree() > 0.0:
             target_rel_angle -= max_turn
         else:
             target_rel_angle += max_turn
 
         agent.set_neck_action(NeckTurnToRelative(target_rel_angle))
         return True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

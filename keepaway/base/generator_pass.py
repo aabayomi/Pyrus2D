@@ -649,8 +649,6 @@ class BhvPassGen(BhvKickGen):
                     )
                     self.debug_list.append((self.index, receive_point, False))
                 continue
-            
-
 
             kick_count = Tools.predict_kick_count(
                 wm, wm.self().unum(), first_ball_speed, ball_move_angle
@@ -709,7 +707,6 @@ class BhvPassGen(BhvKickGen):
             candidate.target_unum = receiver.unum()
             candidate.start_ball_speed = first_ball_speed
             candidate.evaluate(wm)
-
 
             self.candidates.append(candidate)
 

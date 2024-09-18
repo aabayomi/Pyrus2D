@@ -17,7 +17,7 @@ class MessengerConverter:
         s = 0
         for i, (min_v, max_v, size) in enumerate(self._min_max_sizes):
             v = values[i]
-            log.os_log().debug(f'v={v}')
+            log.os_log().debug(f"v={v}")
             v = bound(min_v, v, max_v)
             v -= min_v
             v /= max_v - min_v
@@ -32,20 +32,20 @@ class MessengerConverter:
             # print(s)
             words.append(s % n_chars)
             s = s // n_chars
-            log.os_log().debug(f's={s}')
+            log.os_log().debug(f"s={s}")
         # print(s)
         # words.append(s)
-        msg = ''
+        msg = ""
         for word in words:
             msg += chars[word]
 
-        while len(msg) < self._size-1:
+        while len(msg) < self._size - 1:
             msg += chars[0]
 
         return msg
 
     def convert_to_values(self, msg):
-        if msg == '':
+        if msg == "":
             return None
 
         msg = msg[::-1]
@@ -57,7 +57,7 @@ class MessengerConverter:
 
         for c in msg:
             i = chars.find(c)
-            val += i * int(n_chars ** digit)
+            val += i * int(n_chars**digit)
             digit -= 1
 
         values = []
@@ -80,7 +80,7 @@ def convert_to_bits(values_min_max_sizes: list[tuple[float, float, float, int]])
 
         s += int(v)
 
-        print(f'{int(v)}, {s}', end=', ')
+        print(f"{int(v)}, {s}", end=", ")
         if i != len(values_min_max_sizes) - 1:
             s *= values_min_max_sizes[i + 1][-1]
         print(s)
@@ -88,6 +88,7 @@ def convert_to_bits(values_min_max_sizes: list[tuple[float, float, float, int]])
 
 
 #  bYl)0L
+
 
 def convert_to_words(val: int, size: int) -> str:
     n_chars = len(chars)
@@ -97,7 +98,7 @@ def convert_to_words(val: int, size: int) -> str:
         val = val // n_chars
 
     words.append(val)
-    msg = ''
+    msg = ""
     for word in words:
         msg += chars[word]
 
@@ -105,7 +106,7 @@ def convert_to_words(val: int, size: int) -> str:
 
 
 def convert_to_int(msg: str) -> Union[int, None]:
-    if msg == '':
+    if msg == "":
         return None
 
     msg = msg[::-1]
@@ -117,7 +118,7 @@ def convert_to_int(msg: str) -> Union[int, None]:
 
     for c in msg:
         i = chars.find(c)
-        val += i * int(n_chars ** digit)
+        val += i * int(n_chars**digit)
         digit -= 1
 
     return val

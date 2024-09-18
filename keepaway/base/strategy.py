@@ -20,8 +20,14 @@ class _Strategy:
     def update(self, wm):
         ball_pos = wm.ball().pos()
         for p in range(len(self._poses)):
-            x = ball_pos.x() / 52.5 * self._base_poses[p - 1][1] + self._base_poses[p - 1][0].x()
-            y = ball_pos.y() / 52.5 * self._base_poses[p - 1][1] + self._base_poses[p - 1][0].y()
+            x = (
+                ball_pos.x() / 52.5 * self._base_poses[p - 1][1]
+                + self._base_poses[p - 1][0].x()
+            )
+            y = (
+                ball_pos.y() / 52.5 * self._base_poses[p - 1][1]
+                + self._base_poses[p - 1][0].y()
+            )
             self._poses[p - 1] = Vector2D(x, y)
 
     def get_pos(self, unum):

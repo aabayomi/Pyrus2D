@@ -6,15 +6,15 @@ import sys
 from compile import Src
 
 
-def make_file_list(dir='.', c_mode=False):
+def make_file_list(dir=".", c_mode=False):
     lst = []
     for file_dir in listdir(dir):
-        if file_dir[0] == '.' or file_dir == 'compile.py':
+        if file_dir[0] == "." or file_dir == "compile.py":
             continue
 
-        new_dir = dir + '/' + file_dir
-        file_splt = file_dir.split('.')
-        src = Src(dir, '.'.join(file_splt[:-1]), file_splt[-1])
+        new_dir = dir + "/" + file_dir
+        file_splt = file_dir.split(".")
+        src = Src(dir, ".".join(file_splt[:-1]), file_splt[-1])
         if isdir(new_dir):
             lst += make_file_list(new_dir, c_mode)
         else:
@@ -55,9 +55,9 @@ def clean_c_files():
         print("All c files deleted :)")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = sys.argv
-    if len(args) > 1 and args[1] == 'c-files':
+    if len(args) > 1 and args[1] == "c-files":
         clean_c_files()
     else:
         clean_everything()

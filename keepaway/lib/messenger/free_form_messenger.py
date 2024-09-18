@@ -3,15 +3,19 @@ from keepaway.lib.messenger.messenger_memory import MessengerMemory
 from keepaway.lib.rcsc.game_time import GameTime
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from keepaway.lib.coach.gloabl_world_model import GlobalWorldModel
+
 
 class FreeFormMessenger(Messenger):
     def __init__(self) -> None:
         super().__init__()
-    
-    def encode(self, wm: 'GlobalWorldModel') -> str:
+
+    def encode(self, wm: "GlobalWorldModel") -> str:
         return super().encode(wm)
-    
-    def decode(self, messenger_memory: MessengerMemory, sender: int, current_time: GameTime) -> None:
+
+    def decode(
+        self, messenger_memory: MessengerMemory, sender: int, current_time: GameTime
+    ) -> None:
         return super().decode(messenger_memory, sender, current_time)

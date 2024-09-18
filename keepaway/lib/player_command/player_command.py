@@ -45,8 +45,6 @@ class CommandType(Enum):
 
     ILLEGAL = auto()
 
-    
-
 
 class PlayerCommand:
     def type(self):
@@ -90,6 +88,7 @@ class PlayerInitCommand(PlayerCommand):
 #     def str(self):
 #         return f"(init (version {self._version}))"
 
+
 class PlayerReconnectCommand(PlayerCommand):
     def __init__(self, team_name: str, unum: int):
         self._team_name = team_name
@@ -100,7 +99,6 @@ class PlayerReconnectCommand(PlayerCommand):
 
     def type(self):
         return CommandType.RECONNECT
-    
 
 
 class PlayerByeCommand:

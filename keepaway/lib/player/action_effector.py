@@ -6,7 +6,9 @@ from pyrusgeom.angle_deg import AngleDeg
 from pyrusgeom.soccer_math import min_max
 from pyrusgeom.vector_2d import Vector2D
 from keepaway.lib.messenger.messenger import Messenger
-from keepaway.lib.parser.parser_message_fullstate_world import FullStateWorldMessageParser
+from keepaway.lib.parser.parser_message_fullstate_world import (
+    FullStateWorldMessageParser,
+)
 from keepaway.lib.player.sensor.body_sensor import SenseBodyParser
 from keepaway.lib.player_command.player_command import CommandType
 from keepaway.lib.player_command.player_command_body import (
@@ -86,9 +88,6 @@ class ActionEffector:
 
         self._pointto_pos: Vector2D = Vector2D(0, 0)
 
-        
-
-    
     def change_view_command(self):
         return self._change_view_command
 
@@ -213,9 +212,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command TURN_NECK at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.TURN_NECK.value
-            ] = full_sensor.turn_neck_count()
+            self._command_counter[CommandType.TURN_NECK.value] = (
+                full_sensor.turn_neck_count()
+            )
             self._done_turn_neck = False
             self._turn_neck_moment = 0
 
@@ -241,9 +240,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command CHANGE_VIEW at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.CHANGE_VIEW.value
-            ] = full_sensor.change_view_count()
+            self._command_counter[CommandType.CHANGE_VIEW.value] = (
+                full_sensor.change_view_count()
+            )
 
         if full_sensor.say_count() != self._command_counter[CommandType.SAY.value]:
             log.os_log().error(
@@ -386,9 +385,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command TURN_NECK at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.TURN_NECK.value
-            ] = body_sensor.turn_neck_count()
+            self._command_counter[CommandType.TURN_NECK.value] = (
+                body_sensor.turn_neck_count()
+            )
             self._done_turn_neck = False
             self._turn_neck_moment = 0
 
@@ -405,9 +404,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command CHANGE_FOCUS at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.CHANGE_FOCUS.value
-            ] = body_sensor.change_focus_count()
+            self._command_counter[CommandType.CHANGE_FOCUS.value] = (
+                body_sensor.change_focus_count()
+            )
             self._done_change_focus = False
             self._change_focus_moment_dist = 0
             self._change_focus_moment_dir = AngleDeg(0)
@@ -425,9 +424,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command CHANGE_VIEW at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.CHANGE_VIEW.value
-            ] = body_sensor.change_view_count()
+            self._command_counter[CommandType.CHANGE_VIEW.value] = (
+                body_sensor.change_view_count()
+            )
 
         if body_sensor.say_count() != self._command_counter[CommandType.SAY.value]:
             log.os_log().error(
@@ -454,9 +453,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command POINTTO at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.POINTTO.value
-            ] = body_sensor.pointto_count()
+            self._command_counter[CommandType.POINTTO.value] = (
+                body_sensor.pointto_count()
+            )
 
         if (
             body_sensor.attentionto_count()
@@ -471,9 +470,9 @@ class ActionEffector:
             log.debug_client().add_message(
                 f"player({wm.self().unum()}) lost command ATTENTIONTO at cycle {wm.time()}"
             )
-            self._command_counter[
-                CommandType.ATTENTIONTO.value
-            ] = body_sensor.attentionto_count()
+            self._command_counter[CommandType.ATTENTIONTO.value] = (
+                body_sensor.attentionto_count()
+            )
 
     @staticmethod
     def conserve_dash_power(wm: "WorldModel", power, rel_dir):
@@ -513,7 +512,6 @@ class ActionEffector:
 
     def set_kick(self, power: float, rel_dir: Union[AngleDeg, float]):
 
-    
         wm = self._agent.world()
 
         rel_dir = float(rel_dir)

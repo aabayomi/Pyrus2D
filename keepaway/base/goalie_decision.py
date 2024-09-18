@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING
 
 from pyrusgeom.line_2d import Line2D
@@ -29,23 +28,28 @@ if TYPE_CHECKING:
 
 DEBUG = True
 
-def decision(agent: 'PlayerAgent'):
+
+def decision(agent: "PlayerAgent"):
     SP = ServerParam.i()
     wm = agent.world()
 
-    our_penalty = Rect2D(Vector2D(-SP.pitch_half_length(), -SP.penalty_area_half_width() + 1),
-                         Size2D(SP.penalty_area_length() - 1, SP.penalty_area_width() - 2))
+    our_penalty = Rect2D(
+        Vector2D(-SP.pitch_half_length(), -SP.penalty_area_half_width() + 1),
+        Size2D(SP.penalty_area_length() - 1, SP.penalty_area_width() - 2),
+    )
 
-    log.os_log().debug(f'########## gdc={wm.time().cycle()}')
-    log.os_log().debug(f'########## gd gmt={wm.game_mode().type()}')
+    log.os_log().debug(f"########## gdc={wm.time().cycle()}")
+    log.os_log().debug(f"########## gd gmt={wm.game_mode().type()}")
     if wm.game_mode().type() != GameModeType.PlayOn:
         if Bhv_GoalieSetPlay().execute(agent):
             return True
         return False
 
-    if (wm.time().cycle() > wm.self().catch_time().cycle() + SP.catch_ban_cycle()
+    if (
+        wm.time().cycle() > wm.self().catch_time().cycle() + SP.catch_ban_cycle()
         and wm.ball().dist_from_self() < SP.catchable_area() - 0.05
-        and our_penalty.contains(wm.ball().pos())):
+        and our_penalty.contains(wm.ball().pos())
+    ):
 
         agent.do_catch()
         agent.set_neck_action(NeckTurnToBall())
@@ -56,7 +60,8 @@ def decision(agent: 'PlayerAgent'):
 
     return True
 
-def do_kick(agent: 'PlayerAgent'):
+
+def do_kick(agent: "PlayerAgent"):
     wm = agent.world()
 
     action_candidates = BhvPassGen().generator(wm)
@@ -68,18 +73,25 @@ def do_kick(agent: 'PlayerAgent'):
     best_action: KickAction = max(action_candidates)
     target = best_action.target_ball_pos
     log.debug_client().set_target(target)
-    log.debug_client().add_message(best_action.type.value + 'to ' + best_action.target_ball_pos.__str__() + ' ' + str(
-        best_action.start_ball_speed))
-    SmartKick(target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3).execute(agent)
+    log.debug_client().add_message(
+        best_action.type.value
+        + "to "
+        + best_action.target_ball_pos.__str__()
+        + " "
+        + str(best_action.start_ball_speed)
+    )
+    SmartKick(
+        target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3
+    ).execute(agent)
     agent.set_neck_action(NeckScanPlayers())
     return True
 
 
-def do_move(agent: 'PlayerAgent'):
+def do_move(agent: "PlayerAgent"):
     SP = ServerParam.i()
     wm = agent.world()
 
-    if BasicTackle(0.8, 90.).execute(agent):
+    if BasicTackle(0.8, 90.0).execute(agent):
         return True
 
     self_min = wm.intercept_table().self_reach_cycle()
@@ -93,31 +105,37 @@ def do_move(agent: 'PlayerAgent'):
 
     ball_pos = wm.ball().inertia_point(min(tm_min, opp_min))
 
-    post1 = Vector2D(-SP.pitch_half_length(), + SP.goal_half_width())
-    post2 = Vector2D(-SP.pitch_half_length(), - SP.goal_half_width())
+    post1 = Vector2D(-SP.pitch_half_length(), +SP.goal_half_width())
+    post2 = Vector2D(-SP.pitch_half_length(), -SP.goal_half_width())
 
     ball_to_post1 = (post1 - ball_pos).th()
     ball_to_post2 = (post2 - ball_pos).th()
-    ball_dir = (ball_to_post1 + ball_to_post2).degree()/ 2
+    ball_dir = (ball_to_post1 + ball_to_post2).degree() / 2
 
     ball_move_line = Line2D(ball_pos, ball_dir)
 
     margin = min(-SP.pitch_half_length() + 3, ball_pos.x() - 0.1)
-    goalie_move_line = Line2D(Vector2D(margin, -SP.pitch_half_width()),
-                              Vector2D(margin, +SP.pitch_half_width()))
+    goalie_move_line = Line2D(
+        Vector2D(margin, -SP.pitch_half_width()),
+        Vector2D(margin, +SP.pitch_half_width()),
+    )
 
     target = goalie_move_line.intersection(ball_move_line)
     target.set_y(bound(-SP.goal_half_width(), target.y(), SP.goal_half_width()))
 
     if DEBUG:
         log.sw_log().positioning().add_line(
-                      start=Vector2D(ball_pos.x(), ball_move_line.get_y(ball_pos.x())),
-                      end=Vector2D(-SP.pitch_half_length(), ball_move_line.get_y(-SP.pitch_half_length())),
-                      color=Color(string='red'))
+            start=Vector2D(ball_pos.x(), ball_move_line.get_y(ball_pos.x())),
+            end=Vector2D(
+                -SP.pitch_half_length(), ball_move_line.get_y(-SP.pitch_half_length())
+            ),
+            color=Color(string="red"),
+        )
         log.sw_log().positioning().add_line(
-                      start=Vector2D(goalie_move_line.get_x(-30), -30),
-                      end=Vector2D(goalie_move_line.get_x(+30), +30),
-                      color=Color(string='red'))
+            start=Vector2D(goalie_move_line.get_x(-30), -30),
+            end=Vector2D(goalie_move_line.get_x(+30), +30),
+            color=Color(string="red"),
+        )
 
     if target:
         GoToPoint(target, 0.2, 100).execute(agent)
@@ -125,13 +143,3 @@ def do_move(agent: 'PlayerAgent'):
         return True
 
     return False
-
-
-
-
-
-
-
-
-
-

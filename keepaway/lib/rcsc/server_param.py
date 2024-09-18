@@ -2,6 +2,7 @@ from keepaway.lib.parser.parser_message_params import MessageParamsParser
 import math
 from pyrusgeom.soccer_math import *
 from keepaway.lib.rcsc.types import SideID
+
 # import pyrusgeom.soccer_math as smath
 
 DEFAULT_MAX_PLAYER = 11
@@ -356,7 +357,9 @@ class _ServerParam:  # TODO specific TYPES and change them
         self._wind_angle = DEFAULT_WIND_ANGLE
         self._wind_rand = DEFAULT_WIND_RAND
 
-        self._kickable_area = DEFAULT_PLAYER_SIZE + DEFAULT_KICKABLE_MARGIN + DEFAULT_BALL_SIZE
+        self._kickable_area = (
+            DEFAULT_PLAYER_SIZE + DEFAULT_KICKABLE_MARGIN + DEFAULT_BALL_SIZE
+        )
 
         self._catch_area_l = DEFAULT_CATCH_AREA_L
         self._catch_area_w = DEFAULT_CATCH_AREA_W
@@ -560,9 +563,9 @@ class _ServerParam:  # TODO specific TYPES and change them
 
         self._catchable_area: float = 0
         self._real_speed_max: float = 0
-        
-        self._max_catch_angle:float = 0
-        self._min_catch_angle:float = 0
+
+        self._max_catch_angle: float = 0
+        self._min_catch_angle: float = 0
 
     def set_data(self, dic):
         self._audio_cut_dist = float(dic["audio_cut_dist"])
@@ -669,8 +672,12 @@ class _ServerParam:  # TODO specific TYPES and change them
         self._sense_body_step = int(dic["sense_body_step"])
         self._simulator_step = int(dic["simulator_step"])
         self._slow_down_factor = int(dic["slow_down_factor"])
-        self._slowness_on_top_for_left_team = float(dic["slowness_on_top_for_left_team"])
-        self._slowness_on_top_for_right_team = float(dic["slowness_on_top_for_right_team"])
+        self._slowness_on_top_for_left_team = float(
+            dic["slowness_on_top_for_left_team"]
+        )
+        self._slowness_on_top_for_right_team = float(
+            dic["slowness_on_top_for_right_team"]
+        )
         self._stamina_inc_max = float(dic["stamina_inc_max"])
         self._stamina_max = float(dic["stamina_max"])
         self._start_goal_l = int(dic["start_goal_l"])
@@ -702,23 +709,33 @@ class _ServerParam:  # TODO specific TYPES and change them
         self._wind_none = bool(int(dic["wind_none"]))
         self._wind_rand = float(dic["wind_rand"])
         self._use_wind_random = bool(int(dic["wind_random"]))
-        self._dash_angle_step = float(dic['dash_angle_step'])
+        self._dash_angle_step = float(dic["dash_angle_step"])
         # self._max_catch_angle = dic["max_catch_angle"] TODO FIX THESE
         # self._min_catch_angle = dic["min_catch_angle"]
 
     def parse(self, message):
         dic = MessageParamsParser().parse(message)
-        self.set_data(dic['server_param'])
+        self.set_data(dic["server_param"])
         self.set_additional_param()
-    
+
     def set_additional_param(self):
-        self._kickable_area = self._kickable_margin + self._ball_size + self._player_size
-        self._catchable_area = ((self.catch_area_w()*0.5)**2 + (self.catch_area_l()**2))**0.5
+        self._kickable_area = (
+            self._kickable_margin + self._ball_size + self._player_size
+        )
+        self._catchable_area = (
+            (self.catch_area_w() * 0.5) ** 2 + (self.catch_area_l() ** 2)
+        ) ** 0.5
         self._control_radius_width = self._control_radius - self._player_size
-        
-        accel_max = self.max_dash_power() * self.default_dash_power_rate() * self.default_effort_max()
+
+        accel_max = (
+            self.max_dash_power()
+            * self.default_dash_power_rate()
+            * self.default_effort_max()
+        )
         self._real_speed_max = accel_max / (1 - self.default_player_decay())
-        self._real_speed_max = min(self._real_speed_max, self.default_player_speed_max())
+        self._real_speed_max = min(
+            self._real_speed_max, self.default_player_speed_max()
+        )
 
     def goal_width(self):
         return self._goal_width
@@ -740,7 +757,7 @@ class _ServerParam:  # TODO specific TYPES and change them
 
     def default_player_speed_max(self):
         return self._player_speed_max
-    
+
     def default_player_real_speed_max(self):
         return self._real_speed_max
 
@@ -1331,17 +1348,19 @@ class _ServerParam:  # TODO specific TYPES and change them
 
     def golden_goal(self):
         return self._golden_goal
-    
+
     def max_catch_angle(self):
         return self._max_catch_angle
-        
+
     def min_catch_angle(self):
         return self._min_catch_angle
-        
 
     def discretize_dash_angle(self, direction):
-        return direction if self._dash_angle_step < 1e-10 else \
-            self.dash_angle_step() * round(direction / self._dash_angle_step)  # TODO which one ?
+        return (
+            direction
+            if self._dash_angle_step < 1e-10
+            else self.dash_angle_step() * round(direction / self._dash_angle_step)
+        )  # TODO which one ?
         # if self.dash_angle_step() < 1.0e-10:
         #     return dir
         # return self.dash_angle_step() * smath.rint(dir / self.dash_angle_step())
@@ -1371,9 +1390,13 @@ class _ServerParam:  # TODO specific TYPES and change them
         d = self.discretize_dash_angle(self.normalize_dash_angle(direction))
         if math.fabs(d) > 90.0:
             r = self.back_dash_rate() - (
-                    (self.back_dash_rate() - self.side_dash_rate()) * (1.0 - (math.fabs(d) - 90.0) / 90.0))
+                (self.back_dash_rate() - self.side_dash_rate())
+                * (1.0 - (math.fabs(d) - 90.0) / 90.0)
+            )
         else:
-            r = self.side_dash_rate() + ((1.0 - self.side_dash_rate()) * (1.0 - math.fabs(d) / 90.0))
+            r = self.side_dash_rate() + (
+                (1.0 - self.side_dash_rate()) * (1.0 - math.fabs(d) / 90.0)
+            )
         return min(max(1.0e-5, r), 1.0)
 
     # default params
@@ -1431,25 +1454,35 @@ class _ServerParam:  # TODO specific TYPES and change them
         return self._player_speed_max
 
     def ball_move_step(self, first_ball_speed, ball_move_dist):
-        return int(math.ceil(calc_length_geom_series(first_ball_speed, ball_move_dist, self.ball_decay())) + 1.0e-10)
-    
+        return int(
+            math.ceil(
+                calc_length_geom_series(
+                    first_ball_speed, ball_move_dist, self.ball_decay()
+                )
+            )
+            + 1.0e-10
+        )
+
     def first_ball_speed(self, ball_move_dist: float, total_step: int):
-        return calc_first_term_geom_series(ball_move_dist, self.ball_decay(), total_step)
-    
+        return calc_first_term_geom_series(
+            ball_move_dist, self.ball_decay(), total_step
+        )
+
     def actual_half_time(self):
 
         return self._half_time * 10
-    
+
     def is_fullstate(self, side: SideID):
         if side == SideID.LEFT:
             return self.fullstate_l()
         return self.fullstate_r()
 
     def their_team_goal_pos(self):
-        return Vector2D( self.pitch_half_length(), 0.)
+        return Vector2D(self.pitch_half_length(), 0.0)
 
     def our_team_goal_pos(self):
-        return Vector2D(-self.pitch_half_length(), 0.)
+        return Vector2D(-self.pitch_half_length(), 0.0)
+
 
 # TODO we can use function, instance instance class
 # like:

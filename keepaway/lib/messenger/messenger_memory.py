@@ -7,12 +7,14 @@ from keepaway.lib.rcsc.game_time import GameTime
 
 class MessengerMemory:
     class Player:
-        def __init__(self,
-                     sender:int=0,
-                     unum:int=0,
-                     pos:Vector2D=Vector2D(),
-                     body:float=-360,
-                     stamina:float=-1) -> None:
+        def __init__(
+            self,
+            sender: int = 0,
+            unum: int = 0,
+            pos: Vector2D = Vector2D(),
+            body: float = -360,
+            stamina: float = -1,
+        ) -> None:
             self.sender_: int = sender
             self.pos_: Vector2D = pos.copy()
             self.unum_: int = unum
@@ -20,13 +22,15 @@ class MessengerMemory:
             self.stamina_: float = stamina
 
     class Ball:
-        def __init__(self, sender=0, pos: Vector2D = Vector2D(), vel: Vector2D = None) -> None:
+        def __init__(
+            self, sender=0, pos: Vector2D = Vector2D(), vel: Vector2D = None
+        ) -> None:
             self.sender_: int = sender
             self.pos_: Vector2D = pos.copy()
             self.vel_: Vector2D = vel.copy()
 
     class Goalie:
-        def __init__(self, sender = 0, pos: Vector2D = Vector2D(), body: AngleDeg = None):
+        def __init__(self, sender=0, pos: Vector2D = Vector2D(), body: AngleDeg = None):
             self.sender_ = sender
             self.pos_ = pos.copy()
             self.body_ = body.copy()
@@ -41,7 +45,6 @@ class MessengerMemory:
         def __init__(self, sender: int, rate: float):
             self.rate_ = rate
             self.sender_ = sender
-
 
     class Recovery:
         def __init__(self, sender: int, rate: float):
@@ -71,7 +74,9 @@ class MessengerMemory:
         self._recovery: list[MessengerMemory.Recovery] = []
         self._recovery_time: GameTime = GameTime()
 
-    def add_ball(self, sender: int, pos: Vector2D, vel: Vector2D, current_time: GameTime):
+    def add_ball(
+        self, sender: int, pos: Vector2D, vel: Vector2D, current_time: GameTime
+    ):
         if self._ball_time != current_time:
             self._balls.clear()
 
@@ -79,13 +84,15 @@ class MessengerMemory:
         self._ball_time = current_time.copy()
         self._time = current_time.copy()
 
-    def add_player(self,
-                   sender: int,
-                   unum: int,
-                   pos: Vector2D,
-                   current_time: GameTime,
-                   body: float = -360.,
-                   stamina: float = -1.):
+    def add_player(
+        self,
+        sender: int,
+        unum: int,
+        pos: Vector2D,
+        current_time: GameTime,
+        body: float = -360.0,
+        stamina: float = -1.0,
+    ):
         if self._player_time != current_time:
             self._players.clear()
 
@@ -107,7 +114,13 @@ class MessengerMemory:
 
         self._time = current.copy()
 
-    def add_opponent_goalie(self, sender:int, pos: Vector2D, current_time: GameTime, body: Union[AngleDeg, float]):
+    def add_opponent_goalie(
+        self,
+        sender: int,
+        pos: Vector2D,
+        current_time: GameTime,
+        body: Union[AngleDeg, float],
+    ):
         if self._goalie_time != current_time:
             self._goalie.clear()
 
@@ -175,6 +188,3 @@ class MessengerMemory:
 
     def stamina_time(self):
         return self._stamina_time
-
-
-

@@ -1,0 +1,53 @@
+# server configuration file - server-config.yml
+# This file is used to configure the server.
+## server parameters for keepaway passed 
+
+coach: 0
+coach_port: 6001
+coach_w_referee: 1
+file_per_player: false
+game_start: 8
+keeper_count: 3
+keeper_input: null
+keeper_learn: 0
+keeper_output: null
+keeper_policy: rand
+hfo_min_ball_pos_x: 0.0
+hfo_max_ball_pos_x: 0.2
+hfo_min_ball_pos_y: -0.8
+hfo_max_ball_pos_y: 0.8
+hfo_max_trial_time: 1000.0
+hfo_max_trials: 1.0
+hfo_max_frames: -1.0
+hfo_offense_on_ball: 0
+hfo_max_untouched_time: 100.0
+hfo_logging: "./../logs"
+hfo_log_dir: "./../logs"
+log_hfo: true
+hfo: true
+label: ""
+log_dir: "./../logs"
+game_log_dir: "./../logs"
+log_game: true
+log_text: true
+monitor: false
+log_keepaway: true
+online_coach_port: 6002
+port: 6000
+restricted_vision: false
+synch_mode: false
+taker_count: 2
+taker_input: null
+taker_learn: false
+taker_output: null
+taker_policy: hand
+log_level: 1
+fullstate: false
+hierarchical_fsm: false
+crossEntropy: false
+qlearning: false
+gamma: 1.0
+lambd: 0.0
+alpha: 0.125
+memory_check: false
+initial_weight: 0.0

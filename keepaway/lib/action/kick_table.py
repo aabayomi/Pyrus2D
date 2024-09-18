@@ -2,9 +2,11 @@
   \ file kick_table.py
   \ brief kick table class File to generate smart kick.
 """
+
 import functools
 
 from keepaway.lib.debug.debug import log
+
 # from typing import List
 # from enum import Enum
 
@@ -22,9 +24,10 @@ from keepaway.lib.rcsc.game_time import *
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from keepaway.lib.player.world_model import WorldModel
-    
+
 
 """
       \ brief compare operation function
@@ -61,16 +64,16 @@ RELEASE_INTERFERE: hex = 0x0020
 MAYBE_RELEASE_INTERFERE: hex = 0x0040
 OUT_OF_PITCH: hex = 0x0080
 KICK_MISS_POSSIBILITY: hex = 0x0100
-NOT_SAFETY: hex = 0xffff
-NOT_NEXT_TACKLEABLE: hex = 0xfffe
-NOT_NEXT_KICKABLE: hex = 0xfffd
-NOT_TACKLEABLE: hex = 0xfffb
-NOT_KICKABLE: hex = 0xfff7
-NOT_SELF_COLLISION: hex = 0xffef
-NOT_RELEASE_INTERFERE: hex = 0xffdf
-NOT_MAYBE_RELEASE_INTERFERE: hex = 0xffbf
-NOT_OUT_OF_PITCH: hex = 0xff7f
-NOT_KICK_MISS_POSSIBILITY: hex = 0xfeff
+NOT_SAFETY: hex = 0xFFFF
+NOT_NEXT_TACKLEABLE: hex = 0xFFFE
+NOT_NEXT_KICKABLE: hex = 0xFFFD
+NOT_TACKLEABLE: hex = 0xFFFB
+NOT_KICKABLE: hex = 0xFFF7
+NOT_SELF_COLLISION: hex = 0xFFEF
+NOT_RELEASE_INTERFERE: hex = 0xFFDF
+NOT_MAYBE_RELEASE_INTERFERE: hex = 0xFFBF
+NOT_OUT_OF_PITCH: hex = 0xFF7F
+NOT_KICK_MISS_POSSIBILITY: hex = 0xFEFF
 
 NEAR_SIDE_RATE = 0.3  # < kickable margin rate for the near side sub-target
 MID_RATE = 0.5  # < kickable margin rate for the middle distance sub-target
@@ -102,14 +105,14 @@ class State:
     # < status bit flag
 
     """
-      \ brief construct an illegal state object
-        OR
-      \ brief construct a legal state object. flag is set to SAFETY.
-      \ param index index number of self state
-      \ param dist distance from self
-      \ param pos global position
-      \ param kick_rate kick rate at self state
-     """
+    \ brief construct an illegal state object
+      OR
+    \ brief construct a legal state object. flag is set to SAFETY.
+    \ param index index number of self state
+    \ param dist distance from self
+    \ param pos global position
+    \ param kick_rate kick rate at self state
+    """
 
     def __init__(self, *args):
         if len(args) == 0:
@@ -139,10 +142,10 @@ class Path:
     # < kick power to generate max_speed_
 
     """
-      \ brief construct a kick path object
-      \ param origin index of origin state
-      \ param destination index of destination state
-     """
+    \ brief construct a kick path object
+    \ param origin index of origin state
+    \ param destination index of destination state
+    """
 
     def __init__(self, origin=0, destination=0):
         self.origin_ = origin
@@ -174,11 +177,11 @@ class Sequence:
     # < evaluated score of self sequence
 
     """
-      \ brief construct an illegal sequence object
-        OR
-      \ brief copy constructor
-      \ param arg another instance
-     """
+    \ brief construct an illegal sequence object
+      OR
+    \ brief copy constructor
+    \ param arg another instance
+    """
 
     def __init__(self, *args):
         if len(args) == 0:
@@ -196,7 +199,13 @@ class Sequence:
 
     def __repr__(self):
         return "[{} Step, next_pos = {}, speed = {}, pos_list = {}, flag = {}, score [{}]]".format(
-            len(self.pos_list_), self.pos_list_[0], self.speed_, self.pos_list_, self.flag_, self.score_)
+            len(self.pos_list_),
+            self.pos_list_[0],
+            self.speed_,
+            self.pos_list_,
+            self.flag_,
+            self.score_,
+        )
 
 
 """
@@ -210,11 +219,15 @@ def calc_near_dist(player_type: PlayerType):
     #       0.3 + 0.6*0.3 + 0.085 = 0.565
     # near: 0.3 + 0.7*0.3 + 0.085 = 0.595
     #       0.3 + 0.8*0.3 + 0.085 = 0.625
-    return bound(player_type.player_size() + ServerParam.i().ball_size() + 0.1,
-                 (player_type.player_size()
-                  + (player_type.kickable_margin() * NEAR_SIDE_RATE)
-                  + ServerParam.i().ball_size()),
-                 player_type.kickable_area() - 0.2)
+    return bound(
+        player_type.player_size() + ServerParam.i().ball_size() + 0.1,
+        (
+            player_type.player_size()
+            + (player_type.kickable_margin() * NEAR_SIDE_RATE)
+            + ServerParam.i().ball_size()
+        ),
+        player_type.kickable_area() - 0.2,
+    )
 
 
 """
@@ -228,11 +241,15 @@ def calc_mid_dist(player_type: PlayerType):
     #      0.3 + 0.6*0.5 + 0.085 = 0.705
     # mid: 0.3 + 0.7*0.5 + 0.085 = 0.735
     #      0.3 + 0.8*0.5 + 0.085 = 0.765
-    return bound(player_type.player_size() + ServerParam.i().ball_size() + 0.1,
-                 (player_type.player_size()
-                  + (player_type.kickable_margin() * MID_RATE)
-                  + ServerParam.i().ball_size()),
-                 player_type.kickable_area() - 0.2)
+    return bound(
+        player_type.player_size() + ServerParam.i().ball_size() + 0.1,
+        (
+            player_type.player_size()
+            + (player_type.kickable_margin() * MID_RATE)
+            + ServerParam.i().ball_size()
+        ),
+        player_type.kickable_area() - 0.2,
+    )
 
 
 """
@@ -255,11 +272,15 @@ def calc_far_dist(player_type: PlayerType):
     # far: 0.3 + 0.7*0.675 + 0.085 = 0.8575 (=1.085-0.2275)
     #      0.3 + 0.8*0.675 + 0.085 = 0.925  (=1.185-0.26)
 
-    return bound(player_type.player_size() + ServerParam.i().ball_size() + 0.1,
-                 (player_type.player_size()
-                  + (player_type.kickable_margin() * FAR_SIDE_RATE)
-                  + ServerParam.i().ball_size()),
-                 player_type.kickable_area() - 0.2)
+    return bound(
+        player_type.player_size() + ServerParam.i().ball_size() + 0.1,
+        (
+            player_type.player_size()
+            + (player_type.kickable_margin() * FAR_SIDE_RATE)
+            + ServerParam.i().ball_size()
+        ),
+        player_type.kickable_area() - 0.2,
+    )
     # player_type.kickable_area() - 0.22 )
 
 
@@ -272,12 +293,11 @@ def calc_far_dist(player_type: PlayerType):
  """
 
 
-def calc_max_velocity(target_angle: AngleDeg,
-                      krate,
-                      ball_vel: Vector2D):
+def calc_max_velocity(target_angle: AngleDeg, krate, ball_vel: Vector2D):
     ball_speed_max2 = ServerParam.i().ball_speed_max() ** 2
-    max_accel = min(ServerParam.i().max_power() * krate,
-                    ServerParam.i().ball_accel_max())
+    max_accel = min(
+        ServerParam.i().max_power() * krate, ServerParam.i().ball_accel_max()
+    )
 
     desired_ray = Ray2D(Vector2D(0.0, 0.0), target_angle)
     next_reachable_circle = Circle2D(ball_vel, max_accel)
@@ -285,9 +305,9 @@ def calc_max_velocity(target_angle: AngleDeg,
     num = next_reachable_circle.intersection(desired_ray)
     if len(num) == 0:
         return Vector2D(0.0, 0.0)
-    
+
     vel1 = num[0]
-    
+
     if len(num) == 1:
         if vel1.r2() > ball_speed_max2:
             # next inertia ball point is within reachable circle.
@@ -358,9 +378,11 @@ class _KickTable:
         self._old_player_type_id = player_type.id()
         player_type = PlayerType()  # default type
 
-        if (math.fabs(self._player_size - player_type.player_size()) < EPS
-                and math.fabs(self._kickable_margin - player_type.kickable_margin()) < EPS
-                and math.fabs(self._ball_size - ServerParam.i().ball_size()) < EPS):
+        if (
+            math.fabs(self._player_size - player_type.player_size()) < EPS
+            and math.fabs(self._kickable_margin - player_type.kickable_margin()) < EPS
+            and math.fabs(self._ball_size - ServerParam.i().ball_size()) < EPS
+        ):
             return False
         self._player_size = player_type.player_size()
         self._kickable_margin = player_type.kickable_margin()
@@ -372,6 +394,7 @@ class _KickTable:
         angles = [AngleDeg(-180 + i * angle_step) for i in range(DEST_DIR_DIVS)]
         # TODO this functions should be checked
         from multiprocessing import Pool
+
         pool = Pool(4)
         self._tables = pool.map(self.create_table, angles)
 
@@ -430,9 +453,9 @@ class _KickTable:
         for origin in range(max_state):
             for dest in range(max_state):
                 vel = self._state_list[dest].pos_ - self._state_list[origin].pos_
-                max_vel = calc_max_velocity(angle,
-                                            self._state_list[dest].kick_rate_,
-                                            vel)
+                max_vel = calc_max_velocity(
+                    angle, self._state_list[dest].kick_rate_, vel
+                )
                 accel = max_vel - vel
                 path = Path(origin, dest)
                 path.max_speed_ = max_vel.r()
@@ -440,16 +463,15 @@ class _KickTable:
                 res[max_state * origin + dest] = path
         res.sort(key=functools.cmp_to_key(table_cmp))
         if len(res) > MAX_TABLE_SIZE:
-            res = res[:MAX_TABLE_SIZE + 1]
+            res = res[: MAX_TABLE_SIZE + 1]
         return res
-
 
     """
       \ brief update internal state
       \ param world  reference to the WorldModel
      """
 
-    def update_state(self, world: 'WorldModel'):
+    def update_state(self, world: "WorldModel"):
 
         if KickTable.S_UPDATE_TIME == world.time():
             return
@@ -463,21 +485,21 @@ class _KickTable:
       \ param world  reference to the WorldModel
      """
 
-    def create_state_cache(self, world: 'WorldModel'):
+    def create_state_cache(self, world: "WorldModel"):
 
         param = ServerParam.i()
         # pitch = Rect2D(Vector2D(- param.pitch_half_length(), - param.pitch_half_width()), Size2D(param.pitch_length(),
-                                                                                                #  param.pitch_width()))
+        #  param.pitch_width()))
         ## TODO - changed to keepaway sized pitch
         pitch = world.keepaway_rect()
-        
+
         self_type = world.self().player_type()
         near_dist = calc_near_dist(self_type)
         mid_dist = calc_mid_dist(self_type)
         far_dist = calc_far_dist(self_type)
 
         rpos = world.ball().rpos()
-        rpos.rotate(- world.self().body())
+        rpos.rotate(-world.self().body())
 
         dist = rpos.r()
         angle = rpos.th()
@@ -487,7 +509,9 @@ class _KickTable:
         else:
             dir_div = STATE_DIVS_FAR
 
-        self._current_state.index_ = (round(dir_div * round(angle.degree() + 180.0) / 360.0))
+        self._current_state.index_ = round(
+            dir_div * round(angle.degree() + 180.0) / 360.0
+        )
         if self._current_state.index_ >= dir_div:
             self._current_state.index_ = 0
 
@@ -562,7 +586,9 @@ class _KickTable:
       \ param first_speed required first speed
      """
 
-    def check_collision_after_release(self, world: 'WorldModel', target_point: Vector2D, first_speed):
+    def check_collision_after_release(
+        self, world: "WorldModel", target_point: Vector2D, first_speed
+    ):
 
         self_type = world.self().player_type()
 
@@ -576,7 +602,7 @@ class _KickTable:
         self_pos += self_vel
         self_vel *= self_type.player_decay()
 
-        release_pos = (target_point - self._current_state.pos_)
+        release_pos = target_point - self._current_state.pos_
         release_pos.set_length(first_speed)
 
         if self_pos.dist2(release_pos) < collide_dist2:
@@ -593,7 +619,7 @@ class _KickTable:
             self_vel *= self_type.player_decay()
 
             for it in self._state_cache[i]:
-                release_pos = (target_point - it.pos_)
+                release_pos = target_point - it.pos_
                 release_pos.set_length(first_speed)
 
                 if self_pos.dist2(release_pos) < collide_dist2:
@@ -610,14 +636,22 @@ class _KickTable:
     """
 
     @staticmethod
-    def check_interfere_at(world: 'WorldModel',
-                           # cycle,  # not needed
-                           state: State):
+    def check_interfere_at(
+        world: "WorldModel",
+        # cycle,  # not needed
+        state: State,
+    ):
         # cycle += 0  Check need
-        penalty_area = Rect2D(Vector2D(ServerParam.i().their_penalty_area_line_x(),
-                                       - ServerParam.i().penalty_area_half_width()),
-                              Size2D(ServerParam.i().penalty_area_length(),
-                                     ServerParam.i().penalty_area_width()))
+        penalty_area = Rect2D(
+            Vector2D(
+                ServerParam.i().their_penalty_area_line_x(),
+                -ServerParam.i().penalty_area_half_width(),
+            ),
+            Size2D(
+                ServerParam.i().penalty_area_length(),
+                ServerParam.i().penalty_area_width(),
+            ),
+        )
         flag = SAFETY
         OFB = world.opponents_from_ball()
         if len(OFB) == 0:
@@ -637,53 +671,77 @@ class _KickTable:
             opp_dist = opp_next.dist(state.pos_)
 
             if o.is_tackling():
-                if opp_dist < (o.playerTypePtr().player_size()
-                               + ServerParam.i().ball_size()):
+                if opp_dist < (
+                    o.playerTypePtr().player_size() + ServerParam.i().ball_size()
+                ):
                     flag |= KICKABLE
                     break
 
                 continue
 
-            control_area = o.player_type().catchable_area() if (
-                    o.goalie() and penalty_area.contains(o.pos()) and penalty_area.contains(state.pos_
-                                                                                            )) else o.player_type().kickable_area()
+            control_area = (
+                o.player_type().catchable_area()
+                if (
+                    o.goalie()
+                    and penalty_area.contains(o.pos())
+                    and penalty_area.contains(state.pos_)
+                )
+                else o.player_type().kickable_area()
+            )
 
             #
             # check kick possibility
             #
-            if not o.is_ghost() and o.pos_count() <= 2 and opp_dist < control_area + 0.15:
+            if (
+                not o.is_ghost()
+                and o.pos_count() <= 2
+                and opp_dist < control_area + 0.15
+            ):
                 flag |= KICKABLE
                 break
 
             opp_body = o.body() if o.body_count() <= 1 else (state.pos_ - opp_next).th()
             player_2_pos = Vector2D(state.pos_ - opp_next)
-            player_2_pos.rotate(- opp_body)
+            player_2_pos.rotate(-opp_body)
             #
             # check tackle possibility
             #
-            tackle_dist = ServerParam.i().tackle_dist() if player_2_pos.x() > 0.0 else ServerParam.i().tackle_back_dist()
+            tackle_dist = (
+                ServerParam.i().tackle_dist()
+                if player_2_pos.x() > 0.0
+                else ServerParam.i().tackle_back_dist()
+            )
             if tackle_dist > EPSILON:
-                tackle_prob = (pow(player_2_pos.abs_x() / tackle_dist,
-                                   ServerParam.i().tackle_exponent()) + pow(
+                tackle_prob = pow(
+                    player_2_pos.abs_x() / tackle_dist,
+                    ServerParam.i().tackle_exponent(),
+                ) + pow(
                     player_2_pos.abs_y() / ServerParam.i().tackle_width(),
-                    ServerParam.i().tackle_exponent()))
+                    ServerParam.i().tackle_exponent(),
+                )
                 if tackle_prob < 1.0 and 1.0 - tackle_prob > 0.7:  # success probability
                     flag |= TACKLEABLE
 
                     # check kick or tackle possibility after dash
 
             player_type = o.player_type()
-            max_accel = (ServerParam.i().max_dash_power()
-                         * player_type.dash_power_rate()
-                         * player_type.effort_max())
+            max_accel = (
+                ServerParam.i().max_dash_power()
+                * player_type.dash_power_rate()
+                * player_type.effort_max()
+            )
 
             if player_2_pos.abs_y() < control_area and (
-                    player_2_pos.abs_x() < max_accel or (player_2_pos + Vector2D(max_accel, 0.0)).r() < control_area or (
-                    player_2_pos - Vector2D(max_accel, 0.0)).r() < control_area):
+                player_2_pos.abs_x() < max_accel
+                or (player_2_pos + Vector2D(max_accel, 0.0)).r() < control_area
+                or (player_2_pos - Vector2D(max_accel, 0.0)).r() < control_area
+            ):
                 flag |= NEXT_KICKABLE
-            elif (player_2_pos.abs_y() < ServerParam.i().tackle_width() * 0.7
-                  and player_2_pos.x() > 0.0
-                  and player_2_pos.x() - max_accel < ServerParam.i().tackle_dist() - 0.3):
+            elif (
+                player_2_pos.abs_y() < ServerParam.i().tackle_width() * 0.7
+                and player_2_pos.x() > 0.0
+                and player_2_pos.x() - max_accel < ServerParam.i().tackle_dist() - 0.3
+            ):
                 flag |= NEXT_TACKLEABLE
 
         state.flag_ = flag
@@ -703,28 +761,38 @@ class _KickTable:
 
     def check_interfere_after_release(self, *args):  # , **kwargs):):
         if len(args) == 3:
-            world: 'WorldModel' = args[0]
+            world: "WorldModel" = args[0]
             target_point: Vector2D = args[1]
             first_speed: float = args[2]
-            self.check_interfere_after_release(world, target_point, first_speed, 1, self._current_state)
+            self.check_interfere_after_release(
+                world, target_point, first_speed, 1, self._current_state
+            )
 
             for i in range(MAX_DEPTH):
                 for state in self._state_cache[i]:
                     state.flag_ &= NOT_RELEASE_INTERFERE
                     state.flag_ &= NOT_MAYBE_RELEASE_INTERFERE
 
-                    self.check_interfere_after_release(world, target_point, first_speed, i + 2, state)
+                    self.check_interfere_after_release(
+                        world, target_point, first_speed, i + 2, state
+                    )
         elif len(args) == 5:
-            world: 'WorldModel' = args[0]
+            world: "WorldModel" = args[0]
             target_point: Vector2D = args[1]
             first_speed: float = args[2]
             cycle: int = args[3]
             state: State = args[4]
 
-            penalty_area = Rect2D(Vector2D(ServerParam.i().their_penalty_area_line_x(),
-                                           - ServerParam.i().penalty_area_half_width()),
-                                  Size2D(ServerParam.i().penalty_area_length(),
-                                         ServerParam.i().penalty_area_width()))
+            penalty_area = Rect2D(
+                Vector2D(
+                    ServerParam.i().their_penalty_area_line_x(),
+                    -ServerParam.i().penalty_area_half_width(),
+                ),
+                Size2D(
+                    ServerParam.i().penalty_area_length(),
+                    ServerParam.i().penalty_area_width(),
+                ),
+            )
 
             ball_pos = target_point - state.pos_
             ball_pos.set_length(first_speed)
@@ -748,12 +816,20 @@ class _KickTable:
                     opp_pos = o.pos() + o.vel()
 
                 if o.is_tackling():
-                    if opp_pos.dist(ball_pos) < (o.player_type().player_size() + ServerParam.i().ball_size()):
+                    if opp_pos.dist(ball_pos) < (
+                        o.player_type().player_size() + ServerParam.i().ball_size()
+                    ):
                         state.flag_ |= RELEASE_INTERFERE
                     continue
-                control_area = o.player_type().catchable_area() if (
-                        o.goalie() and penalty_area.contains(o.pos()) and penalty_area.contains(
-                    state.pos_)) else o.player_type().kickable_area()
+                control_area = (
+                    o.player_type().catchable_area()
+                    if (
+                        o.goalie()
+                        and penalty_area.contains(o.pos())
+                        and penalty_area.contains(state.pos_)
+                    )
+                    else o.player_type().kickable_area()
+                )
 
                 control_area += 0.1
                 control_area2 = pow(control_area, 2)
@@ -765,30 +841,49 @@ class _KickTable:
                     else:
                         state.flag_ |= RELEASE_INTERFERE
                 else:  # if  cycle <= 1 :
-                    opp_body = o.body() if o.body_count() <= 1 else (ball_pos - opp_pos).th()
+                    opp_body = (
+                        o.body() if o.body_count() <= 1 else (ball_pos - opp_pos).th()
+                    )
                     player_2_pos = ball_pos - opp_pos
-                    player_2_pos.rotate(- opp_body)
+                    player_2_pos.rotate(-opp_body)
 
-                    tackle_dist = ServerParam.i().tackle_dist() if player_2_pos.x() > 0.0 else ServerParam.i().tackle_back_dist()
+                    tackle_dist = (
+                        ServerParam.i().tackle_dist()
+                        if player_2_pos.x() > 0.0
+                        else ServerParam.i().tackle_back_dist()
+                    )
                     if tackle_dist > EPSILON:
-                        tackle_prob = (pow(player_2_pos.abs_x() / tackle_dist,
-                                           ServerParam.i().tackle_exponent()) + pow(
+                        tackle_prob = pow(
+                            player_2_pos.abs_x() / tackle_dist,
+                            ServerParam.i().tackle_exponent(),
+                        ) + pow(
                             player_2_pos.abs_y() / ServerParam.i().tackle_width(),
-                            ServerParam.i().tackle_exponent()))
-                        if tackle_prob < 1.0 and 1.0 - tackle_prob > 0.8:  # success probability
+                            ServerParam.i().tackle_exponent(),
+                        )
+                        if (
+                            tackle_prob < 1.0 and 1.0 - tackle_prob > 0.8
+                        ):  # success probability
                             state.flag_ |= MAYBE_RELEASE_INTERFERE
                     player_type = o.player_type()
-                    max_accel = (ServerParam.i().max_dash_power()
-                                 * player_type.dash_power_rate()
-                                 * player_type.effort_max()) * 0.8
-                    if (player_2_pos.abs_y() < control_area - 0.1
-                            and (player_2_pos.abs_x() < max_accel
-                                 or (player_2_pos + Vector2D(max_accel, 0.0)).r() < control_area - 0.25
-                                 or (player_2_pos - Vector2D(max_accel, 0.0)).r() < control_area - 0.25)):
+                    max_accel = (
+                        ServerParam.i().max_dash_power()
+                        * player_type.dash_power_rate()
+                        * player_type.effort_max()
+                    ) * 0.8
+                    if player_2_pos.abs_y() < control_area - 0.1 and (
+                        player_2_pos.abs_x() < max_accel
+                        or (player_2_pos + Vector2D(max_accel, 0.0)).r()
+                        < control_area - 0.25
+                        or (player_2_pos - Vector2D(max_accel, 0.0)).r()
+                        < control_area - 0.25
+                    ):
                         state.flag_ |= MAYBE_RELEASE_INTERFERE
 
-                    elif (player_2_pos.abs_y() < ServerParam.i().tackle_width() * 0.7
-                          and player_2_pos.x() - max_accel < ServerParam.i().tackle_dist() - 0.5):
+                    elif (
+                        player_2_pos.abs_y() < ServerParam.i().tackle_width() * 0.7
+                        and player_2_pos.x() - max_accel
+                        < ServerParam.i().tackle_dist() - 0.5
+                    ):
                         state.flag_ |= MAYBE_RELEASE_INTERFERE
 
     """
@@ -798,24 +893,28 @@ class _KickTable:
       \ param first_speed required first speed
      """
 
-    def simulate_one_step(self, world: 'WorldModel', target_point: Vector2D, first_speed):
+    def simulate_one_step(
+        self, world: "WorldModel", target_point: Vector2D, first_speed
+    ):
         if self._current_state.flag_ & SELF_COLLISION:
             return False
 
         if self._current_state.flag_ & RELEASE_INTERFERE:
             return False
 
-        current_max_accel = min(self._current_state.kick_rate_ * ServerParam.i().max_power(),
-                                ServerParam.i().ball_accel_max())
-        target_vel = (target_point - world.ball().pos())
+        current_max_accel = min(
+            self._current_state.kick_rate_ * ServerParam.i().max_power(),
+            ServerParam.i().ball_accel_max(),
+        )
+        target_vel = target_point - world.ball().pos()
         target_vel.set_length(first_speed)
 
         accel = target_vel - world.ball().vel()
         accel_r = accel.r()
         if accel_r > current_max_accel:
-            max_vel = calc_max_velocity(target_vel.th(),
-                                        self._current_state.kick_rate_,
-                                        world.ball().vel())
+            max_vel = calc_max_velocity(
+                target_vel.th(), self._current_state.kick_rate_, world.ball().vel()
+            )
             accel = max_vel - world.ball().vel()
             self._candidates.append(Sequence())
             self._candidates[-1].flag_ = self._current_state.flag_
@@ -849,7 +948,9 @@ class _KickTable:
       \ param first_speed required first speed
      """
 
-    def simulate_two_step(self, world: 'WorldModel', target_point: Vector2D, first_speed):
+    def simulate_two_step(
+        self, world: "WorldModel", target_point: Vector2D, first_speed
+    ):
         max_power = ServerParam.i().max_power()
         accel_max = ServerParam.i().ball_accel_max()
         ball_decay = ServerParam.i().ball_decay()
@@ -862,16 +963,19 @@ class _KickTable:
         my_kickable_area = self_type.kickable_area()
 
         my_noise = world.self().vel().r() * param.player_rand()
-        current_dir_diff_rate = (world.ball().angle_from_self() - world.self().body()).abs() / 180.0
+        current_dir_diff_rate = (
+            world.ball().angle_from_self() - world.self().body()
+        ).abs() / 180.0
 
-        current_dist_rate = ((world.ball().dist_from_self()
-                              - self_type.player_size()
-                              - param.ball_size())
-                             / self_type.kickable_margin())
+        current_dist_rate = (
+            world.ball().dist_from_self() - self_type.player_size() - param.ball_size()
+        ) / self_type.kickable_margin()
         current_pos_rate = 0.5 + 0.25 * (current_dir_diff_rate + current_dist_rate)
 
-        current_speed_rate = 0.5 + 0.5 * (world.ball().vel().r() / (
-                param.ball_speed_max() * param.default_player_decay()))
+        current_speed_rate = 0.5 + 0.5 * (
+            world.ball().vel().r()
+            / (param.ball_speed_max() * param.default_player_decay())
+        )
         # my_final_pos = world.self().pos() + world.self().vel() + world.self().vel() * self_type.player_decay()
 
         success_count = 0
@@ -902,10 +1006,14 @@ class _KickTable:
                 continue
             kick_power = accel_r / world.self().kick_rate()
             ball_noise = vel.r() * param.ball_rand()
-            max_kick_rand = self_type.kick_rand() * (kick_power / param.max_power()) * (
-                    current_pos_rate + current_speed_rate)
-            if ((my_noise + ball_noise + max_kick_rand)  # * 0.9
-                    > my_kickable_area - state.dist_ - 0.05):  # 0.1 )
+            max_kick_rand = (
+                self_type.kick_rand()
+                * (kick_power / param.max_power())
+                * (current_pos_rate + current_speed_rate)
+            )
+            if (
+                my_noise + ball_noise + max_kick_rand
+            ) > my_kickable_area - state.dist_ - 0.05:  # * 0.9  # 0.1 )
                 kick_miss_flag |= KICK_MISS_POSSIBILITY
 
             vel *= ball_decay
@@ -915,9 +1023,7 @@ class _KickTable:
             if accel_r > min(state.kick_rate_ * max_power, accel_max):
 
                 if success_count == 0:
-                    max_vel = calc_max_velocity(target_vel.th(),
-                                                state.kick_rate_,
-                                                vel)
+                    max_vel = calc_max_velocity(target_vel.th(), state.kick_rate_, vel)
                     d2 = max_vel.r2()
                     if max_speed2 < d2:
                         if max_speed2 == 0.0:
@@ -925,8 +1031,9 @@ class _KickTable:
 
                         max_speed2 = d2
                         accel = max_vel - vel
-                        self._candidates[-1].flag_ = ((self._current_state.flag_ & NOT_RELEASE_INTERFERE)
-                                                      | state.flag_)
+                        self._candidates[-1].flag_ = (
+                            self._current_state.flag_ & NOT_RELEASE_INTERFERE
+                        ) | state.flag_
                         self._candidates[-1].pos_list_.clear()
                         self._candidates[-1].pos_list_.append(state.pos_.copy())
                         self._candidates[-1].pos_list_.append(state.pos_ + max_vel)
@@ -935,9 +1042,11 @@ class _KickTable:
                         success_count += 1
                 continue
             self._candidates.append(Sequence())
-            self._candidates[-1].flag_ = ((self._current_state.flag_ & NOT_RELEASE_INTERFERE)
-                                          | state.flag_
-                                          | kick_miss_flag)
+            self._candidates[-1].flag_ = (
+                (self._current_state.flag_ & NOT_RELEASE_INTERFERE)
+                | state.flag_
+                | kick_miss_flag
+            )
             self._candidates[-1].pos_list_.append(state.pos_.copy())
             self._candidates[-1].pos_list_.append(state.pos_ + target_vel)
             self._candidates[-1].speed_ = first_speed
@@ -952,16 +1061,15 @@ class _KickTable:
       \ param first_speed required first speed
      """
 
-    def simulate_three_step(self, world: 'WorldModel',
-                            target_point: Vector2D,
-                            first_speed):
+    def simulate_three_step(
+        self, world: "WorldModel", target_point: Vector2D, first_speed
+    ):
 
         max_power = ServerParam.i().max_power()
         accel_max = ServerParam.i().ball_accel_max()
         ball_decay = ServerParam.i().ball_decay()
 
-        current_max_accel = min(self._current_state.kick_rate_ * max_power,
-                                accel_max)
+        current_max_accel = min(self._current_state.kick_rate_ * max_power, accel_max)
         current_max_accel2 = current_max_accel * current_max_accel
 
         param = ServerParam.i()
@@ -971,16 +1079,20 @@ class _KickTable:
         my_kickable_area = self_type.kickable_area()
 
         my_noise1 = world.self().vel().r() * param.player_rand()
-        current_dir_diff_rate = (world.ball().angle_from_self() - world.self().body()).abs() / 180.0
-        current_dist_rate = ((world.ball().dist_from_self()
-                              - self_type.player_size()
-                              - param.ball_size())
-                             / self_type.kickable_margin())
+        current_dir_diff_rate = (
+            world.ball().angle_from_self() - world.self().body()
+        ).abs() / 180.0
+        current_dist_rate = (
+            world.ball().dist_from_self() - self_type.player_size() - param.ball_size()
+        ) / self_type.kickable_margin()
         current_pos_rate = 0.5 + 0.25 * (current_dir_diff_rate + current_dist_rate)
-        current_speed_rate = 0.5 + 0.5 * (world.ball().vel().r()
-                                          / (param.ball_speed_max() * param.ball_decay()))
+        current_speed_rate = 0.5 + 0.5 * (
+            world.ball().vel().r() / (param.ball_speed_max() * param.ball_decay())
+        )
 
-        target_rel_angle = (target_point - world.self().pos()).th() - world.self().body()
+        target_rel_angle = (
+            target_point - world.self().pos()
+        ).th() - world.self().body()
         angle_deg = target_rel_angle.degree() + 180.0
         target_angle_index = round(DEST_DIR_DIVS * (angle_deg / 360.0))
         if target_angle_index >= DEST_DIR_DIVS:
@@ -1032,11 +1144,15 @@ class _KickTable:
 
             kick_power = math.sqrt(accel_r2) / world.self().kick_rate()
             ball_noise = vel1.r() * param.ball_rand()
-            max_kick_rand = self_type.kick_rand() * (kick_power / param.max_power()) * (
-                    current_pos_rate + current_speed_rate)
+            max_kick_rand = (
+                self_type.kick_rand()
+                * (kick_power / param.max_power())
+                * (current_pos_rate + current_speed_rate)
+            )
 
-            if ((my_noise1 + ball_noise + max_kick_rand)  # * 0.95
-                    > my_kickable_area - state_1st.dist_ - 0.05):  # 0.1 )
+            if (
+                my_noise1 + ball_noise + max_kick_rand
+            ) > my_kickable_area - state_1st.dist_ - 0.05:  # * 0.95  # 0.1 )
                 kick_miss_flag |= KICK_MISS_POSSIBILITY
 
             vel1 *= ball_decay
@@ -1053,9 +1169,9 @@ class _KickTable:
             accel_r2 = accel.r2()
             if accel_r2 > pow(min(state_2nd.kick_rate_ * max_power, accel_max), 2):
                 if success_count == 0:
-                    max_vel = calc_max_velocity(target_vel.th(),
-                                                state_2nd.kick_rate_,
-                                                vel2)
+                    max_vel = calc_max_velocity(
+                        target_vel.th(), state_2nd.kick_rate_, vel2
+                    )
                     d2 = max_vel.r2()
                     if max_speed2 < d2:
                         if max_speed2 == 0.0:
@@ -1064,9 +1180,11 @@ class _KickTable:
                         max_speed2 = d2
                         accel = max_vel - vel2
 
-                        self._candidates[-1].flag_ = ((self._current_state.flag_ & NOT_RELEASE_INTERFERE)
-                                                      | (state_1st.flag_ & NOT_RELEASE_INTERFERE)
-                                                      | state_2nd.flag_)
+                        self._candidates[-1].flag_ = (
+                            (self._current_state.flag_ & NOT_RELEASE_INTERFERE)
+                            | (state_1st.flag_ & NOT_RELEASE_INTERFERE)
+                            | state_2nd.flag_
+                        )
                         self._candidates[-1].pos_list_.clear()
                         self._candidates[-1].pos_list_.append(state_1st.pos_.copy())
                         self._candidates[-1].pos_list_.append(state_2nd.pos_.copy())
@@ -1075,10 +1193,12 @@ class _KickTable:
                         self._candidates[-1].power_ = accel.r() / state_2nd.kick_rate_
                 continue
             self._candidates.append(Sequence())
-            self._candidates[-1].flag_ = ((self._current_state.flag_ & NOT_RELEASE_INTERFERE)
-                                          | (state_1st.flag_ & NOT_RELEASE_INTERFERE)
-                                          | state_2nd.flag_
-                                          | kick_miss_flag)
+            self._candidates[-1].flag_ = (
+                (self._current_state.flag_ & NOT_RELEASE_INTERFERE)
+                | (state_1st.flag_ & NOT_RELEASE_INTERFERE)
+                | state_2nd.flag_
+                | kick_miss_flag
+            )
             self._candidates[-1].pos_list_.append(state_1st.pos_.copy())
             self._candidates[-1].pos_list_.append(state_2nd.pos_.copy())
             self._candidates[-1].pos_list_.append(state_2nd.pos_ + target_vel)
@@ -1154,64 +1274,64 @@ class _KickTable:
     \ return if successful kick is found, True, False is returned but kick sequence is generated anyway.
     """
 
-    def simulate(self, world, target_point: Vector2D, first_speed, allowable_speed, max_step, sequence: Sequence):
+    def simulate(
+        self,
+        world,
+        target_point: Vector2D,
+        first_speed,
+        allowable_speed,
+        max_step,
+        sequence: Sequence,
+    ):
 
         if len(self._state_list) == 0:
-            log.sw_log().kick().add_text( 'there isnt any state list')
+            log.sw_log().kick().add_text("there isnt any state list")
             # if _KickTable.debug_print_DEBUG:
             #     debug_print("False , Len  == 0")
             return False
 
-        target_speed = bound(0.0,
-                             first_speed,
-                             ServerParam.i().ball_speed_max())
-        speed_thr = bound(0.0,
-                          allowable_speed,
-                          target_speed)
+        target_speed = bound(0.0, first_speed, ServerParam.i().ball_speed_max())
+        speed_thr = bound(0.0, allowable_speed, target_speed)
 
         self._candidates.clear()
 
         self.update_state(world)
 
-        self.check_collision_after_release(world,
-                                           target_point,
-                                           target_speed)
-        self.check_interfere_after_release(world,
-                                           target_point,
-                                           target_speed)
+        self.check_collision_after_release(world, target_point, target_speed)
+        self.check_interfere_after_release(world, target_point, target_speed)
 
-        if (max_step >= 1
-                and self.simulate_one_step(world,
-                                           target_point,
-                                           target_speed)):
+        if max_step >= 1 and self.simulate_one_step(world, target_point, target_speed):
             if _KickTable.debug_print_DEBUG:
-                log.sw_log().kick().add_text( "simulate() found 1 step")
-        if (max_step >= 2
-                and self.simulate_two_step(world,
-                                           target_point,
-                                           target_speed)):
+                log.sw_log().kick().add_text("simulate() found 1 step")
+        if max_step >= 2 and self.simulate_two_step(world, target_point, target_speed):
             if _KickTable.debug_print_DEBUG:
-                log.sw_log().kick().add_text( "simulate() found 2 step")
-        if (max_step >= 3
-                and self.simulate_three_step(world,
-                                             target_point,
-                                             target_speed)):
+                log.sw_log().kick().add_text("simulate() found 2 step")
+        if max_step >= 3 and self.simulate_three_step(
+            world, target_point, target_speed
+        ):
             if _KickTable.debug_print_DEBUG:
-                log.sw_log().kick().add_text( "simulate() found 3 step")
+                log.sw_log().kick().add_text("simulate() found 3 step")
 
         self.evaluate(target_speed, speed_thr)
-        log.sw_log().kick().add_text( "candidate number:{}".format(len(self._candidates)))
+        log.sw_log().kick().add_text(
+            "candidate number:{}".format(len(self._candidates))
+        )
         if not self._candidates:
             # if _KickTable.debug_print_DEBUG:
             #     debug_print("False -> candidates len == ", len(self._candidates))
             rtn_list = [False, sequence]
             return rtn_list
-        sequence = max(self._candidates, key=functools.cmp_to_key(sequence_cmp))  # TODO : CMP Check
+        sequence = max(
+            self._candidates, key=functools.cmp_to_key(sequence_cmp)
+        )  # TODO : CMP Check
         if _KickTable.debug_print_DEBUG or True:
             for tmp in self._candidates:
                 log.sw_log().kick().add_text(
-                              f"simulate() result next_pos={sequence.pos_list_[0]}  flag={sequence.flag_} n_kick={len(sequence.pos_list_)} speed= {sequence.speed_} power={sequence.power_}  score={sequence.score_}")
-            log.os_log().info(f"Smart kick : {sequence.speed_ >= target_speed - EPS} -> seq speed is {sequence.speed_} & tar speed eps is {target_speed - EPS}")
+                    f"simulate() result next_pos={sequence.pos_list_[0]}  flag={sequence.flag_} n_kick={len(sequence.pos_list_)} speed= {sequence.speed_} power={sequence.power_}  score={sequence.score_}"
+                )
+            log.os_log().info(
+                f"Smart kick : {sequence.speed_ >= target_speed - EPS} -> seq speed is {sequence.speed_} & tar speed eps is {target_speed - EPS}"
+            )
         rtn_list = [sequence.speed_ >= target_speed - EPS, sequence]
         return rtn_list
 

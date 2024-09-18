@@ -11,22 +11,28 @@ from keepaway.lib.rcsc.game_time import GameTime
 from keepaway.lib.rcsc.server_param import ServerParam
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from keepaway.lib.player.world_model import WorldModel
 
 
 class GoalieMessenger(Messenger):
-    CONVERTER = MessengerConverter(Messenger.SIZES[Messenger.Types.GOALIE], [
-        (53. - 16., 53., 160),
-        (-20., 20., 400),
-        (0, 360, 360),
-    ])
+    CONVERTER = MessengerConverter(
+        Messenger.SIZES[Messenger.Types.GOALIE],
+        [
+            (53.0 - 16.0, 53.0, 160),
+            (-20.0, 20.0, 400),
+            (0, 360, 360),
+        ],
+    )
 
-    def __init__(self,
-                 goalie_unum: int = None,
-                 goalie_pos: Vector2D = None,
-                 goalie_body: AngleDeg = None,
-                 message: str = None) -> None:
+    def __init__(
+        self,
+        goalie_unum: int = None,
+        goalie_pos: Vector2D = None,
+        goalie_body: AngleDeg = None,
+        message: str = None,
+    ) -> None:
         super().__init__()
         if message is None:
             self._goalie_unum: int = goalie_unum
@@ -43,24 +49,44 @@ class GoalieMessenger(Messenger):
         self._message = message
 
     def encode(self) -> str:
-        if self._goalie_pos.x() < 53. - 16 or self._goalie_pos.x() > 53 or self._goalie_pos.abs_y() > 20:
-            log.sw_log().communication().add_text(f'(goalie player messenger) goalie pos over poisition range'
-                                                  f': {self._goalie_pos}')
-            return ''
+        if (
+            self._goalie_pos.x() < 53.0 - 16
+            or self._goalie_pos.x() > 53
+            or self._goalie_pos.abs_y() > 20
+        ):
+            log.sw_log().communication().add_text(
+                f"(goalie player messenger) goalie pos over poisition range"
+                f": {self._goalie_pos}"
+            )
+            return ""
 
         SP = ServerParam.i()
         ep = 0.001
-        msg = GoalieMessenger.CONVERTER.convert_to_word([
-            bound(-SP.pitch_half_length() + ep, self._goalie_pos.x(), SP.pitch_half_length() - ep),
-            bound(-SP.pitch_half_width() + ep, self._goalie_pos.y(), SP.pitch_half_width() - ep),
-            bound(ep, self._goalie_body.degree() + 180, 360-ep),
-        ])
-        return f'{self._header}{msg}'
+        msg = GoalieMessenger.CONVERTER.convert_to_word(
+            [
+                bound(
+                    -SP.pitch_half_length() + ep,
+                    self._goalie_pos.x(),
+                    SP.pitch_half_length() - ep,
+                ),
+                bound(
+                    -SP.pitch_half_width() + ep,
+                    self._goalie_pos.y(),
+                    SP.pitch_half_width() - ep,
+                ),
+                bound(ep, self._goalie_body.degree() + 180, 360 - ep),
+            ]
+        )
+        return f"{self._header}{msg}"
 
-    def decode(self, messenger_memory: MessengerMemory, sender: int, current_time: GameTime) -> None:
+    def decode(
+        self, messenger_memory: MessengerMemory, sender: int, current_time: GameTime
+    ) -> None:
         gpx, gpy, gb = GoalieMessenger.CONVERTER.convert_to_values(self._message)
 
-        messenger_memory.add_opponent_goalie(sender, Vector2D(gpx, gpy), current_time, body=AngleDeg(gb-180))  # TODO IMP FUNC
+        messenger_memory.add_opponent_goalie(
+            sender, Vector2D(gpx, gpy), current_time, body=AngleDeg(gb - 180)
+        )  # TODO IMP FUNC
 
     def __repr__(self) -> str:
         return "ball player msg"

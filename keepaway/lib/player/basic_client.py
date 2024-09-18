@@ -3,6 +3,7 @@ from enum import Enum
 from keepaway.lib.network.udp_socket import IPAddress, UDPSocket
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     # from keepaway.lib.player.soccer_agent import SoccerAgent
     from keepaway.utils.soccer_agent import SoccerAgent
@@ -13,8 +14,7 @@ class BasicClient:
         self._server_alive = True
         self._socket: UDPSocket = None
 
-    def connect_to(self,
-                   host_port: IPAddress):
+    def connect_to(self, host_port: IPAddress):
         self._socket = UDPSocket(host_port)
         return True
 

@@ -16,8 +16,8 @@ class NeckTurnToBallOrScan(NeckAction):
         super().__init__()
         self._count_thr = count_thr
 
-    def execute(self, agent: 'PlayerAgent'):
-        log.debug_client().add_message('TurnToBallOrScan/')
+    def execute(self, agent: "PlayerAgent"):
+        log.debug_client().add_message("TurnToBallOrScan/")
         wm = agent.world()
         ef = agent.effector()
         SP = ServerParam.i()
@@ -28,30 +28,20 @@ class NeckTurnToBallOrScan(NeckAction):
         ball_next = ef.queued_next_ball_pos()
         my_next = ef.queued_next_self_pos()
 
-        if (wm.ball().pos_count() <= 0
-                and not wm.kickable_opponent()
-                and not wm.kickable_teammate()
-                and my_next.dist(ball_next) < SP.visible_distance() - 0.2):
+        if (
+            wm.ball().pos_count() <= 0
+            and not wm.kickable_opponent()
+            and not wm.kickable_teammate()
+            and my_next.dist(ball_next) < SP.visible_distance() - 0.2
+        ):
             return NeckScanField().execute(agent)
 
         my_next_body = ef.queued_next_self_body()
         next_view_width = ef.queued_next_view_width().width()
 
-        if ((ball_next - my_next).th() - my_next_body).abs() > SP.max_neck_angle() + next_view_width * 0.5 + 2:
+        if (
+            (ball_next - my_next).th() - my_next_body
+        ).abs() > SP.max_neck_angle() + next_view_width * 0.5 + 2:
             return NeckScanField().execute(agent)
 
         return NeckTurnToBall().execute(agent)
-
-
-
-
-
-
-
-
-
-
-
-
-
-    

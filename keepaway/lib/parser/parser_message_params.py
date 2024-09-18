@@ -8,13 +8,13 @@ class MessageParamsParser:
         if len(string) < 3:
             return
         key = string.split(" ")[0].strip("()")
-        value = string[string.find(" "):]
+        value = string[string.find(" ") :]
         if not MessageParamsParser.need_dict(value):
             if value.find(")") == -1:
                 dic[key] = value.strip()
             else:
-                dic[key] = value[:value.find(")")].strip()
-            MessageParamsParser._parse(dic, value[value.find(")"):])
+                dic[key] = value[: value.find(")")].strip()
+            MessageParamsParser._parse(dic, value[value.find(")") :])
         else:
             dic[key] = {}
             end_of_dic = MessageParamsParser.end_of_dic(value)
@@ -48,5 +48,3 @@ class MessageParamsParser:
 
     def dic(self):
         return self._dic
-
-

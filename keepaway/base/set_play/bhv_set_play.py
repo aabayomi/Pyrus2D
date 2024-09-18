@@ -13,6 +13,7 @@ from keepaway.base.generator_pass import BhvPassGen
 from keepaway.lib.action.smart_kick import SmartKick
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from keepaway.lib.player.object_player import PlayerObject
     from keepaway.lib.player.player_agent import PlayerAgent
@@ -21,14 +22,15 @@ if TYPE_CHECKING:
 class Bhv_SetPlay:
     _kickable_time: int = -1
     _waiting = False
+
     def __init__(self):
         pass
 
-    def execute(self, agent: 'PlayerAgent'):
+    def execute(self, agent: "PlayerAgent"):
         if self.kick(agent):
             return True
-        
-        log.sw_log().team().add_text( "Bhv_SetPlay")
+
+        log.sw_log().team().add_text("Bhv_SetPlay")
         wm: WorldModel = agent.world()
         game_mode = wm.game_mode().type()
         game_side = wm.game_mode().side()
@@ -42,7 +44,7 @@ class Bhv_SetPlay:
             nearest_tm_dist = 1000
             nearest_tm = 0
             for i in range(1, 12):
-                tm: 'PlayerObject' = wm.our_player(i)
+                tm: "PlayerObject" = wm.our_player(i)
                 if tm is None:
                     continue
                 if tm.unum() == i:
@@ -62,18 +64,24 @@ class Bhv_SetPlay:
     @staticmethod
     def is_kicker(agent):
         wm = agent.world()
-        if wm.game_mode().mode_name() == "goalie_catch" and \
-                wm.game_mode().side() == wm.our_side() and \
-                not wm.self().goalie():
-            log.sw_log().team().add_text( "(is_kicker) goalie free kick")
+        if (
+            wm.game_mode().mode_name() == "goalie_catch"
+            and wm.game_mode().side() == wm.our_side()
+            and not wm.self().goalie()
+        ):
+            log.sw_log().team().add_text("(is_kicker) goalie free kick")
             return False
-        if not wm.self().goalie() and \
-                wm.game_mode().mode_name() == "goal_kick" and \
-                wm.game_mode().side() == wm.our_side():
+        if (
+            not wm.self().goalie()
+            and wm.game_mode().mode_name() == "goal_kick"
+            and wm.game_mode().side() == wm.our_side()
+        ):
             return False
-        if wm.self().goalie() and \
-                wm.game_mode().mode_name() == "goal_kick" and \
-                wm.game_mode().side() == wm.our_side():
+        if (
+            wm.self().goalie()
+            and wm.game_mode().mode_name() == "goal_kick"
+            and wm.game_mode().side() == wm.our_side()
+        ):
             return True
         st = StrategyFormation().i()
         kicker_unum = 0
@@ -98,10 +106,12 @@ class Bhv_SetPlay:
                     second_min_dist2, min_dist2 = min_dist2, second_min_dist2
                     second_kicker_unum, kicker_unum = kicker_unum, second_kicker_unum
 
-        log.sw_log().team().add_text( f"(is kicker) kicker_unum={kicker_unum}, second_kicker_unum={second_kicker_unum}")
+        log.sw_log().team().add_text(
+            f"(is kicker) kicker_unum={kicker_unum}, second_kicker_unum={second_kicker_unum}"
+        )
 
-        kicker: 'PlayerObject' = None
-        second_kicker: 'PlayerObject' = None
+        kicker: "PlayerObject" = None
+        second_kicker: "PlayerObject" = None
 
         if kicker_unum != 0:
             kicker = wm.our_player(kicker_unum)
@@ -109,37 +119,53 @@ class Bhv_SetPlay:
             second_kicker = wm.our_player(second_kicker_unum)
 
         if kicker is None:
-            if len(wm.teammates_from_ball()) > 0 and \
-                    wm.teammates_from_ball()[0].dist_from_ball() < wm.ball().dist_from_self() * 0.9:
-                log.sw_log().team().add_text( "(is kicker) first kicker")
+            if (
+                len(wm.teammates_from_ball()) > 0
+                and wm.teammates_from_ball()[0].dist_from_ball()
+                < wm.ball().dist_from_self() * 0.9
+            ):
+                log.sw_log().team().add_text("(is kicker) first kicker")
                 return False
 
-            log.sw_log().team().add_text( "(is_kicker) self(1)")
+            log.sw_log().team().add_text("(is_kicker) self(1)")
             return True
 
-        if kicker is not None and \
-                second_kicker is not None and \
-                (kicker.unum() == wm.self().unum() or \
-                 second_kicker.unum() == wm.self().unum()):
-            if min_dist2 ** 0.5 < (second_min_dist2 ** 0.5) * 0.95:
-                log.sw_log().team().add_text( f"(is kicker) kicker->unum={kicker.unum()} (1)")
+        if (
+            kicker is not None
+            and second_kicker is not None
+            and (
+                kicker.unum() == wm.self().unum()
+                or second_kicker.unum() == wm.self().unum()
+            )
+        ):
+            if min_dist2**0.5 < (second_min_dist2**0.5) * 0.95:
+                log.sw_log().team().add_text(
+                    f"(is kicker) kicker->unum={kicker.unum()} (1)"
+                )
                 return kicker.unum() == wm.self().unum()
             elif kicker.dist_from_ball() < second_kicker.dist_from_ball() * 0.95:
-                log.sw_log().team().add_text( f"(is kicker) kicker->unum={kicker.unum()} (2)")
+                log.sw_log().team().add_text(
+                    f"(is kicker) kicker->unum={kicker.unum()} (2)"
+                )
                 return kicker.unum() == wm.self().unum()
             elif second_kicker.dist_from_ball() < kicker.dist_from_ball() * 0.95:
-                log.sw_log().team().add_text( f"(is kicker) kicker->unum={kicker.unum()} (3)")
+                log.sw_log().team().add_text(
+                    f"(is kicker) kicker->unum={kicker.unum()} (3)"
+                )
                 return second_kicker.unum() == wm.self().unum()
-            elif len(wm.teammates_from_ball()) > 0 and \
-                    wm.teammates_from_ball()[0].dist_from_ball() < wm.self().dist_from_ball() * 0.95:
-                log.sw_log().team().add_text( "(is kicker) other kicker")
+            elif (
+                len(wm.teammates_from_ball()) > 0
+                and wm.teammates_from_ball()[0].dist_from_ball()
+                < wm.self().dist_from_ball() * 0.95
+            ):
+                log.sw_log().team().add_text("(is kicker) other kicker")
                 return False
             else:
-                log.sw_log().team().add_text( "(is kicker) self (2)")
+                log.sw_log().team().add_text("(is kicker) self (2)")
                 return True
         return kicker.unum() == wm.self().unum()
-    
-    def kick(self, agent: 'PlayerAgent'):
+
+    def kick(self, agent: "PlayerAgent"):
         wm = agent.world()
 
         if not wm.self().is_kickable():
@@ -164,12 +190,20 @@ class Bhv_SetPlay:
 
         target = best_action.target_ball_pos
         log.debug_client().set_target(target)
-        log.debug_client().add_message(f'{best_action.type.value} to {best_action.target_ball_pos} {best_action.start_ball_speed}')
-        SmartKick(target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3).execute(agent)
-        agent.add_say_message(PassMessenger(best_action.target_unum,
-                                            best_action.target_ball_pos,
-                                            agent.effector().queued_next_ball_pos(),
-                                            agent.effector().queued_next_ball_vel()))
+        log.debug_client().add_message(
+            f"{best_action.type.value} to {best_action.target_ball_pos} {best_action.start_ball_speed}"
+        )
+        SmartKick(
+            target, best_action.start_ball_speed, best_action.start_ball_speed - 1, 3
+        ).execute(agent)
+        agent.add_say_message(
+            PassMessenger(
+                best_action.target_unum,
+                best_action.target_ball_pos,
+                agent.effector().queued_next_ball_pos(),
+                agent.effector().queued_next_ball_vel(),
+            )
+        )
 
         agent.set_neck_action(NeckScanPlayers())
         return True
